@@ -1,0 +1,152 @@
+:root { 
+    --primary: #1a1a1a; 
+    --accent: #c5a059; 
+    --light: #f4f4f4; 
+    --white: #ffffff; 
+    --gray: #666666; 
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light);
+}
+
+/* Sidebar */
+.sidebar {
+    background: var(--primary);
+    min-height: 100vh;
+    color: var(--white);
+    border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar .nav-link {
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 5px;
+    border-radius: 0;
+    transition: all 0.3s;
+    font-size: 14px;
+    padding: 12px 20px;
+    border-left: 3px solid transparent;
+}
+
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background-color: rgba(255,255,255,0.05);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    transform: none;
+}
+
+.profile-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+    margin-bottom: 15px;
+    padding: 3px;
+    background: var(--primary);
+}
+
+/* Welcome Hero */
+.welcome-header {
+    background-image: url('https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+    background-size: cover;
+    background-position: center;
+    height: 200px;
+    border-radius: 0;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.welcome-overlay {
+    background: rgba(26, 26, 26, 0.7); /* Darker overlay */
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 40px;
+    color: white;
+}
+
+/* Cards */
+.card-custom {
+    border: none;
+    border-radius: 2px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+    background: var(--white);
+    overflow: hidden;
+}
+
+.card-custom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.card-title {
+    font-family: 'Playfair Display', serif;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--accent);
+    border: none;
+    padding: 10px 20px;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background: #b08d4a;
+    transform: translateY(-2px);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.status-paid { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+.status-pending { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+    opacity: 0;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Upload Area */
+.upload-area {
+    border: 1px dashed #cbd5e0;
+    border-radius: 0;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fafafa;
+}
+.upload-area:hover {
+    border-color: var(--accent);
+    background-color: rgba(197, 160, 89, 0.05);
+}
+
+.room-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+/* Modal */
+.modal-content {
+    border-radius: 0;
+    border: none;
+}
+.modal-header {
+    border-bottom: 1px solid #eee;
+}

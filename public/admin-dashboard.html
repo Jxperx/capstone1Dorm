@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - EliteStay Manager</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin/dashboard.css">
+</head>
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading border-bottom bg-dark text-white">
+                <i class="fas fa-user-shield me-2"></i>Admin Panel
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rooms', this)">
+                    <i class="fas fa-door-open me-2"></i>Room Management
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('tenants', this)">
+                    <i class="fas fa-users me-2"></i>Tenants
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('payments', this)">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Payments
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('maintenance', this)">
+                    <i class="fas fa-tools me-2"></i>Maintenance
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('media', this)">
+                    <i class="fas fa-images me-2"></i>Property Media
+                </a>
+                <div class="mt-4 border-top border-secondary pt-2">
+                    <a href="#" class="list-group-item list-group-item-action" onclick="prepareAddTenant()">
+                        <i class="fas fa-user-plus me-2"></i>Add Tenant
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="showSection('profile', this)" data-bs-toggle="modal" data-bs-target="#profileModal">
+                        <i class="fas fa-user-circle me-2"></i>Profile
+                    </a>
+                    <a href="/logout" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <div class="container-fluid">
+                    <button class="btn btn-primary" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                    <h4 class="ms-3 mb-0" id="pageTitle">Dashboard Overview</h4>
+                    <div class="ms-auto">
+                        <span class="text-muted small me-2">Welcome, Admin</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid mt-4">
+                
+                <!-- SECTION: Dashboard Overview -->
+                <div id="section-dashboard" class="content-section active">
+                    <!-- Quick Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-white bg-success mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Revenue</h5>
+                                    <p class="card-text display-6" id="totalRevenue">$0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-info mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Occupancy</h5>
+                                    <p class="card-text display-6" id="occupancy">0/0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-warning mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Pending Payments</h5>
+                                    <p class="card-text display-6" id="pendingCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-danger mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Open Issues</h5>
+                                    <p class="card-text display-6" id="openIssues">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Room Management -->
+                <div id="section-rooms" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Room & Unit Management</h3>
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="openRoomModal()">
+                            <i class="fas fa-plus me-2"></i>Add New Room
+                        </button>
+                    </div>
+                    <div class="row">
+                        <!-- Dorm Management -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dormitories</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Room</th>
+                                                    <th>Capacity</th>
+                                                    <th>Rate</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dormsTableBody">
+                                                <!-- Dynamic Dorms -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Condo Management -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Units</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Unit</th>
+                                                    <th>Capacity</th>
+                                                    <th>Rate</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="condosTableBody">
+                                                <!-- Dynamic Condos -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-media" class="content-section">
+                    <h3 class="mb-4">Condo and Dorm Media</h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Media</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="condoMediaForm" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label class="form-label">Photo</label>
+                                            <input type="file" name="image" accept="image/*" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Video</label>
+                                            <input type="file" name="video" accept="video/*" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Map embed or URL</label>
+                                            <textarea name="mapEmbed" class="form-control" rows="3" placeholder="Paste Google Maps embed code or link"></textarea>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" onclick="savePropertyMedia('condo')">Save Condo Media</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dorm Media</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="dormMediaForm" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label class="form-label">Photo</label>
+                                            <input type="file" name="image" accept="image/*" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Video</label>
+                                            <input type="file" name="video" accept="video/*" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Map embed or URL</label>
+                                            <textarea name="mapEmbed" class="form-control" rows="3" placeholder="Paste Google Maps embed code or link"></textarea>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" onclick="savePropertyMedia('dorm')">Save Dorm Media</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Payments -->
+                <div id="section-payments" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Payment Management</h3>
+                        <button class="btn btn-warning rounded-pill shadow-sm" onclick="triggerRentReminders()">
+                            <i class="fas fa-paper-plane me-2"></i>Send Rent Reminders
+                        </button>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2 text-warning"></i>Pending Payment Approvals</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush" id="paymentsList">
+                                <!-- Dynamic Payments -->
+                                <li class="list-group-item text-center text-muted">Loading payments...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Maintenance -->
+                <div id="section-maintenance" class="content-section">
+                    <h3 class="mb-4">Maintenance Requests</h3>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Tenant</th>
+                                        <th>Room</th>
+                                        <th>Issue</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenanceTableBody">
+                                    <!-- Dynamic Maintenance -->
+                                    <tr><td colspan="6" class="text-center">Loading requests...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Tenant Management -->
+                <div id="section-tenants" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Tenant Management</h3>
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="prepareAddTenant()">
+                            <i class="fas fa-user-plus me-2"></i>Add New Tenant
+                        </button>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Tenant</th>
+                                            <th>Contact</th>
+                                            <th>Room</th>
+                                            <th>Guardian</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tenantsTableBody">
+                                        <tr><td colspan="6" class="text-center">Loading tenants...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- (Meter Reading and Utility Calculator sections removed) -->
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">My Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img id="profilePreview" src="https://via.placeholder.com/150" class="rounded-circle" width="100" height="100" style="object-fit: cover;">
+                        <div class="mt-2">
+                            <input type="file" id="profileImageInput" class="form-control form-control-sm" accept="image/*" onchange="previewProfileImage(this, 'profilePreview')">
+                        </div>
+                    </div>
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="profileName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="profilePhone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="profileEmail" readonly disabled>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Tenant Modal -->
+    <div class="modal fade" id="editTenantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Tenant Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editTenantId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Personal Info</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="editTenantName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="editTenantPhone" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Room Assignment</label>
+                                <select class="form-select" id="editTenantRoom">
+                                    <option value="">Select Room...</option>
+                                    <!-- Dynamic Options -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Guardian Info</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Name</label>
+                                <input type="text" class="form-control" id="editGuardianName">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Address</label>
+                                <input type="text" class="form-control" id="editGuardianAddress">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Contact</label>
+                                <input type="text" class="form-control" id="editGuardianContact">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTenantChanges()">Save Tenant</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proof Modal -->
+    <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg text-center">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-dark">
+                    <img id="proofImage" src="" class="proof-img-modal" alt="Proof">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="updateMaintenanceId">
+                    <label class="form-label">New Status</label>
+                    <select id="newStatus" class="form-select">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Room Modal -->
+    <div class="modal fade" id="roomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roomModalTitle">Add New Room</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roomForm">
+                        <input type="hidden" id="roomId">
+                        <div class="mb-3">
+                            <label class="form-label">Room Number/Name</label>
+                            <input type="text" class="form-control" id="roomNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="roomType" required>
+                                <option value="dorm">Dormitory</option>
+                                <option value="condo">Condo Unit</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Capacity (Beds)</label>
+                            <input type="number" class="form-control" id="roomCapacity" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monthly Rate</label>
+                            <input type="number" class="form-control" id="roomRate" required min="0" step="0.01">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitSaveRoom()">Save Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Meter Reading Modal -->
+    <div class="modal fade" id="addReadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-bolt me-2"></i>Add Meter Reading</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addReadingForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Tenant</label>
+                            <select class="form-select" id="readingTenantSelect" required>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Water Reading (m³)</label>
+                                <input type="number" class="form-control" name="water_reading" required step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Electric Reading (kWh)</label>
+                                <input type="number" class="form-control" name="electric_reading" required step="0.01">
+                            </div>
+                        </div>
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle me-1"></i> Admin-entered readings are automatically verified.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddReading()">Submit Reading</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tenant Modal (Replaces Create Account) -->
+    <div class="modal fade" id="addTenantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add New Tenant</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTenantForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" required placeholder="John Doe">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" name="email" required placeholder="john@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="09123456789">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Room Assignment</label>
+                            <select class="form-select" name="room_id" id="addTenantRoomSelect">
+                                <option value="">Select Room (Optional)...</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lease Start Date</label>
+                            <input type="date" class="form-control" name="lease_start" value="">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddTenant()">Add Tenant</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Admin Modules -->
+    <script src="js/admin/modules/stats.js"></script>
+    <script src="js/admin/modules/rooms.js"></script>
+    <script src="js/admin/modules/tenants.js"></script>
+    <script src="js/admin/modules/payments.js"></script>
+    <script src="js/admin/modules/payments.js"></script>
+    <script src="js/admin/modules/maintenance.js"></script>
+    <script src="js/admin/modules/profile.js"></script>
+    
+    <!-- Main Entry Point -->
+    <script src="js/admin/main.js"></script>
+</body>
+</html>

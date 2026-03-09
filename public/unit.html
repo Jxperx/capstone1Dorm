@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Details - EliteStay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <link rel="stylesheet" href="css/landing.css">
+    <style>
+        .unit-details-hero {
+            height: 50vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #fff;
+            overflow: hidden;
+            background-color: var(--primary);
+        }
+        .hero-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            opacity: 0.7;
+        }
+        .unit-info-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 100px;
+        }
+        .info-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray);
+            margin-bottom: 5px;
+            display: block;
+        }
+        .info-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: block;
+        }
+        .calendar-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        #calendar {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .fc-header-toolbar {
+            font-size: 0.8em;
+        }
+        .fc-toolbar-title {
+            font-size: 1.2em !important;
+            font-family: 'Playfair Display', serif;
+        }
+        .fc-button-primary {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+        .fc-button-primary:hover {
+            background-color: var(--accent) !important;
+            border-color: var(--accent) !important;
+        }
+        .media-container {
+            border-radius: 20px;
+            overflow: hidden;
+            background: #f9f9f9;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        .media-placeholder {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            flex-direction: column;
+            gap: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        .status-available { background: #e6fffa; color: #319795; }
+        .status-occupied { background: #fff5f5; color: #e53e3e; }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: -50px auto 50px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            z-index: 1001;
+            color: var(--white);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s;
+        }
+        .back-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+
+    <div class="unit-details-hero">
+        <img src="" alt="Unit Hero" class="hero-img" id="heroImage">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div id="unitStatusBadge" class="status-badge">Loading...</div>
+            <h1 id="unitTitle" style="font-family: 'Playfair Display', serif; font-size: 48px; margin-bottom: 10px;">Unit Details</h1>
+            <p id="unitSubtitle" style="font-size: 18px; opacity: 0.9;">Loading professional student living...</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 40px;">
+            <!-- Left Column: Media & Calendar -->
+            <div>
+                <div class="calendar-container">
+                    <h3 style="font-family: 'Playfair Display', serif; margin-bottom: 20px;">Availability Calendar</h3>
+                    <div id="calendar"></div>
+                    <p style="font-size: 12px; color: var(--gray); margin-top: 15px;">
+                        <i class="fas fa-info-circle"></i> Green dates indicate the unit is available for move-in. Red indicates it is currently occupied.
+                    </p>
+                </div>
+
+                <h3 style="font-family: 'Playfair Display', serif; margin-bottom: 20px;">Gallery & Tour</h3>
+                
+                <div class="media-container" id="unitImages">
+                    <div class="media-placeholder">
+                        <i class="far fa-image fa-3x"></i>
+                        <span>Loading gallery...</span>
+                    </div>
+                </div>
+
+                <div class="media-container" id="unitVideo">
+                    <div class="media-placeholder">
+                        <i class="fas fa-play-circle fa-3x"></i>
+                        <span>Loading video tour...</span>
+                    </div>
+                </div>
+
+                <div class="media-container" id="unitMap">
+                    <div class="media-placeholder">
+                        <i class="fas fa-map-marked-alt fa-3x"></i>
+                        <span>Loading location...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Info & Booking -->
+            <div>
+                <div class="unit-info-card">
+                    <h3 style="font-family: 'Playfair Display', serif; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px;">Unit Details</h3>
+                    
+                    <span class="info-label">Property Type</span>
+                    <span class="info-value" id="infoType">Loading...</span>
+
+                    <span class="info-label">Unit Number</span>
+                    <span class="info-value" id="infoRoomNumber">Loading...</span>
+
+                    <span class="info-label">Maximum Capacity</span>
+                    <span class="info-value"><span id="infoCapacity">0</span> Persons</span>
+
+                    <span class="info-label">24 Hours Stay</span>
+                    <span class="info-value" style="color: var(--accent); font-size: 24px;">₱<span id="infoRate">1500</span></span>
+
+                    <div id="bookingAction">
+                        <a href="/login" class="btn" style="width: 100%; padding: 15px; text-decoration: none; display: inline-block; text-align: center;">Book This Unit</a>
+                        <p style="font-size: 12px; color: var(--gray); text-align: center; margin-top: 10px;">* Requires account verification</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="padding: 60px 0; background: var(--primary); color: #fff; text-align: center;">
+        <p style="font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 10px;">EliteStay</p>
+        <p style="font-size: 14px; opacity: 0.6;">&copy; 2026 EliteStay Student Housing. All rights reserved.</p>
+    </footer>
+
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src="js/unit-details.js"></script>
+</body>
+</html>

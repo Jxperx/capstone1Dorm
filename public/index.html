@@ -1,0 +1,100 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>EliteStay | Premium Condo Rentals Preview</title> 
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/landing.css">
+</head> 
+<body> 
+ 
+    <nav>
+        <a href="#" class="logo">EliteStay</a>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#condos">Condo Units</a>
+            <a href="#dorms">Dorms</a>
+            <a href="#location">Location</a>
+            <a href="/login" style="color: var(--accent);">Login</a>
+        </div>
+    </nav>
+ 
+    <header id="home" class="hero">
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="videos/Video_2_2.mov" type="video/quicktime">
+            <source src="videos/Video_2_2.mov" type="video/mp4">
+            <!-- Fallback image if video fails or not supported -->
+            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1350&q=80" alt="Hero Background" style="width: 100%; height: 100%; object-fit: cover;">
+        </video>
+        <div class="hero-overlay"></div>
+        
+        <div class="hero-content">
+            <h1>Experience Premium Student Living</h1>
+            <p>Luxury Condos & Comfortable Dorms Near Campus</p>
+            <div>
+                <a href="#condos" class="btn">View Units</a>
+                <a href="/login" class="btn btn-outline">Tenant Portal</a>
+            </div>
+        </div>
+    </header>
+ 
+    <section id="condos" class="section bg-light">
+        <h2 class="section-title">Premium Condo Units</h2>
+        <p class="section-subtitle">Exquisite living spaces designed for comfort and productivity.</p>
+        
+        <div class="unit-grid" id="condoList">
+            <div style="text-align: center; width: 100%; grid-column: 1/-1;">Loading...</div>
+        </div>
+    </section>
+ 
+    <section id="dorms" class="section">
+        <h2 class="section-title">Standard Dormitories</h2>
+        <p class="section-subtitle">Affordable, community-focused accommodation for students.</p>
+        
+        <div class="unit-grid" id="dormList">
+            <div style="text-align: center; width: 100%; grid-column: 1/-1;">Loading...</div>
+        </div>
+    </section>
+ 
+    <section id="location" class="section bg-dark">
+        <h2 class="section-title" style="color: var(--white);">Prime Location</h2>
+        <p class="section-subtitle" style="color: rgba(255,255,255,0.6);">Situated in the heart of the University District.</p>
+        
+        <div class="location-details">
+            <div class="loc-item">
+                <i class="fas fa-map-marker-alt loc-icon"></i>
+                <div>
+                    <h4 style="color: white; margin-bottom: 5px;">Address</h4>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 14px;">123 Student Way, University District<br>City, State 12345</p>
+                </div>
+            </div>
+            <div class="loc-item">
+                <i class="fas fa-landmark loc-icon"></i>
+                <div>
+                    <h4 style="color: white; margin-bottom: 5px;">Landmark</h4>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 14px;">Near Central Library & City Park.<br>Look for the Black & Gold Building.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-wrapper">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1625.9657516732047!2d121.04191636843764!3d14.240380047590405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7d00529ec079%3A0x2bf1df6bbd2bbb6c!2sStanford%20Suites%201!5e0!3m2!1sen!2sph!4v1769783871662!5m2!1sen!2sph" 
+                width="100%" 
+                height="100%" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy">
+            </iframe>
+        </div>
+    </section>
+ 
+    <footer>
+        <p>&copy; 2026 EliteStay Student Housing. All rights reserved.</p>
+    </footer>
+
+    <script src="js/landing.js"></script>
+</body> 
+</html>
