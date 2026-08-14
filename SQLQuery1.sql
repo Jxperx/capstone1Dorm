@@ -1,0 +1,4 @@
+- Users: SELECT TOP 50 * FROM dbo.users ORDER BY created_at DESC;
+- Tenants: SELECT TOP 50 * FROM dbo.tenants ORDER BY id DESC;
+- Payments: SELECT TOP 50 * FROM dbo.payments ORDER BY created_at DESC;
+- Maintenance: SELECT TOP 50 * FROM dbo.maintenance_requests ORDER BY reported_at DESC;

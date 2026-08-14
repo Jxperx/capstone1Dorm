@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Portal - EliteStay</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/tenant/dashboard.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-none d-md-block sidebar p-4">
+            <div class="sidebar-logo-brand text-center pt-1 mb-4">
+                ELITESTAY
+            </div>
+            <div class="text-center mb-4">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Profile" class="profile-img">
+                <h5 id="sidebarName" class="fw-bold text-white mb-1 fs-6">Loading...</h5>
+                <p class="small text-white-50 mb-0 font-monospace extra-small" id="sidebarRoom">...</p>
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="#"><i class="fas fa-home me-2"></i> Dashboard</a>
+
+                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#maintenanceModal"><i class="fas fa-tools me-2"></i> Maintenance</a>
+                <a class="nav-link" href="#" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal"><i class="fas fa-tasks me-2"></i> Track Requests</a>
+
+                <a class="nav-link" href="#" onclick="loadFeedbackReport()" data-bs-toggle="modal" data-bs-target="#feedbackModal"><i class="fas fa-comment-dots me-2"></i> Feedback</a>
+                <a class="nav-link" href="#" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2"></i> Profile</a>
+                <a class="nav-link text-danger mt-4" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-4">
+            
+            <!-- Mobile Header -->
+            <div class="d-block d-md-none mb-4 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold" style="font-family: 'Playfair Display', serif;">EliteStay</h4>
+                <div class="dropdown">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-0">
+                        <li><a class="dropdown-item" href="#" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadAvailableRooms()" data-bs-toggle="modal" data-bs-target="#unitsModal"><i class="fas fa-building me-2"></i> Browse Units</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#feedbackModal"><i class="fas fa-comment-dots me-2"></i> Feedback</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#locationModal"><i class="fas fa-map-marked-alt me-2"></i> Location</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> History</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#maintenanceModal"><i class="fas fa-tools me-2"></i> Report Issue</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal"><i class="fas fa-tasks me-2"></i> Track Requests</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Welcome Hero -->
+            <div class="welcome-header">
+                <div class="welcome-overlay">
+                    <div>
+                        <h2 class="fw-bold display-6 mb-2" id="welcomeName" style="font-family: 'Playfair Display', serif;">Welcome Back</h2>
+                        <p class="mb-0 text-white-50" id="rentDueHeader">Rent for <span id="rentDueMonth">this month</span> is <span class="badge bg-warning text-dark rounded-pill ms-1 px-3 py-1" id="rentDueBadge">Calculating...</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editorial Asymmetric Layout (Spotlight Hub & Action Rail) -->
+            <div class="row g-4 mb-4">
+                
+                <!-- Left Section: Unit Spotlight & Financial Focal Hub (7 Columns) -->
+                <div class="col-lg-7">
+                    <div class="row g-4">
+                        <!-- My Room Card -->
+                        <div class="col-md-6">
+                            <div class="card card-custom h-100">
+                                <img src="https://images.unsplash.com/photo-1522771753035-0a1539503ed2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" onerror="this.src='https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'" class="room-img" alt="Room">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="card-title fw-bold mb-0 text-dark" id="cardRoomNumber">No Room</h5>
+                                        <span class="badge bg-primary rounded-pill px-3 py-1" id="cardRoomType">--</span>
+                                    </div>
+                                    <p class="text-muted small mb-3" id="cardRoomDetails">--</p>
+                                    <div class="d-flex align-items-center pt-2 border-top">
+                                        <div class="me-2 text-muted extra-small font-uppercase">Roommates:</div>
+                                        <div class="d-flex">
+                                            <img src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle border border-white shadow-sm" width="30" height="30" style="margin-right: -10px;">
+                                            <img src="https://randomuser.me/api/portraits/men/45.jpg" class="rounded-circle border border-white shadow-sm" width="30" height="30" style="margin-right: -10px;">
+                                            <div class="rounded-circle bg-light border border-white d-flex align-items-center justify-content-center extra-small fw-bold shadow-sm" style="width: 30px; height: 30px; z-index: 1;">+1</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Bill Card -->
+                        <div class="col-md-6">
+                            <div class="card card-custom h-100 p-3">
+                                <div class="card-body text-center d-flex flex-column justify-content-center">
+                                    <div class="mb-2">
+                                        <span class="badge bg-warning-subtle text-warning border border-warning rounded-circle p-3 shadow-sm">
+                                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                                        </span>
+                                    </div>
+                                    <h6 class="card-title text-muted text-uppercase extra-small letter-spacing-1 mb-1">Amount Due</h6>
+                                    <h2 class="fw-bold text-dark mb-1" id="currentBillAmount" style="font-family: 'Playfair Display', serif;">₱0.00</h2>
+                                    <p class="text-muted extra-small mb-3">Current Monthly Billing</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn editorial-btn-gold rounded-pill w-100 py-2 text-uppercase extra-small" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                            <i class="fas fa-upload me-2"></i> Upload Proof
+                                        </button>
+                                        <button id="openGcashModalBtn" class="btn editorial-btn-cyan rounded-pill w-100 py-2 text-uppercase extra-small" data-bs-toggle="modal" data-bs-target="#gcashModal" data-bill-id="">
+                                            <i class="fas fa-qrcode me-2"></i> Pay with GCash
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Section: Quick Action Rail (5 Columns) -->
+                <div class="col-lg-5">
+                    <div class="card card-custom h-100 p-4">
+                        <div class="card-body p-0">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title fw-bold mb-0 text-dark">Quick Actions</h5>
+                                <span class="extra-small text-muted font-monospace">SHORTCUTS</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="quick-action-tile d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#maintenanceModal">
+                                    <div class="quick-action-icon me-3">
+                                        <i class="fas fa-wrench"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">Report Issue</div>
+                                        <div class="extra-small text-muted">Something broken? Submit ticket.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="quick-action-tile d-flex align-items-center" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal">
+                                    <div class="quick-action-icon me-3">
+                                        <i class="fas fa-history"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">Payment Receipts & History</div>
+                                        <div class="extra-small text-muted">View past statements & print receipts.</div>
+                                    </div>
+                                </div>
+
+                                <div class="quick-action-tile d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                                    <div class="quick-action-icon me-3">
+                                        <i class="fas fa-comment-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">Submit Feedback</div>
+                                        <div class="extra-small text-muted">Rate your stay & management.</div>
+                                    </div>
+                                </div>
+
+                                <div class="quick-action-tile d-flex align-items-center" onclick="loadFeedbackReport()" data-bs-toggle="modal" data-bs-target="#feedbackReportModal">
+                                    <div class="quick-action-icon me-3">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">AI Sentiment Report</div>
+                                        <div class="extra-small text-muted">View AI-analyzed feedback insights.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Width: Recent Activity Stream (12 Columns) -->
+                <div class="col-12">
+                    <div class="card card-custom p-4">
+                        <div class="card-body p-0">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title fw-bold mb-0 text-dark">Recent Activity</h5>
+                                <span class="extra-small text-muted">LOG STREAM</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr class="extra-small text-uppercase text-muted">
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Status</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentActivityBody">
+                                        <!-- Dynamically populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Upload Payment Proof Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
+                        <i class="fas fa-file-invoice-dollar text-primary me-2 fs-4"></i> Upload Payment Proof
+                    </h5>
+                    <small class="text-muted">Please attach your bank transfer or GCash receipt screenshot.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                
+                <!-- Notice Banner -->
+                <div class="alert alert-warning border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center">
+                    <i class="fas fa-shield-alt me-2 text-warning fs-5"></i>
+                    <span class="small"><strong>Required:</strong> Please enter the exact <strong>Payment Date</strong> and <strong>Reference Number</strong> shown on your receipt screenshot for payment verification.</span>
+                </div>
+
+                <!-- Step 1: Amount Paid -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Amount Paid (₱) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 fw-bold">₱</span>
+                        <input type="number" id="paymentAmount" step="0.01" class="form-control border-start-0 rounded-end-3" placeholder="e.g. 350.00" required>
+                    </div>
+                </div>
+
+                <!-- Pay Online Option -->
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark shadow-sm" onclick="payWithGCash(this)">
+                        <i class="fas fa-wallet me-2"></i> Pay Online (GCash/Maya)
+                    </button>
+                </div>
+                <div class="text-center text-muted small mb-3">- OR Upload Proof -</div>
+
+                <!-- Step 2: Upload Dropzone & OCR Feedback -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Attach Receipt Screenshot <span class="text-danger">*</span></label>
+                    <div class="upload-area mb-2 rounded-3 border-2 border-dashed p-4 text-center cursor-pointer" onclick="document.getElementById('paymentProof').click()">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2"></i>
+                        <p class="mb-0 fw-bold text-dark">Click to upload or drag & drop</p>
+                        <p class="small text-muted mb-0">JPG, PNG up to 5MB</p>
+                        <input type="file" id="paymentProof" class="d-none" accept="image/*">
+                    </div>
+                    
+                    <!-- OCR Scan Progress / Detection Banner -->
+                    <div id="ocrScanAlert" class="d-none alert alert-info border-0 rounded-3 py-2 px-3 small align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2 text-info" role="status"></div>
+                        <span id="ocrScanText">Scanning image for Reference Number & Date...</span>
+                    </div>
+
+                    <div id="fileNameDisplayContainer" class="d-none bg-light p-2 rounded-3 border align-items-center">
+                        <i class="fas fa-file-image text-success me-2 fs-5"></i>
+                        <span class="small fw-semibold text-dark flex-grow-1 text-truncate" id="fileName"></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" id="clearPaymentProofBtn">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Payment Date (Mandatory) -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Payment Date (From Receipt) <span class="text-danger">*</span></label>
+                    <input type="date" id="paymentDate" class="form-control rounded-3" required>
+                    <small class="text-muted extra-small">Select the transaction date printed on your receipt.</small>
+                </div>
+
+                <!-- Step 4: Reference Number (Mandatory) -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Reference Number (From Receipt) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-hashtag"></i></span>
+                        <input type="text" id="paymentReference" class="form-control border-start-0 rounded-end-3" placeholder="e.g. 10098234712 (13-digit GCash / Bank Ref)" required>
+                    </div>
+                    <small class="text-muted extra-small">Must match the reference/trace number on your payment proof.</small>
+                </div>
+
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 py-3 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="submitPaymentBtn" class="btn btn-primary rounded-pill px-4 fw-bold">
+                    <i class="fas fa-paper-plane me-1"></i> Submit Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Enhanced Maintenance Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
+                        <i class="fas fa-tools text-danger me-2 fs-4"></i> Report Maintenance Issue
+                    </h5>
+                    <small class="text-muted">Need a quick fix? Let our team know and track progress live.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Hidden input for selected category title -->
+                <input type="hidden" id="maintenanceTitle" value="Plumbing (Leak, No Water)">
+
+                <!-- Step 1: Category Selection Grid -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-muted">1. Select Issue Category</label>
+                    <div class="row g-2" id="maintCategoryGrid">
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card active" data-category="Plumbing (Leak, No Water)" data-tip="💡 Tip: If water leak is severe, turn off the stopcock valve under sink/toilet.">
+                                <div class="maint-category-icon"><i class="fas fa-faucet"></i></div>
+                                <div class="fw-semibold small">Plumbing</div>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card" data-category="Electrical (Light, Outlet)" data-tip="💡 Tip: Check if the circuit breaker tripped on your room switchboard.">
+                                <div class="maint-category-icon"><i class="fas fa-bolt"></i></div>
+                                <div class="fw-semibold small">Electrical</div>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card" data-category="Internet / WiFi" data-tip="💡 Tip: Try restarting your room access point before reporting connection issues.">
+                                <div class="maint-category-icon"><i class="fas fa-wifi"></i></div>
+                                <div class="fw-semibold small">WiFi</div>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card" data-category="Furniture / Appliance" data-tip="💡 Tip: Unplug malfunctioning appliances immediately for safe inspection.">
+                                <div class="maint-category-icon"><i class="fas fa-chair"></i></div>
+                                <div class="fw-semibold small">Furniture</div>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card" data-category="Aircon & Cooling" data-tip="💡 Tip: Ensure air filters are clean and remote control batteries work.">
+                                <div class="maint-category-icon"><i class="fas fa-snowflake"></i></div>
+                                <div class="fw-semibold small">Aircon</div>
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <div class="maint-category-card" data-category="Other / General" data-tip="💡 Tip: Provide details below so our maintenance crew brings the right tools.">
+                                <div class="maint-category-icon"><i class="fas fa-wrench"></i></div>
+                                <div class="fw-semibold small">Other</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Troubleshooting Tip Box -->
+                <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-4 d-flex align-items-center" id="maintSmartTip">
+                    <i class="fas fa-lightbulb me-2 text-info fs-5"></i>
+                    <span class="small" id="maintTipText">💡 Tip: If water leak is severe, turn off the stopcock valve under sink/toilet.</span>
+                </div>
+
+                <!-- Step 2: Urgency & Availability Grid -->
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-muted">2. Urgency Level</label>
+                        <select id="maintUrgency" class="form-select rounded-3">
+                            <option value="normal">🟢 Normal (1 - 3 days standard response)</option>
+                            <option value="urgent">🟡 Urgent (Needs attention within 24 hours)</option>
+                            <option value="emergency">🔴 Emergency (Water pipe burst, power failure)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-muted">3. Preferred Visit Slot</label>
+                        <select id="maintSchedule" class="form-select rounded-3">
+                            <option value="Anytime">Anytime (Staff can inspect when available)</option>
+                            <option value="Morning (8 AM - 12 PM)">Morning (8 AM - 12 PM)</option>
+                            <option value="Afternoon (12 PM - 5 PM)">Afternoon (12 PM - 5 PM)</option>
+                            <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 3: Issue Description -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-muted">4. Describe the Problem</label>
+                    <textarea id="maintenanceDescription" class="form-control rounded-3" rows="3" placeholder="Explain what is broken or needs attention (e.g. Sink pipe leaking continuously under room bathroom)..."></textarea>
+                </div>
+
+                <!-- Step 4: Photo Attachment Dropzone & Live Preview -->
+                <div class="mb-2">
+                    <label class="form-label fw-bold small text-uppercase letter-spacing-1 text-muted">5. Photo Evidence (Optional)</label>
+                    <div class="maint-dropzone" id="maintDropzone">
+                        <i class="fas fa-camera fa-2x text-muted mb-2"></i>
+                        <div class="fw-semibold text-dark small">Click or drag photo here to attach proof</div>
+                        <div class="text-muted extra-small">Supports JPG, PNG (Max 5MB)</div>
+                    </div>
+                    <input type="file" id="maintenanceProof" accept="image/*" class="d-none">
+
+                    <!-- Image Preview Area -->
+                    <div id="imagePreviewContainer" class="mt-3 d-none align-items-center bg-light p-2 rounded-3 border">
+                        <img id="imagePreview" src="" alt="Preview" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold small text-dark text-truncate" id="previewFileName">filename.jpg</div>
+                            <div class="text-muted extra-small" id="previewFileSize">0 KB</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" id="clearImageBtn">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 py-3 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal">
+                    <i class="fas fa-list-check me-1"></i> Track My Tickets
+                </button>
+                <div>
+                    <button type="button" class="btn btn-light rounded-pill px-3 me-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="submitMaintenanceBtn" class="btn btn-danger rounded-pill px-4 fw-bold">
+                        <i class="fas fa-paper-plane me-1"></i> Submit Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Track Maintenance Modal -->
+<div class="modal fade" id="trackMaintenanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
+                        <i class="fas fa-tasks text-primary me-2 fs-4"></i> My Maintenance Tickets
+                    </h5>
+                    <small class="text-muted">Track real-time progress and rate completed repairs.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
+                <div id="maintRequestsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2 small">Loading your tickets...</p>
+                </div>
+                <div id="maintRequestsEmpty" class="text-center py-5 d-none">
+                    <i class="fas fa-clipboard-check fa-3x text-muted opacity-50 mb-3"></i>
+                    <h6 class="fw-bold text-dark">No Maintenance Requests Yet</h6>
+                    <p class="text-muted small">You haven't reported any issues. Click below to submit one anytime.</p>
+                    <button class="btn btn-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#maintenanceModal">
+                        <i class="fas fa-plus me-1"></i> Report an Issue
+                    </button>
+                </div>
+                <div id="maintRequestsList" class="d-flex flex-column gap-3"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 py-3 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="loadMyMaintenanceRequests()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Enhanced Payment History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
+                        <i class="fas fa-file-invoice-dollar text-success me-2 fs-4"></i> Payment History & Receipts
+                    </h5>
+                    <small class="text-muted">View past payments, download official receipts, and check verification status.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
+                
+                <!-- Payment Summary Metrics Bar -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded-3 border d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: grid; place-items: center;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted fw-bold text-uppercase">Total Approved Paid</small>
+                                <h5 class="fw-bold text-dark mb-0" id="totalPaidSummary">₱0.00</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded-3 border d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: grid; place-items: center;">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted fw-bold text-uppercase">Total Receipts Available</small>
+                                <h5 class="fw-bold text-dark mb-0" id="totalReceiptsCount">0 Receipts</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="py-3 ps-3">Payment Date</th>
+                                <th class="py-3">Amount</th>
+                                <th class="py-3">Reference No.</th>
+                                <th class="py-3 text-center">Proof / Receipt</th>
+                                <th class="py-3 pe-3 text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                    Loading payment history...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 py-3 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success rounded-pill px-4" onclick="loadHistory()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh History
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Digital Receipt Printable Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-dark text-white rounded-top-4 py-3 px-4">
+                <h5 class="modal-title fw-bold d-flex align-items-center mb-0">
+                    <i class="fas fa-receipt text-warning me-2"></i> Official Digital Receipt
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="printableReceiptCard">
+                <!-- Styled Printable Receipt Card -->
+                <div class="card border-0 bg-light p-4 rounded-4 shadow-sm position-relative overflow-hidden">
+                    
+                    <!-- Verified Watermark Stamp -->
+                    <div class="position-absolute top-0 end-0 m-3 opacity-25 text-success text-uppercase fw-bold border border-success border-3 rounded-3 p-2" style="font-size: 1rem; transform: rotate(12deg);">
+                        <i class="fas fa-check-double me-1"></i> VERIFIED & PAID
+                    </div>
+
+                    <div class="text-center pb-3 border-bottom mb-3">
+                        <h4 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif;">EliteStay</h4>
+                        <small class="text-muted">Boarding House Management & Billing</small>
+                        <div class="badge bg-dark text-white rounded-pill mt-2 px-3 py-1" id="receiptNumberTag">RECEIPT #RC-0000</div>
+                    </div>
+
+                    <div class="row g-2 small mb-3">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Tenant Name:</span>
+                            <strong class="text-dark" id="receiptTenantName">--</strong>
+                        </div>
+                        <div class="col-6 text-end">
+                            <span class="text-muted d-block">Room Number:</span>
+                            <strong class="text-dark" id="receiptRoomNo">--</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Payment Date:</span>
+                            <strong class="text-dark" id="receiptDate">--</strong>
+                        </div>
+                        <div class="col-6 text-end">
+                            <span class="text-muted d-block">Reference No:</span>
+                            <strong class="text-dark" id="receiptRef">--</strong>
+                        </div>
+                    </div>
+
+                    <!-- Line Item -->
+                    <div class="bg-white p-3 rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">Rent & Accommodation Payment</span>
+                            <span class="fw-bold text-dark" id="receiptItemAmount">₱0.00</span>
+                        </div>
+                        <small class="text-muted">Status: <span class="text-success fw-bold">Payment Verified</span></small>
+                    </div>
+
+                    <!-- Total Amount Display -->
+                    <div class="d-flex justify-content-between align-items-center bg-dark text-white p-3 rounded-3">
+                        <span class="fw-bold text-uppercase letter-spacing-1">Total Paid Amount</span>
+                        <h3 class="fw-bold text-warning mb-0" id="receiptTotalAmount">₱0.00</h3>
+                    </div>
+
+                    <div class="text-center mt-3 extra-small text-muted">
+                        Thank you for keeping your account updated! Keep this receipt for your records.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 py-3 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="printReceiptCard()">
+                    <i class="fas fa-print me-1"></i> Print / Save PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">My Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <img id="profilePreview" src="https://via.placeholder.com/150" class="rounded-circle mb-3 border" style="width: 150px; height: 150px; object-fit: cover;">
+                            <div class="mb-3">
+                                <label for="profileImageInput" class="btn btn-sm btn-outline-primary rounded-pill">Change Photo</label>
+                                <input type="file" id="profileImageInput" class="d-none" accept="image/*" onchange="previewProfileImage(this)">
+                            </div>
+                            <div class="card bg-light border-0 p-3">
+                                <h6 class="fw-bold">Room Assignment</h6>
+                                <p class="mb-0 text-primary fw-bold" id="profileRoomDisplay">Loading...</p>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6 class="fw-bold text-primary mb-3">Personal Information</h6>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" id="profileName" class="form-control rounded-3" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Email (Read-only)</label>
+                                <input type="email" id="profileEmail" class="form-control rounded-3" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Phone Number <span class="text-danger">*</span></label>
+                                <input type="text" id="profilePhone" class="form-control rounded-3" required>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <h6 class="fw-bold text-primary mb-3">Emergency / Guardian Contact</h6>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Guardian Name <span class="text-danger">*</span></label>
+                                <input type="text" id="guardianName" class="form-control rounded-3" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Guardian Address <span class="text-danger">*</span></label>
+                                <input type="text" id="guardianAddress" class="form-control rounded-3" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Guardian Contact Number <span class="text-danger">*</span></label>
+                                <input type="text" id="guardianContact" class="form-control rounded-3" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" onclick="saveProfile()" class="btn btn-primary rounded-pill px-4">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Units Modal -->
+<div class="modal fade" id="unitsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Available Units</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <h5 class="fw-bold mb-3">Condo Units</h5>
+                <div class="row g-3 mb-4" id="condoListModal">
+                    <!-- Dynamic Content -->
+                </div>
+                <h5 class="fw-bold mb-3">Dormitories</h5>
+                <div class="row g-3" id="dormListModal">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Our Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1625.9657516732047!2d121.04191636843764!3d14.240380047590405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7d00529ec079%3A0x2bf1df6bbd2bbb6c!2sStanford%20Suites%201!5e0!3m2!1sen!2sph!4v1769783871662!5m2!1sen!2sph" 
+                    width="100%" 
+                    height="450" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Socket.io -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- Tenant Modules -->
+<script src="js/tenant/modules/dashboard.js"></script>
+<script src="js/tenant/modules/maintenance.js"></script>
+<script src="js/tenant/modules/profile.js"></script>
+<script src="js/tenant/modules/rooms.js"></script>
+<script src="js/tenant/modules/payments.js"></script>
+<script src="js/tenant/modules/chat.js"></script>
+<script src="js/tenant/modules/feedback.js"></script>
+
+<script src="js/tenant/dashboard.js"></script>
+
+<!-- GCash Payment Modal -->
+<div class="modal fade" id="gcashModal" tabindex="-1" aria-labelledby="gcashModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0" id="gcashModalLabel">
+                        <i class="fas fa-qrcode text-primary me-2 fs-4"></i> Pay with GCash via PayMongo
+                    </h5>
+                    <small class="text-muted">Instant online QRPH & e-wallet payment checkout.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                
+                <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center">
+                    <i class="fas fa-shield-alt me-2 text-info fs-5"></i>
+                    <span class="small"><strong>Instant Verification:</strong> Your payment reference number will be generated and verified automatically upon checkout.</span>
+                </div>
+
+                <form id="gcash-payment-form">
+                    <!-- Hidden field carrying the specific payment/bill record ID -->
+                    <input type="hidden" id="gcash-bill-id" name="bill_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="payment-amount" class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Amount (PHP) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 fw-bold">₱</span>
+                            <input type="number" step="0.01" class="form-control border-start-0 rounded-end-3" id="payment-amount" placeholder="e.g. 5000.00" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment-description" class="form-label fw-bold small text-uppercase letter-spacing-1 text-dark">Description <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-align-left"></i></span>
+                            <input type="text" class="form-control border-start-0 rounded-end-3" id="payment-description" placeholder="e.g. Monthly Rent Payment" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning btn-lg w-100 rounded-pill fw-bold text-dark shadow-sm">
+                        <i class="fas fa-qrcode me-2"></i> Generate QRPH Code
+                    </button>
+                </form>
+                
+                <!-- QR Code Display Container -->
+                <div id="qr-container" class="text-center d-none mt-3 p-3 bg-light rounded-4 border">
+                    <h6 class="fw-bold text-primary mb-2"><i class="fas fa-qrcode me-1"></i> Scan to Pay via QRPH</h6>
+                    <img id="qr-image" src="" alt="QR Code" class="img-fluid border rounded-3 p-2 bg-white mb-3 shadow-sm" style="max-height: 240px;">
+                    
+                    <div class="bg-white p-2 rounded-3 border mb-3">
+                        <small class="text-muted d-block extra-small">PayMongo Reference Number:</small>
+                        <span id="qr-reference" class="fw-bold text-dark font-monospace fs-6"></span>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small rounded-pill mb-3">
+                        <i class="fas fa-spinner fa-spin me-2"></i> Real-time payment listener active...
+                    </div>
+
+                    <button type="button" class="btn btn-outline-secondary rounded-pill btn-sm w-100" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- AI Feedback Report Modal -->
+<div class="modal fade" id="feedbackReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 24px;">
+            <div class="modal-header border-0 p-4 text-white" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);">
+                <div>
+                    <h5 class="modal-title fw-bold d-flex align-items-center">
+                        <i class="fas fa-brain me-2"></i> AI Sentiment Analysis — Completion Report
+                    </h5>
+                    <p class="mb-0 opacity-75 small">Insightful summary of your submitted feedback</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light" style="max-height: 70vh; overflow-y: auto;">
+                <div id="feedbackReportContainer">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3 bg-white">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#feedbackModal">Submit New Feedback</button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+            <div class="modal-header border-0 p-4 bg-warning text-dark">
+                <div>
+                    <h5 class="modal-title fw-bold d-flex align-items-center">
+                        <i class="fas fa-comment-alt me-2"></i> Submit Feedback
+                    </h5>
+                    <p class="mb-0 opacity-75 small">Help us improve your stay</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="feedbackForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">How was your experience?</label>
+                        <textarea id="feedbackText" class="form-control border-0 bg-light p-3" rows="4" placeholder="Share your thoughts, suggestions, or concerns here..." style="border-radius: 16px;" required></textarea>
+                    </div>
+                    <div class="alert alert-info border-0 rounded-4 small mb-0">
+                        <i class="fas fa-magic me-2"></i> Our AI will analyze your feedback to help management prioritize improvements.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="submitFeedbackBtn" class="btn btn-warning rounded-pill px-4 fw-bold">Submit Feedback</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

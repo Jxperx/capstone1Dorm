@@ -1,0 +1,50 @@
+[
+  {
+    "COLUMN_NAME": "id",
+    "DATA_TYPE": "int"
+  },
+  {
+    "COLUMN_NAME": "tenant_id",
+    "DATA_TYPE": "int"
+  },
+  {
+    "COLUMN_NAME": "survey_id",
+    "DATA_TYPE": "int"
+  },
+  {
+    "COLUMN_NAME": "feedback_text",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "COLUMN_NAME": "ai_sentiment",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "COLUMN_NAME": "ai_sentiment_score",
+    "DATA_TYPE": "decimal"
+  },
+  {
+    "COLUMN_NAME": "ai_topics",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "COLUMN_NAME": "ai_keywords",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "COLUMN_NAME": "ai_summary",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "COLUMN_NAME": "ai_needs_attention",
+    "DATA_TYPE": "bit"
+  },
+  {
+    "COLUMN_NAME": "ai_confidence",
+    "DATA_TYPE": "decimal"
+  },
+  {
+    "COLUMN_NAME": "created_at",
+    "DATA_TYPE": "datetime"
+  }
+]

@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteStay | Luxury Condo Living — Condo 1 & 2</title>
+    <meta name="description" content="Discover EliteStay's premium condo units — Condo 1 and Condo 2. Experience luxury student living with a 360° virtual tour, modern interiors, and world-class amenities.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ── Variables ── */
+        :root {
+            --charcoal:    #1A1A1B;
+            --charcoal-2:  #232325;
+            --charcoal-3:  #2d2d30;
+            --gold:        #D4AF37;
+            --gold-light:  #e8cd6a;
+            --gold-dark:   #b8960c;
+            --white:       #ffffff;
+            --off-white:   #f5f0e8;
+            --muted:       rgba(255,255,255,0.45);
+            --transition:  0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--charcoal);
+            color: var(--white);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ══════════════════════════════════════
+           NAVIGATION
+        ══════════════════════════════════════ */
+        nav#eliteNav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 6%;
+            background: rgba(26,26,27,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(212,175,55,0.15);
+            transition: padding var(--transition), background var(--transition);
+        }
+
+        nav#eliteNav.scrolled {
+            padding: 14px 6%;
+            background: rgba(26,26,27,0.97);
+            box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+        }
+
+        .nav-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-logo .diamond {
+            width: 8px; height: 8px;
+            background: var(--gold);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+        }
+
+        .nav-center {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+        }
+
+        .nav-center a {
+            text-decoration: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color var(--transition);
+            position: relative;
+        }
+
+        .nav-center a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 1px;
+            background: var(--gold);
+            transition: width var(--transition);
+        }
+
+        .nav-center a:hover { color: var(--gold); }
+        .nav-center a:hover::after { width: 100%; }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 22px;
+            border: 1px solid rgba(212,175,55,0.5);
+            border-radius: 2px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all var(--transition);
+            background: transparent;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .nav-btn:hover {
+            background: var(--gold);
+            color: var(--charcoal);
+            border-color: var(--gold);
+        }
+
+        .nav-btn.solid {
+            background: var(--gold);
+            color: var(--charcoal);
+            border-color: var(--gold);
+        }
+
+        .nav-btn.solid:hover {
+            background: var(--gold-light);
+            border-color: var(--gold-light);
+        }
+
+        .nav-social {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-left: 8px;
+            padding-left: 20px;
+            border-left: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .nav-social a {
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+            transition: color var(--transition);
+            text-decoration: none;
+        }
+
+        .nav-social a:hover { color: var(--gold); }
+
+        /* ══════════════════════════════════════
+           HERO — 360 VIRTUAL TOUR WINDOW
+        ══════════════════════════════════════ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 6% 80px;
+            position: relative;
+            background: var(--charcoal);
+            overflow: hidden;
+        }
+
+        /* Ambient glow behind tour window */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px; height: 500px;
+            background: radial-gradient(ellipse, rgba(212,175,55,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            opacity: 0;
+            animation: fadeUp 0.8s 0.2s ease forwards;
+        }
+
+        .hero-eyebrow .line {
+            width: 40px; height: 1px;
+            background: var(--gold);
+            opacity: 0.6;
+        }
+
+        .hero-eyebrow span {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--gold);
+            opacity: 0.9;
+        }
+
+        .hero-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(42px, 6vw, 80px);
+            font-weight: 300;
+            line-height: 1.1;
+            text-align: center;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+            color: var(--white);
+            opacity: 0;
+            animation: fadeUp 0.8s 0.35s ease forwards;
+        }
+
+        .hero-title em {
+            font-style: normal;
+            color: var(--gold);
+        }
+
+        .hero-subtitle {
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 56px;
+            text-align: center;
+            opacity: 0;
+            animation: fadeUp 0.8s 0.5s ease forwards;
+        }
+
+        /* ── 360 Tour Window ── */
+        .tour-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            position: relative;
+            opacity: 0;
+            animation: fadeUp 0.9s 0.65s ease forwards;
+        }
+
+        .tour-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212,175,55,0.12);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 2px;
+            padding: 6px 16px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 16px;
+        }
+
+        .tour-label i { font-size: 12px; animation: spin360 6s linear infinite; }
+
+        @keyframes spin360 {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .tour-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 0;
+        }
+
+        .tour-tab {
+            padding: 10px 28px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid rgba(212,175,55,0.2);
+            border-bottom: none;
+            background: var(--charcoal-3);
+            color: rgba(255,255,255,0.4);
+            transition: all var(--transition);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tour-tab.active {
+            background: var(--charcoal-2);
+            color: var(--gold);
+            border-color: rgba(212,175,55,0.4);
+        }
+
+        .tour-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+        .tour-window {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 0 20px 20px 20px;
+            overflow: hidden;
+            border: 1px solid rgba(212,175,55,0.25);
+            background: var(--charcoal-2);
+            position: relative;
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(212,175,55,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .tour-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tour-panel.active {
+            display: block;
+        }
+
+        .tour-panel iframe,
+        .tour-panel video {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            object-fit: cover;
+        }
+
+        /* 360 placeholder when no iframe is available */
+        .tour-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: linear-gradient(135deg, #1a1a1b 0%, #2a2520 50%, #1a1a1b 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tour-placeholder::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(212,175,55,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(212,175,55,0.04) 0%, transparent 45%);
+        }
+
+        .tour-360-icon {
+            width: 100px; height: 100px;
+            border: 2px solid rgba(212,175,55,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .tour-360-icon::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 50%;
+            animation: pulse-ring 2.5s ease infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.12); opacity: 0.4; }
+        }
+
+        .tour-360-icon i { font-size: 36px; color: var(--gold); }
+
+        .tour-placeholder h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 2px;
+        }
+
+        .tour-placeholder p {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Tour overlay controls */
+        .tour-controls {
+            position: absolute;
+            bottom: 20px; right: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .tour-ctrl-btn {
+            width: 38px; height: 38px;
+            border: 1px solid rgba(212,175,55,0.4);
+            border-radius: 2px;
+            background: rgba(26,26,27,0.8);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition);
+            backdrop-filter: blur(8px);
+        }
+
+        .tour-ctrl-btn:hover {
+            background: var(--gold);
+            color: var(--charcoal);
+        }
+
+        /* ══════════════════════════════════════
+           PROPERTY HIGHLIGHTS STRIP
+        ══════════════════════════════════════ */
+        .highlights {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+            max-width: 1100px;
+            width: 100%;
+            margin-top: 32px;
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.8s 0.9s ease forwards;
+        }
+
+        .highlight-item {
+            flex: 1;
+            min-width: 160px;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-right: 1px solid rgba(212,175,55,0.12);
+            background: rgba(255,255,255,0.02);
+            transition: background var(--transition);
+        }
+
+        .highlight-item:last-child { border-right: none; }
+        .highlight-item:hover { background: rgba(212,175,55,0.05); }
+
+        .highlight-icon {
+            width: 36px; height: 36px;
+            border: 1px solid rgba(212,175,55,0.35);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .highlight-icon i { font-size: 14px; color: var(--gold); }
+
+        .highlight-text .label {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .highlight-text .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        /* ══════════════════════════════════════
+           CONDO SHOWCASE
+        ══════════════════════════════════════ */
+        .showcase {
+            padding: 120px 6%;
+            background: var(--charcoal-2);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 72px;
+        }
+
+        .section-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 18px;
+        }
+
+        .section-eyebrow::before,
+        .section-eyebrow::after {
+            content: '◆';
+            font-size: 6px;
+            opacity: 0.6;
+        }
+
+        .section-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(36px, 4.5vw, 58px);
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: var(--white);
+            line-height: 1.15;
+        }
+
+        .section-title em { font-style: normal; color: var(--gold); }
+
+        .condo-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .condo-card {
+            position: relative;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .condo-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(26,26,27,0.92) 0%, rgba(26,26,27,0.3) 50%, transparent 100%);
+            z-index: 1;
+            transition: opacity var(--transition);
+        }
+
+        .condo-card:hover::before {
+            opacity: 0.9;
+        }
+
+        .condo-card-bg {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.7s ease;
+        }
+
+        .condo-card:hover .condo-card-bg { transform: scale(1.08); }
+
+        .condo-card-content {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 36px 36px 32px;
+            z-index: 2;
+        }
+
+        .condo-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border: 1px solid rgba(212,175,55,0.5);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            border-radius: 1px;
+            margin-bottom: 12px;
+        }
+
+        .condo-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .condo-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        .condo-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .condo-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .condo-price span {
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--muted);
+            margin-left: 4px;
+        }
+
+        .condo-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border: 1px solid rgba(212,175,55,0.5);
+            border-radius: 2px;
+            color: var(--gold);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all var(--transition);
+            margin-left: auto;
+        }
+
+        .condo-cta:hover {
+            background: var(--gold);
+            color: var(--charcoal);
+            border-color: var(--gold);
+        }
+
+        /* ══════════════════════════════════════
+           INQUIRE TODAY — 50/50 SPLIT
+        ══════════════════════════════════════ */
+        .inquire {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 700px;
+        }
+
+        /* Left — luxury photo */
+        .inquire-photo {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inquire-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.9s ease;
+        }
+
+        .inquire-photo:hover img { transform: scale(1.04); }
+
+        .inquire-photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26,26,27,0.55) 0%, rgba(26,26,27,0.1) 100%);
+        }
+
+        .inquire-photo-badge {
+            position: absolute;
+            top: 40px; left: 40px;
+            background: rgba(26,26,27,0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(212,175,55,0.4);
+            border-radius: 4px;
+            padding: 16px 24px;
+        }
+
+        .inquire-photo-badge .badge-label {
+            font-size: 9px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .inquire-photo-badge .badge-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        /* Right — form */
+        .inquire-form-side {
+            background: var(--charcoal-2);
+            padding: 80px 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 1px solid rgba(212,175,55,0.12);
+        }
+
+        .inquire-eyebrow {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inquire-eyebrow::before {
+            content: '';
+            width: 28px; height: 1px;
+            background: var(--gold);
+            opacity: 0.6;
+        }
+
+        .inquire-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(32px, 3vw, 46px);
+            font-weight: 300;
+            color: var(--white);
+            line-height: 1.2;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .inquire-title em { font-style: normal; color: var(--gold); }
+
+        .inquire-sub {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 300;
+            margin-bottom: 44px;
+            line-height: 1.7;
+        }
+
+        /* Form inputs */
+        .inquire-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(212,175,55,0.7);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--charcoal);
+            border: 1px solid rgba(212,175,55,0.25);
+            border-radius: 2px;
+            padding: 14px 18px;
+            color: var(--white);
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 300;
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            width: 100%;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255,255,255,0.2);
+            font-size: 12px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: rgba(212,175,55,0.65);
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+        }
+
+        .form-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4AF37' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .form-group select option {
+            background: var(--charcoal);
+            color: var(--white);
+        }
+
+        .form-group textarea {
+            resize: none;
+            height: 100px;
+        }
+
+        .cta-inquire {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 18px 36px;
+            background: var(--gold);
+            color: var(--charcoal);
+            border: none;
+            border-radius: 2px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 8px;
+            box-shadow: 0 8px 30px rgba(212,175,55,0.25);
+        }
+
+        .cta-inquire:hover {
+            background: var(--gold-light);
+            box-shadow: 0 12px 40px rgba(212,175,55,0.4);
+            transform: translateY(-2px);
+        }
+
+        .cta-inquire i { font-size: 14px; }
+
+        .form-note {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.25);
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .form-note i { color: rgba(212,175,55,0.4); font-size: 10px; }
+
+        /* ══════════════════════════════════════
+           FOOTER
+        ══════════════════════════════════════ */
+        footer.elite-footer {
+            background: #111112;
+            padding: 60px 6% 40px;
+            border-top: 1px solid rgba(212,175,55,0.12);
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .footer-brand .logo-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-brand .logo-text .diamond {
+            width: 7px; height: 7px;
+            background: var(--gold);
+            transform: rotate(45deg);
+        }
+
+        .footer-brand p {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-divider {
+            width: 1px;
+            height: 60px;
+            background: rgba(212,175,55,0.2);
+        }
+
+        .footer-copy {
+            text-align: right;
+            font-size: 11px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 0.5px;
+        }
+
+        .footer-copy .gold { color: var(--gold); }
+
+        /* ══════════════════════════════════════
+           SUCCESS MESSAGE
+        ══════════════════════════════════════ */
+        .form-success {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .form-success .success-icon {
+            width: 70px; height: 70px;
+            border: 1px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .form-success .success-icon i {
+            font-size: 28px;
+            color: var(--gold);
+        }
+
+        .form-success h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 400;
+            color: var(--white);
+            margin-bottom: 10px;
+        }
+
+        .form-success p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Intersection Observer animations ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .condo-cards { grid-template-columns: 1fr; }
+            .condo-card { aspect-ratio: 16/7; }
+            .inquire { grid-template-columns: 1fr; }
+            .inquire-photo { min-height: 420px; }
+            .inquire-form-side { padding: 60px 40px; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-center { display: none; }
+            .nav-social { display: none; }
+            .hero-title { font-size: 40px; }
+            .form-row { grid-template-columns: 1fr; }
+            .inquire-form-side { padding: 50px 28px; }
+            footer.elite-footer { grid-template-columns: 1fr; text-align: center; }
+            .footer-copy { text-align: center; }
+            .footer-divider { width: 60px; height: 1px; margin: 0 auto; }
+            .highlight-item { min-width: 50%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ══ NAVIGATION ══ -->
+    <nav id="eliteNav">
+        <a href="index.html" class="nav-logo">
+            <span class="diamond"></span>
+            EliteStay
+        </a>
+
+        <div class="nav-center">
+            <a href="#tour">Virtual Tour</a>
+            <a href="#condos">Our Units</a>
+            <a href="#inquire">Inquire</a>
+            <a href="index.html#location">Location</a>
+        </div>
+
+        <div class="nav-right">
+            <a href="#inquire" class="nav-btn" id="ctaNavBtn">Schedule Visit</a>
+            <a href="/login" class="nav-btn solid">Tenant Portal</a>
+            <div class="nav-social">
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ══ HERO — 360 VIRTUAL TOUR ══ -->
+    <section class="hero" id="tour">
+        <div class="hero-eyebrow">
+            <span class="line"></span>
+            <span>Premium Condo Living · EliteStay</span>
+            <span class="line"></span>
+        </div>
+
+        <h1 class="hero-title">
+            Your <em>Dream Home</em><br>Awaits
+        </h1>
+        <p class="hero-subtitle">Explore Condo 1 &amp; Condo 2 in Immersive 360°</p>
+
+        <!-- 360 Tour Window -->
+        <div class="tour-wrapper">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0; flex-wrap:wrap; gap:12px;">
+                <div class="tour-label">
+                    <i class="fas fa-sync-alt"></i>
+                    360° Virtual Tour
+                </div>
+                <div class="tour-tabs">
+                    <div class="tour-tab active" onclick="switchTour(0, this)" id="tab-condo1">Condo 1</div>
+                    <div class="tour-tab" onclick="switchTour(1, this)" id="tab-condo2">Condo 2</div>
+                </div>
+            </div>
+
+            <div class="tour-window">
+                <!-- Condo 1 Panel -->
+                <div class="tour-panel active" id="panel-condo1">
+                    <div class="tour-placeholder">
+                        <div class="tour-360-icon">
+                            <i class="fas fa-vr-cardboard"></i>
+                        </div>
+                        <h3>Condo Unit 1</h3>
+                        <p>360° Interactive Tour · Premium Living</p>
+                    </div>
+                </div>
+
+                <!-- Condo 2 Panel -->
+                <div class="tour-panel" id="panel-condo2">
+                    <div class="tour-placeholder">
+                        <div class="tour-360-icon">
+                            <i class="fas fa-vr-cardboard"></i>
+                        </div>
+                        <h3>Condo Unit 2</h3>
+                        <p>360° Interactive Tour · Premium Living</p>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="tour-controls">
+                    <div class="tour-ctrl-btn" title="Fullscreen" onclick="requestFullscreen()">
+                        <i class="fas fa-expand"></i>
+                    </div>
+                    <div class="tour-ctrl-btn" title="Share">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highlights strip below tour -->
+            <div class="highlights">
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-bed"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Bedrooms</span>
+                        <span class="value">Studio / 1BR</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-ruler-combined"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Floor Area</span>
+                        <span class="value">28–42 sqm</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-snowflake"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Amenities</span>
+                        <span class="value">Fully Fitted</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Security</span>
+                        <span class="value">24/7 CCTV</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-wifi"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Internet</span>
+                        <span class="value">Fiber Optic</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CONDO SHOWCASE ══ -->
+    <section class="showcase" id="condos">
+        <div class="section-header reveal">
+            <div class="section-eyebrow">Our Premium Units</div>
+            <h2 class="section-title">Condo <em>Collection</em></h2>
+        </div>
+
+        <div class="condo-cards reveal">
+            <!-- Condo 1 -->
+            <div class="condo-card" onclick="switchTourAndScroll(0)">
+                <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80"
+                     alt="Condo 1 Interior" class="condo-card-bg"
+                     onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80'">
+                <div class="condo-card-content">
+                    <div class="condo-badge">Unit CONDO-01</div>
+                    <div class="condo-name">Condo One</div>
+                    <div class="condo-desc">North-facing unit with panoramic views &amp; premium furnishings</div>
+                    <div class="condo-meta">
+                        <div class="condo-price">₱<span>/mo</span></div>
+                        <a href="unit.html?roomId=1" class="condo-cta">
+                            View Details <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Condo 2 -->
+            <div class="condo-card" onclick="switchTourAndScroll(1)">
+                <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80"
+                     alt="Condo 2 Interior" class="condo-card-bg"
+                     onerror="this.src='https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80'">
+                <div class="condo-card-content">
+                    <div class="condo-badge">Unit CONDO-02</div>
+                    <div class="condo-name">Condo Two</div>
+                    <div class="condo-desc">South-facing unit with warm light &amp; luxurious open-plan layout</div>
+                    <div class="condo-meta">
+                        <div class="condo-price">₱<span>/mo</span></div>
+                        <a href="unit.html?roomId=2" class="condo-cta">
+                            View Details <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ INQUIRE TODAY — 50/50 SPLIT ══ -->
+    <section class="inquire" id="inquire">
+
+        <!-- Left: Luxury Photo -->
+        <div class="inquire-photo">
+            <img src="luxury-interior.png"
+                 alt="EliteStay Luxury Interior"
+                 onerror="this.src='https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80'">
+            <div class="inquire-photo-overlay"></div>
+            <div class="inquire-photo-badge">
+                <span class="badge-label">Now Available</span>
+                <span class="badge-value">Condo 1 &amp; 2</span>
+            </div>
+        </div>
+
+        <!-- Right: Form -->
+        <div class="inquire-form-side">
+            <div class="inquire-eyebrow">Book a Viewing</div>
+            <h2 class="inquire-title">Inquire <em>Today</em></h2>
+            <p class="inquire-sub">
+                Our property concierge will reach out within 24 hours to schedule your private tour and discuss your requirements.
+            </p>
+
+            <!-- Form -->
+            <form class="inquire-form" id="inquireForm" onsubmit="handleInquiry(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" placeholder="Juan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" placeholder="dela Cruz" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="emailAddr">Email Address</label>
+                    <input type="email" id="emailAddr" name="email" placeholder="juan@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phoneNum">Phone Number</label>
+                    <input type="tel" id="phoneNum" name="phone" placeholder="+63 9XX XXX XXXX">
+                </div>
+
+                <div class="form-group">
+                    <label for="unitPref">Preferred Unit</label>
+                    <select id="unitPref" name="unit">
+                        <option value="" disabled selected>Select a unit</option>
+                        <option value="condo1">Condo Unit 1</option>
+                        <option value="condo2">Condo Unit 2</option>
+                        <option value="either">Either / Open to Both</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="messageField">Message (Optional)</label>
+                    <textarea id="messageField" name="message" placeholder="Tell us about your preferred move-in date or any questions…"></textarea>
+                </div>
+
+                <button type="submit" class="cta-inquire" id="inquireBtn">
+                    <i class="fas fa-paper-plane"></i>
+                    Inquire Now
+                </button>
+                <p class="form-note">
+                    <i class="fas fa-lock"></i>
+                    Your information is kept strictly confidential
+                </p>
+            </form>
+
+            <!-- Success state -->
+            <div class="form-success" id="formSuccess">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3>Message Received</h3>
+                <p>Our team will contact you within 24 hours.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ FOOTER ══ -->
+    <footer class="elite-footer">
+        <div class="footer-brand">
+            <div class="logo-text">
+                <span class="diamond"></span>
+                EliteStay
+            </div>
+            <p>&copy; 2026 EliteStay Student Housing. All rights reserved.</p>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-copy">
+            <p>Premium Condo Units</p>
+            <p style="margin-top:4px;">Condo 1 &amp; Condo 2 Now Available</p>
+            <p style="margin-top:8px; font-size:10px;">
+                <span class="gold">◆</span> Luxury Living Redefined
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // ── Nav scroll effect ──
+        const nav = document.getElementById('eliteNav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 60);
+        });
+
+        // ── Tour tab switcher ──
+        function switchTour(index, tab) {
+            document.querySelectorAll('.tour-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tour-panel').forEach(p => p.classList.remove('active'));
+            if (tab) tab.classList.add('active');
+            const panels = document.querySelectorAll('.tour-panel');
+            if (panels[index]) panels[index].classList.add('active');
+        }
+
+        function switchTourAndScroll(index) {
+            const tabs = document.querySelectorAll('.tour-tab');
+            switchTour(index, tabs[index]);
+            document.getElementById('tour').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ── Fullscreen tour ──
+        function requestFullscreen() {
+            const win = document.querySelector('.tour-window');
+            if (win.requestFullscreen) win.requestFullscreen();
+            else if (win.webkitRequestFullscreen) win.webkitRequestFullscreen();
+        }
+
+        // ── Fetch condo prices from API ──
+        async function loadCondoPrices() {
+            try {
+                const priceEls = document.querySelectorAll('.condo-price');
+                const roomIds = [1, 2];
+                for (let i = 0; i < roomIds.length; i++) {
+                    const res = await fetch('/api/rooms/' + roomIds[i]);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.room && data.room.monthly_rate && priceEls[i]) {
+                            priceEls[i].innerHTML = `₱${Number(data.room.monthly_rate).toLocaleString()}<span>/mo</span>`;
+                        }
+                    }
+                }
+            } catch (e) {
+                // prices remain placeholder
+            }
+        }
+
+        // ── Intersection Observer for reveal animations ──
+        const revealEls = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+        revealEls.forEach(el => observer.observe(el));
+
+        // ── Inquire form handler ──
+        function handleInquiry(e) {
+            e.preventDefault();
+            const btn = document.getElementById('inquireBtn');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending…';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                document.getElementById('inquireForm').style.display = 'none';
+                document.getElementById('formSuccess').style.display = 'block';
+            }, 1200);
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', loadCondoPrices);
+    </script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+/* =====================================================================
+   Admin Live Chat — Premium Styling
+   ===================================================================== */
+
+/* Two-panel layout */
+#section-live-chat .lc-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+    height: calc(100vh - 140px);
+    min-height: 500px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* ── Left Panel: Session List ── */
+.lc-sessions-panel {
+    background: #1a1f2e;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.lc-sessions-header {
+    padding: 20px 18px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.lc-sessions-header h5 {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Admin status toggle */
+.lc-status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: background 0.2s;
+    width: 100%;
+}
+.lc-status-toggle:hover { background: rgba(255,255,255,0.09); }
+
+.lc-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s;
+}
+.lc-status-dot.online  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+.lc-status-dot.busy    { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
+.lc-status-dot.offline { background: #6b7280; }
+
+.lc-status-label {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.78rem;
+    font-family: 'Inter', sans-serif;
+    flex: 1;
+}
+
+/* Session list items */
+.lc-session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+.lc-session-list::-webkit-scrollbar { width: 4px; }
+.lc-session-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+.lc-session-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+}
+.lc-session-item:hover { background: rgba(255,255,255,0.05); }
+.lc-session-item.active {
+    background: rgba(197,160,89,0.12);
+    border-left-color: #c5a059;
+}
+
+.lc-session-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c5a059, #9a7d3a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #fff;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.lc-session-info { flex: 1; min-width: 0; }
+.lc-session-name {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lc-session-preview {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.73rem;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.lc-session-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.lc-session-time {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.68rem;
+    font-family: 'Inter', sans-serif;
+}
+.lc-unread-badge {
+    background: #c5a059;
+    color: #1a1f2e;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    animation: lc-pulse 1.5s infinite;
+}
+@keyframes lc-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
+.lc-empty-sessions {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+}
+.lc-empty-sessions i { font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.4; }
+
+/* ── Right Panel: Message Thread ── */
+.lc-chat-panel {
+    background: #f8f9fc;
+    display: flex;
+    flex-direction: column;
+}
+
+.lc-chat-header {
+    padding: 16px 22px;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.lc-chat-header-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #c5a059, #9a7d3a);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+}
+.lc-chat-header-info { flex: 1; }
+.lc-chat-header-name {
+    font-weight: 700; font-size: 0.9rem;
+    color: #1a1f2e; font-family: 'Inter', sans-serif;
+}
+.lc-chat-header-room {
+    font-size: 0.75rem; color: #9ca3af; font-family: 'Inter', sans-serif;
+}
+
+/* Online indicator in header */
+.lc-tenant-online-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 5px rgba(34,197,94,0.5);
+}
+
+/* Messages area */
+.lc-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.lc-messages::-webkit-scrollbar { width: 5px; }
+.lc-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+.lc-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 68%;
+    animation: lc-slide-in 0.2s ease;
+}
+@keyframes lc-slide-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.lc-msg.tenant { align-self: flex-start; }
+.lc-msg.admin  { align-self: flex-end; }
+
+.lc-msg-bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    font-family: 'Inter', sans-serif;
+    word-break: break-word;
+}
+.lc-msg.tenant .lc-msg-bubble {
+    background: #fff;
+    color: #1f2937;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.lc-msg.admin .lc-msg-bubble {
+    background: linear-gradient(135deg, #c5a059, #9a7d3a);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 8px rgba(197,160,89,0.35);
+}
+.lc-msg-time {
+    font-size: 0.67rem;
+    color: #9ca3af;
+    margin-top: 3px;
+    font-family: 'Inter', sans-serif;
+}
+.lc-msg.admin .lc-msg-time { text-align: right; }
+
+.lc-empty-chat {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #d1d5db; font-family: 'Inter', sans-serif;
+}
+.lc-empty-chat i { font-size: 3rem; margin-bottom: 14px; opacity: 0.4; }
+.lc-empty-chat p { font-size: 0.85rem; }
+
+/* Input area */
+.lc-input-area {
+    padding: 14px 18px;
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.07);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+.lc-input-area textarea {
+    flex: 1;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    resize: none;
+    outline: none;
+    max-height: 120px;
+    min-height: 42px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+}
+.lc-input-area textarea:focus { border-color: #c5a059; }
+.lc-send-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, #c5a059, #9a7d3a);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(197,160,89,0.4);
+}
+.lc-send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(197,160,89,0.55); }
+.lc-send-btn:active { transform: scale(0.96); }
+
+/* No session selected placeholder */
+.lc-no-selection {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #d1d5db; font-family: 'Inter', sans-serif;
+    background: #f8f9fc;
+}
+.lc-no-selection i { font-size: 3.5rem; opacity: 0.3; margin-bottom: 16px; }
+.lc-no-selection p { font-size: 0.9rem; color: #9ca3af; }
+
+/* Sidebar unread badge */
+#lc-sidebar-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #c5a059;
+    color: #1a1f2e;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    margin-left: auto;
+    font-family: 'Inter', sans-serif;
+    animation: lc-pulse 1.5s infinite;
+}

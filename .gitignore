@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment secrets
+.env
+.env.local
+
+# Logs
+*.log
+server.log
+server_utf8.log
+test_results.log
+
+# Uploads & Media
+public/uploads/*
+!public/uploads/.gitkeep
+uploads/
+
+# OS / Editor files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Heavy OCR data & temporary files
+eng.traineddata
+tmp_*.txt
+diag_out.txt
+columns.json

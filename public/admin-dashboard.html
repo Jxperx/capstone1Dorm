@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - EliteStay Manager</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin/dashboard.css">
+    <link rel="stylesheet" href="css/admin/fraud.css">
+    <link rel="stylesheet" href="css/admin/inquiries.css">
+    <link rel="stylesheet" href="css/admin/reports.css">
+    <link rel="stylesheet" href="css/admin/liveChat.css">
+</head>
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading border-bottom">
+                ELITESTAY MANAGER
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rooms', this)">
+                    <i class="fas fa-door-open me-2"></i>Room Management
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('tenants', this)">
+                    <i class="fas fa-users me-2"></i>Tenants
+                </a>
+
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('maintenance', this)">
+                    <i class="fas fa-tools me-2"></i>Maintenance
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('media', this)">
+                    <i class="fas fa-images me-2"></i>Property Media
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('feedback', this)">
+                    <i class="fas fa-comment-alt me-2"></i>Feedback & AI
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('fraud', this); initFraudSection()">
+                    <i class="fas fa-shield-alt me-2"></i>Fraud Detection
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('inquiries', this); initInquirySection()">
+                    <i class="fas fa-envelope-open-text me-2"></i>Inquiries
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rent-optimization', this); RentPricingModule.init()">
+                    <i class="fas fa-coins me-2" style="color:#c5a059"></i>Rent Optimization
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('reports', this); ReportModule.init()">
+                    <i class="fas fa-file-alt me-2" style="color:#c5a059"></i>Reports & Analytics
+                </a>
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showSection('live-chat', this); LiveChatAdmin.init()">
+                    <i class="fas fa-comments me-2" style="color:#22c55e"></i>Live Chat
+                    <span id="lc-sidebar-badge" style="display:none;"></span>
+                </a>
+                <div class="mt-4 border-top border-secondary pt-2">
+                    <a href="#" class="list-group-item list-group-item-action" onclick="prepareAddTenant()">
+                        <i class="fas fa-user-plus me-2"></i>Add Tenant
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="showSection('profile', this)" data-bs-toggle="modal" data-bs-target="#profileModal">
+                        <i class="fas fa-user-circle me-2"></i>Profile
+                    </a>
+                    <a href="/logout" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <div class="container-fluid">
+                    <button class="btn btn-primary" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                    <h4 class="ms-3 mb-0" id="pageTitle">Dashboard Overview</h4>
+                    <div class="ms-auto">
+                        <span class="text-muted small me-2">Welcome, Admin</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid mt-4">
+                
+                <!-- SECTION: Dashboard Overview -->
+                <div id="section-dashboard" class="content-section active">
+                    <!-- Quick Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-white bg-success mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Revenue</h5>
+                                    <p class="card-text display-6" id="totalRevenue">$0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-info mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Occupancy</h5>
+                                    <p class="card-text display-6" id="occupancy">0/0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-warning mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Pending Payments</h5>
+                                    <p class="card-text display-6" id="pendingCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-danger mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Open Issues</h5>
+                                    <p class="card-text display-6" id="openIssues">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- SECTION: Predictive Vacancy Analytics -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 bg-gradient text-dark" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);">
+                            <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0 fw-bold"><i class="fas fa-brain text-primary me-2"></i>AI Vacancy Forecast</h4>
+                                <span id="vacancyRiskBadge" class="badge rounded-pill bg-secondary fs-6 shadow-sm">Analyzing...</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-7">
+                                        <div class="p-3 bg-white rounded-4 shadow-sm mb-3">
+                                            <h6 class="text-uppercase text-muted fw-bold small mb-2">AI Summary</h6>
+                                            <p id="vacancySummary" class="lead mb-0" style="font-size: 1.1rem; line-height: 1.6;">Gathering predictive insights based on your lease expirations and inquiry volume...</p>
+                                        </div>
+                                        <h6 class="text-uppercase text-muted fw-bold small mb-2 ms-1">Recommended Actions</h6>
+                                        <ul id="vacancyRecommendations" class="list-group list-group-flush rounded-3 shadow-sm border-0 mb-3 mb-lg-0">
+                                            <li class="list-group-item border-0 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading AI recommendations...</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        <div class="bg-white p-3 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-center">
+                                            <div class="d-flex justify-content-between mb-3 text-center">
+                                                <div>
+                                                    <div class="text-muted small fw-bold text-uppercase">Expiring 30 Days</div>
+                                                    <div class="fs-3 fw-bold text-danger" id="exp30Count">-</div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-muted small fw-bold text-uppercase">Expiring 60 Days</div>
+                                                    <div class="fs-3 fw-bold text-warning" id="exp60Count">-</div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-muted small fw-bold text-uppercase">Recent Inquiries</div>
+                                                    <div class="fs-3 fw-bold text-success" id="recentInquiryCount">-</div>
+                                                </div>
+                                            </div>
+                                            </div>
+                                            <div class="text-center text-muted small mt-2">
+                                                <i class="fas fa-info-circle me-1"></i> Data synced real-time from Active Tenants and Inquiries pipeline.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- NEW: Full width move-out list -->
+                                <div class="row mt-4 border-top pt-4">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0"><i class="fas fa-user-clock text-danger me-2"></i>Critical Move-Out Schedule <span class="badge bg-light text-dark border ms-2 small fw-normal" style="font-size: 0.7rem;">Next 30 Days</span></h5>
+                                            <span class="text-muted small">Total: <strong id="expTotalCount" class="text-danger">0</strong> Tenants</span>
+                                        </div>
+                                        <div id="expiringNamesList" class="row g-3" style="max-height: 400px; overflow-y: auto;">
+                                            <!-- Dynamic Cards -->
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Room Management -->
+                <div id="section-rooms" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Room & Unit Management</h3>
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="openRoomModal()">
+                            <i class="fas fa-plus me-2"></i>Add New Room
+                        </button>
+                    </div>
+                    <div class="row">
+                        <!-- Dorm Management -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dormitories</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Room</th>
+                                                    <th>Capacity</th>
+                                                    <th>Rate</th>
+                                                    <th>Occupancy</th>
+                                                    <th>Status</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dormsTableBody">
+                                                <!-- Dynamic Dorms -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Condo Management -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Units</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Unit</th>
+                                                    <th>Status</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="condosTableBody">
+                                                <!-- Dynamic Condos -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-media" class="content-section">
+                    <h3 class="mb-4"><i class="fas fa-camera me-2 text-warning"></i>Unit Media Manager</h3>
+
+                    <!-- Unit Selector -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" style="font-size:0.85rem;">Select Unit</label>
+                                    <select id="mediaUnitSelect" class="form-select" onchange="loadUnitGallery()">
+                                        <option value="">-- Choose a unit --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <div id="mediaUnitInfo" style="font-size:0.85rem;color:#888;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gallery + Upload (hidden until unit selected) -->
+                    <div id="mediaManagerPanel" style="display:none;">
+                        <!-- Photo Gallery -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-images me-2 text-info"></i>Photo Gallery</h5>
+                                <span id="galleryCount" class="badge bg-secondary">0 photos</span>
+                            </div>
+                            <div class="card-body">
+                                <!-- Gallery Grid -->
+                                <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:16px;"></div>
+
+                                <!-- Upload Zone -->
+                                <div id="uploadZone" style="border:2px dashed #ccc;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all 0.3s;background:#fafafa;" onmouseover="this.style.borderColor='#c5a059';this.style.background='#fef9f0'" onmouseout="this.style.borderColor='#ccc';this.style.background='#fafafa'">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:#c5a059;margin-bottom:8px;"></i>
+                                    <div style="font-size:0.9rem;color:#666;font-weight:600;">Drop photos here or click to upload</div>
+                                    <div style="font-size:0.75rem;color:#aaa;margin-top:4px;">Supports JPG, PNG, WEBP (upload multiple photos, up to 25 at once)</div>
+                                    <input type="file" id="galleryFileInput" multiple accept="image/*" style="display:none;" onchange="uploadGalleryImages()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video & Map -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0"><i class="fas fa-video me-2 text-danger"></i>Video</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="currentVideoPreview" class="mb-3"></div>
+                                        <input type="file" id="mediaVideoInput" name="video" accept="video/*" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-success"></i>Map Embed</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="mediaMapEmbed" class="form-control mb-3" rows="3" placeholder="Paste Google Maps embed code or link" oninput="previewMapEmbed()"></textarea>
+                                        <div id="mapPreview" style="width:100%;height:200px;border-radius:8px;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.85rem;">Map preview will appear here</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="saveMediaSettings()">
+                            <i class="fas fa-save me-2"></i>Save Video & Map Settings
+                        </button>
+                    </div>
+                </div>
+
+
+
+                <!-- SECTION: Maintenance -->
+                <div id="section-maintenance" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-tools me-2 text-warning"></i>Maintenance Requests
+                            <small class="fs-6 text-muted fw-normal ms-2">Newest reports at the top</small>
+                        </h3>
+                    </div>
+
+                    <!-- Summary Stat Cards -->
+                    <div id="maintenanceStats" class="row g-3 mb-3">
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fff8e1,#fff3cd);border-left:4px solid #f39c12!important;">
+                                <div class="card-body py-2 px-3">
+                                    <div style="font-size:1.5rem;font-weight:700;color:#e67e22;" id="maint-stat-pending">—</div>
+                                    <div style="font-size:0.75rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Pending</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fde8e8,#fdd);border-left:4px solid #e74c3c!important;">
+                                <div class="card-body py-2 px-3">
+                                    <div style="font-size:1.5rem;font-weight:700;color:#e74c3c;" id="maint-stat-critical">—</div>
+                                    <div style="font-size:0.75rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Emergency / High</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#e8f4fd,#d6eaf8);border-left:4px solid #3498db!important;">
+                                <div class="card-body py-2 px-3">
+                                    <div style="font-size:1.5rem;font-weight:700;color:#3498db;" id="maint-stat-progress">—</div>
+                                    <div style="font-size:0.75rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">In Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);border-left:4px solid #c0392b!important;">
+                                <div class="card-body py-2 px-3">
+                                    <div style="font-size:1.5rem;font-weight:700;color:#c0392b;" id="maint-stat-overdue">—</div>
+                                    <div style="font-size:0.75rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Overdue</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div id="maintenanceFilters" class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+                        <span style="font-size:0.8rem;color:#888;font-weight:600;margin-right:4px;">Filter:</span>
+                        <button class="btn btn-sm rounded-pill active" onclick="filterMaintenance('all', this)" style="font-size:0.78rem;background:#1a1a2e;color:#fff;border:none;">All</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('Emergency', this)" style="font-size:0.78rem;">🔴 Emergency</button>
+                        <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMaintenance('High', this)" style="font-size:0.78rem;">🟠 High</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="filterMaintenance('Medium', this)" style="font-size:0.78rem;">🟡 Medium</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="filterMaintenance('Routine', this)" style="font-size:0.78rem;">⚪ Routine</button>
+                        <div style="border-left:1px solid #ddd;height:20px;margin:0 6px;"></div>
+                        <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMaintenance('pending', this)" style="font-size:0.78rem;">Pending</button>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="filterMaintenance('in_progress', this)" style="font-size:0.78rem;">In Progress</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('overdue', this)" style="font-size:0.78rem;">⏰ Overdue</button>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="font-size:13px;">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Tenant</th>
+                                            <th>Room</th>
+                                            <th>Issue</th>
+                                            <th>AI Priority</th>
+                                            <th>Category</th>
+                                            <th>Department</th>
+                                            <th>Response Time</th>
+                                            <th>Status / Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maintenanceTableBody">
+                                        <!-- Dynamic Maintenance -->
+                                        <tr><td colspan="9" class="text-center py-3">Loading requests...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- SECTION: Tenant Management -->
+                <div id="section-tenants" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Tenant Management</h3>
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="prepareAddTenant()">
+                            <i class="fas fa-user-plus me-2"></i>Add New Tenant
+                        </button>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Tenant</th>
+                                            <th>Contact</th>
+                                            <th>Room</th>
+                                            <th>Guardian</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tenantsTableBody">
+                                        <tr><td colspan="6" class="text-center">Loading tenants...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Feedback & AI Insights -->
+                <div id="section-feedback" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-brain me-2 text-primary"></i> Tenant Feedback & AI Insights
+                        </h3>
+                        <button class="btn btn-outline-primary rounded-pill shadow-sm" onclick="loadAdminFeedback()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                        </button>
+                    </div>
+
+                    <!-- Dorm Health & Executive Summary Banner -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-uppercase small" style="color:#c5a059;letter-spacing:1px;font-weight:600;">Dorm Health Index</span>
+                                    <i class="fas fa-heartbeat text-danger fs-5"></i>
+                                </div>
+                                <div class="d-flex align-items-baseline">
+                                    <span class="display-5 fw-bold" id="feedbackHealthScore">--</span>
+                                    <span class="fs-5 text-muted ms-1">/100</span>
+                                </div>
+                                <div class="progress mt-2" style="height:6px;background:rgba(255,255,255,0.1);">
+                                    <div id="feedbackHealthBar" class="progress-bar bg-success" style="width:0%;"></div>
+                                </div>
+                                <div class="small text-muted mt-2 d-flex justify-content-between">
+                                    <span>Avg Sentiment: <strong id="feedbackAvgSentiment" class="text-white">--</strong></span>
+                                    <span>Net: <strong id="feedbackNetRatio" class="text-white">--</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fdfcf7;border-left:5px solid #c5a059!important;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-robot text-warning fs-5 me-2"></i>
+                                    <h6 class="fw-bold mb-0 text-dark">AI Weekly Executive Summary</h6>
+                                </div>
+                                <ul id="feedbackExecSummary" class="small text-muted mb-0 ps-3" style="line-height:1.6;">
+                                    <li>Loading AI executive summary...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ask AI Assistant Search Bar -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4" style="background:#f8f9fa;">
+                        <div class="card-body p-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-0 rounded-start-pill ps-3"><i class="fas fa-sparkles text-primary"></i></span>
+                                <input type="text" id="askAiQueryInput" class="form-control border-0 shadow-none" placeholder="Ask AI about resident feedback (e.g. 'Which room complains the most about WiFi?')" onkeydown="if(event.key==='Enter')askAiAboutFeedback()">
+                                <button class="btn btn-primary rounded-end-pill px-4" onclick="askAiAboutFeedback()"><i class="fas fa-paper-plane me-1"></i>Ask AI</button>
+                            </div>
+                            <div id="askAiResponseBox" class="mt-3 p-3 rounded-3 bg-white border" style="display:none;font-size:0.9rem;line-height:1.5;"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI Alerts Section -->
+                    <div id="ai-alerts-container" class="mb-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Active AI Trend Alerts & Proactive Action Plans</h5>
+                        <div class="row g-3" id="alertsList">
+                            <!-- Dynamic Alerts -->
+                            <div class="col-12"><div class="alert alert-light border shadow-sm">Searching for trends...</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Tenant Move-Out / Churn Risk Radar -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="fas fa-user-shield me-2 text-warning"></i>Tenants At-Risk of Moving Out (Churn Radar)</h5>
+                            <span class="badge bg-warning text-dark rounded-pill" id="churnRiskBadge">0 Flagged</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="font-size:13px;">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Tenant / Room</th>
+                                            <th>Negative Complaints</th>
+                                            <th>Churn Risk Level</th>
+                                            <th>Latest Issue Summary</th>
+                                            <th>AI Retention Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="churnRiskTableBody">
+                                        <tr><td colspan="5" class="text-center py-3 text-muted">Checking churn risk...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback List -->
+                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                        <div class="card-header bg-white p-4 border-0">
+                            <h5 class="fw-bold mb-0">Recent Tenant Feedback</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Tenant / Room</th>
+                                            <th>Feedback</th>
+                                            <th>AI Sentiment</th>
+                                            <th>Summary</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminFeedbackTableBody">
+                                        <tr><td colspan="6" class="text-center py-4 text-muted">Loading feedback...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resolved AI Interventions & Impact Log (Bonus Feature) -->
+                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden mt-4">
+                        <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="fas fa-check-circle me-2 text-success"></i>Resolved AI Interventions & Management Impact Log</h5>
+                            <span class="badge bg-success rounded-pill" id="resolvedAlertsBadge">0 Resolved</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="font-size:13px;">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Issue Area</th>
+                                            <th>Severity</th>
+                                            <th>Complaints Mitigated</th>
+                                            <th>Resolved Strategy</th>
+                                            <th>Resolved Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resolvedAlertsTableBody">
+                                        <tr><td colspan="6" class="text-center py-3 text-muted">No resolved interventions logged yet.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- (Meter Reading and Utility Calculator sections removed) -->
+
+                <!-- ═══════════════════════════════════════════════════════
+                     SECTION: Intelligent Fraud Detection
+                ════════════════════════════════════════════════════════ -->
+                <div id="section-fraud" class="content-section">
+
+                    <!-- Header -->
+                    <div class="fraud-section-header">
+                        <h3><i class="fas fa-shield-alt me-2" style="color:#c5a059"></i>Intelligent Fraud Detection</h3>
+                        <div class="header-badges" style="display:flex;gap:8px;align-items:center;">
+                            <button class="btn btn-sm btn-warning rounded-pill shadow-sm" onclick="triggerRentReminders()" style="font-size:0.78rem;">
+                                <i class="fas fa-paper-plane me-1"></i>Send Rent Reminders
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="loadFraudDashboard(FraudDashboard.currentPage);loadFraudAnalytics()" style="font-size:0.78rem;border-color:#c5a059;color:#c5a059" onmouseover="this.style.background='#c5a059';this.style.color='#fff'" onmouseout="this.style.background='';this.style.color='#c5a059'">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Summary Cards -->
+                    <div class="fraud-analytics mb-4">
+                        <div class="fraud-stat-card total">
+                            <div class="fraud-stat-value" id="fd-total">—</div>
+                            <div class="fraud-stat-label">Total Analyzed</div>
+                        </div>
+                        <div class="fraud-stat-card flagged">
+                            <div class="fraud-stat-value" id="fd-flagged">—</div>
+                            <div class="fraud-stat-label">High-Risk Flagged</div>
+                        </div>
+                        <div class="fraud-stat-card blocked">
+                            <div class="fraud-stat-value" id="fd-blocked">—</div>
+                            <div class="fraud-stat-label">Blocked</div>
+                        </div>
+                        <div class="fraud-stat-card review">
+                            <div class="fraud-stat-value" id="fd-review">—</div>
+                            <div class="fraud-stat-label">Pending Review</div>
+                        </div>
+                        <div class="fraud-stat-card safe">
+                            <div class="fraud-stat-value" id="fd-safe">—</div>
+                            <div class="fraud-stat-label">Safe / Approved</div>
+                        </div>
+                    </div>
+
+                    <!-- Top Fraud Reasons -->
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <div class="card shadow-sm" style="border-radius:8px;border:none;padding:20px">
+                                <h6 style="color:#666;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;font-family:'Inter',sans-serif">
+                                    <i class="fas fa-chart-bar me-2" style="color:#c5a059"></i>Top Fraud Reasons
+                                </h6>
+                                <div id="fd-top-reasons">
+                                    <div class="skeleton-line mb-2" style="width:90%"></div>
+                                    <div class="skeleton-line mb-2" style="width:75%"></div>
+                                    <div class="skeleton-line mb-2" style="width:60%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="card shadow-sm" style="border-radius:8px;border:none;padding:20px">
+                                <h6 style="color:#666;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;font-family:'Inter',sans-serif">
+                                    <i class="fas fa-info-circle me-2" style="color:#c5a059"></i>Risk Level Guide
+                                </h6>
+                                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center">
+                                    <div><div class="risk-badge SAFE mx-auto mb-1" style="justify-content:center">SAFE</div><div style="font-size:0.7rem;color:#999">0–20</div></div>
+                                    <div><div class="risk-badge LOW mx-auto mb-1" style="justify-content:center">LOW</div><div style="font-size:0.7rem;color:#999">21–40</div></div>
+                                    <div><div class="risk-badge MEDIUM mx-auto mb-1" style="justify-content:center">MEDIUM</div><div style="font-size:0.7rem;color:#999">41–70</div></div>
+                                    <div><div class="risk-badge HIGH mx-auto mb-1" style="justify-content:center">HIGH</div><div style="font-size:0.7rem;color:#999">71–90</div></div>
+                                    <div><div class="risk-badge CRITICAL mx-auto mb-1" style="justify-content:center">CRITICAL</div><div style="font-size:0.7rem;color:#999">91–100</div></div>
+                                </div>
+                                <hr style="border-color:rgba(0,0,0,0.08);margin:14px 0">
+                                <div style="font-size:0.78rem;color:#666;line-height:1.7">
+                                    <span style="color:#27ae60">✓ SAFE &amp; LOW:</span> Auto-approved &nbsp;|&nbsp;
+                                    <span style="color:#f39c12">⚠ MEDIUM:</span> Admin review &nbsp;|&nbsp;
+                                    <span style="color:#e74c3c">✗ HIGH &amp; CRITICAL:</span> Blocked
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="fraud-filter-bar">
+                        <select id="fd-filter-risk" onchange="applyFraudFilters()">
+                            <option value="ALL">All Risk Levels</option>
+                            <option value="SAFE">Safe</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                        <select id="fd-filter-method" onchange="applyFraudFilters()">
+                            <option value="ALL">All Methods</option>
+                            <option value="gcash">GCash</option>
+                            <option value="qrph">QRPH</option>
+                            <option value="paymongo">PayMongo</option>
+                            <option value="manual">Manual Upload</option>
+                        </select>
+                        <label style="color:#666;font-size:0.82rem;display:flex;align-items:center;gap:6px;cursor:pointer">
+                            <input type="checkbox" id="fd-filter-flagged" onchange="applyFraudFilters()" style="accent-color:#c5a059">
+                            Flagged Only
+                        </label>
+                        <input type="date" id="fd-filter-from" onchange="applyFraudFilters()" title="From date">
+                        <input type="date" id="fd-filter-to" onchange="applyFraudFilters()" title="To date">
+                        <input type="text" id="fd-search" class="search-input" placeholder="Search tenant or reference..." 
+                               oninput="clearTimeout(window._fdSearchTimer);window._fdSearchTimer=setTimeout(applyFraudFilters,400)">
+                        <button class="btn btn-sm" onclick="document.getElementById('fd-search').value='';applyFraudFilters()" 
+                                style="background:rgba(197,160,89,0.12);color:#9a7d3a;border:1px solid rgba(197,160,89,0.3);border-radius:6px;font-size:0.8rem">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                    </div>
+
+                    <!-- Fraud Payments Table -->
+                    <div id="fraud-table-wrapper">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tenant</th>
+                                        <th>Payment ID / Booking</th>
+                                        <th>Method</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Receipt</th>
+                                        <th>Risk Score</th>
+                                        <th>Risk Level</th>
+                                        <th>Fraud Flags</th>
+                                        <th>Decision</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fraud-tbody">
+                                    <tr><td colspan="11" class="text-center py-4 text-muted">Loading fraud data…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="fraud-pagination" class="fraud-pagination mt-3"></div>
+
+                </div> <!-- /#section-fraud -->
+
+                <!-- ═══════════════════════════════════════════════════════════
+                     SECTION: Inquiry Management
+                ═══════════════════════════════════════════════════════════ -->
+                <div id="section-inquiries" class="content-section">
+
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-envelope-open-text me-2" style="color:#c5a059"></i>
+                            Inquiry Management
+                            <small class="fs-6 text-muted fw-normal ms-2">Multi-layer spam & fraud protection</small>
+                        </h3>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                            onclick="loadInquiryAnalytics();loadInquiries(1)" style="font-size:0.8rem">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+
+                    <!-- Analytics Cards -->
+                    <div class="inq-stats-grid">
+                        <div class="inq-stat-card total">
+                            <div class="inq-stat-value" id="inq-total">—</div>
+                            <div class="inq-stat-label">Total</div>
+                        </div>
+                        <div class="inq-stat-card approved">
+                            <div class="inq-stat-value" id="inq-approved">—</div>
+                            <div class="inq-stat-label">Approved</div>
+                        </div>
+                        <div class="inq-stat-card flagged">
+                            <div class="inq-stat-value" id="inq-flagged">—</div>
+                            <div class="inq-stat-label">AI Flagged</div>
+                        </div>
+                        <div class="inq-stat-card duplicate">
+                            <div class="inq-stat-value" id="inq-duplicate">—</div>
+                            <div class="inq-stat-label">Duplicate</div>
+                        </div>
+                        <div class="inq-stat-card suspicious">
+                            <div class="inq-stat-value" id="inq-suspicious">—</div>
+                            <div class="inq-stat-label">Suspicious</div>
+                        </div>
+                        <div class="inq-stat-card blocked-ips">
+                            <div class="inq-stat-value" id="inq-blocked">—</div>
+                            <div class="inq-stat-label">Blocked IPs</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="inq-charts-row">
+                        <div class="inq-chart-card">
+                            <div class="inq-chart-title"><i class="fas fa-chart-line me-2"></i>Inquiries per Day (Last 30 Days)</div>
+                            <div style="height:180px"><canvas id="inq-daily-chart"></canvas></div>
+                        </div>
+                        <div class="inq-chart-card">
+                            <div class="inq-chart-title"><i class="fas fa-chart-pie me-2"></i>Real vs Spam Ratio</div>
+                            <div style="height:180px"><canvas id="inq-ratio-chart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Top IPs Table -->
+                    <div class="inq-ip-table mb-4">
+                        <div style="padding:14px 18px;border-bottom:1px solid #f0e8d8;">
+                            <h6 class="mb-0" style="font-size:0.78rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.06em">
+                                <i class="fas fa-network-wired me-2" style="color:#c5a059"></i>Top Submitting IPs
+                            </h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>IP Address</th>
+                                        <th class="text-center">Submissions</th>
+                                        <th class="text-center">Bad (Flagged/Suspicious)</th>
+                                        <th>Last Seen</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inq-top-ips-tbody">
+                                    <tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="inq-filter-bar">
+                        <select id="inq-filter-status" onchange="applyInquiryFilters()">
+                            <option value="ALL">All Statuses</option>
+                            <option value="approved">Approved</option>
+                            <option value="flagged">Flagged (Spam)</option>
+                            <option value="duplicate">Duplicate</option>
+                            <option value="suspicious">Suspicious</option>
+                        </select>
+                        <input type="date" id="inq-filter-from" onchange="applyInquiryFilters()" title="From date">
+                        <input type="date" id="inq-filter-to"   onchange="applyInquiryFilters()" title="To date">
+                        <select id="inq-filter-sort" onchange="applyInquiryFilters()">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                        <input type="text" id="inq-search" placeholder="Search name, email, message…"
+                            oninput="clearTimeout(window._inqTimer);window._inqTimer=setTimeout(applyInquiryFilters,400)">
+                        <button class="btn btn-sm" onclick="document.getElementById('inq-search').value='';applyInquiryFilters()"
+                            style="background:rgba(197,160,89,0.12);color:#9a7d3a;border:1px solid rgba(197,160,89,0.3);border-radius:6px;font-size:0.8rem">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                    </div>
+
+                    <!-- Bulk OSINT Scan Bar -->
+                    <div id="inq-bulk-bar" class="inq-bulk-bar">
+                        <div class="inq-bulk-left">
+                            <i class="fas fa-search-dollar me-2" style="color:#c5a059"></i>
+                            <span id="inq-missing-label" style="font-size:0.83rem;color:#555">Checking for unscanned inquiries…</span>
+                        </div>
+                        <div class="inq-bulk-right">
+                            <button id="inq-bulk-btn" class="inq-bulk-scan-btn" onclick="runBulkOsint()" style="display:none">
+                                <i class="fas fa-robot me-1"></i>Scan All Missing
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Progress Panel (hidden by default) -->
+                    <div id="inq-bulk-progress" class="inq-bulk-progress" style="display:none">
+                        <div class="inq-bulk-progress-header">
+                            <span><i class="fas fa-circle-notch fa-spin me-2" style="color:#c5a059"></i>Running OSINT Bulk Scan…</span>
+                            <span id="inq-bulk-counter" style="font-size:0.82rem;color:#888">0 / 0</span>
+                        </div>
+                        <div class="inq-bulk-bar-track">
+                            <div id="inq-bulk-fill" class="inq-bulk-bar-fill" style="width:0%"></div>
+                        </div>
+                        <div id="inq-bulk-log" class="inq-bulk-log"></div>
+                    </div>
+
+                    <!-- Inquiries Table -->
+                    <div id="inq-table-wrapper">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Name / Email</th>
+                                        <th>Phone</th>
+                                        <th>Unit</th>
+                                        <th>Message</th>
+                                        <th>Status</th>
+                                        <th>AI</th>
+                                        <th>Trust</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inq-tbody">
+                                    <tr><td colspan="8" class="text-center py-4 text-muted">Loading inquiries…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="inq-pagination" class="inq-pagination"></div>
+                    </div>
+
+                </div> <!-- /#section-inquiries -->
+
+                <!-- ═══════════════════════════════════════════════════════════
+                     SECTION: Reports & Analytics
+                ═══════════════════════════════════════════════════════════ -->
+                <div id="section-reports" class="content-section">
+
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-file-alt me-2" style="color:#c5a059"></i>
+                            Reports &amp; Analytics
+                            <small class="fs-6 text-muted fw-normal ms-2">AI-powered, decision-ready reports</small>
+                        </h3>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Left: Generator + Output -->
+                        <div class="col-lg-8">
+
+                            <!-- Toolbar -->
+                            <div class="rpt-toolbar">
+                                <select id="rpt-type-select">
+                                    <option value="">— Select Report Type —</option>
+                                    <option value="maintenance">🔧 Maintenance Report</option>
+                                    <option value="financial">💰 Financial Summary</option>
+                                    <option value="complaints">💬 Tenant Complaint Report</option>
+                                    <option value="booking">📋 Booking Activity Report</option>
+                                    <option value="incident">🚨 Emergency Incident Report</option>
+                                </select>
+                                <input type="date" id="rpt-date-from" title="From date">
+                                <input type="date" id="rpt-date-to"   title="To date">
+                                <button class="rpt-btn-generate" id="rpt-generate-btn" onclick="ReportModule.generateReport()">
+                                    <i class="fas fa-bolt"></i> Generate Report
+                                </button>
+                                <button class="rpt-btn-export" onclick="ReportModule.exportCSV()">
+                                    <i class="fas fa-file-csv"></i> CSV
+                                </button>
+                                <button class="rpt-btn-print" onclick="ReportModule.printReport()">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                            </div>
+
+                            <!-- Report Output -->
+                            <div id="rpt-output">
+                                <div style="text-align:center;padding:60px 20px;color:#aaa">
+                                    <i class="fas fa-file-alt" style="font-size:3rem;margin-bottom:16px;display:block;opacity:.3"></i>
+                                    Select a report type above and click <strong>Generate Report</strong>.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: History panel -->
+                        <div class="col-lg-4">
+                            <div class="card shadow-sm border-0" style="border-radius:12px;">
+                                <div class="card-header bg-white border-0 pt-4 pb-0">
+                                    <h6 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9a7d3a">
+                                        <i class="fas fa-history me-2"></i>Report History
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="max-height:520px;overflow-y:auto;padding-top:10px">
+                                    <div id="rpt-history-list">
+                                        <p class="text-muted small text-center py-3">Loading history…</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- /#section-reports -->
+
+                <!-- ═══════════════════════════════════════════════════════════
+                     SECTION: Live Chat
+                ═══════════════════════════════════════════════════════════ -->
+                <div id="section-live-chat" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-comments me-2" style="color:#22c55e"></i>
+                            Live Chat
+                            <small class="fs-6 text-muted fw-normal ms-2">Real-time tenant messaging</small>
+                        </h3>
+                    </div>
+
+                    <div class="lc-container">
+                        <!-- Left: Session List -->
+                        <div class="lc-sessions-panel">
+                            <div class="lc-sessions-header">
+                                <h5><i class="fas fa-inbox me-2" style="color:#c5a059;"></i>Conversations</h5>
+                                <button class="lc-status-toggle" id="lc-status-toggle">
+                                    <span class="lc-status-dot offline" id="lc-status-dot"></span>
+                                    <span class="lc-status-label" id="lc-status-label">Connecting…</span>
+                                </button>
+                            </div>
+                            <div class="lc-session-list" id="lc-session-list">
+                                <div class="lc-empty-sessions">
+                                    <i class="fas fa-comments"></i>
+                                    No active conversations yet
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Chat Thread -->
+                        <div class="lc-chat-panel">
+                            <!-- No session selected -->
+                            <div class="lc-no-selection" id="lc-no-selection" style="display:flex;">
+                                <i class="fas fa-comment-dots"></i>
+                                <p>Select a conversation to start chatting</p>
+                            </div>
+
+                            <!-- Chat header (hidden until session selected) -->
+                            <div class="lc-chat-header" id="lc-chat-header" style="display:none;">
+                                <div class="lc-chat-header-avatar" id="lc-header-avatar"></div>
+                                <div class="lc-chat-header-info">
+                                    <div class="lc-chat-header-name" id="lc-header-name"></div>
+                                    <div class="lc-chat-header-room" id="lc-header-room"></div>
+                                </div>
+                                <div class="lc-tenant-online-dot" id="lc-tenant-dot" style="display:none;"></div>
+                            </div>
+
+                            <!-- Messages -->
+                            <div class="lc-messages" id="lc-messages-area">
+                                <div class="lc-empty-chat">
+                                    <i class="fas fa-comment-slash"></i>
+                                    <p>No messages yet</p>
+                                </div>
+                            </div>
+
+                            <!-- Reply Input -->
+                            <div class="lc-input-area" id="lc-input-area" style="display:none;">
+                                <textarea id="lc-reply-input" placeholder="Type a reply… (Enter to send, Shift+Enter for new line)" rows="1"></textarea>
+                                <button class="lc-send-btn" id="lc-send-btn" title="Send">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- /#section-live-chat -->
+
+                    <!-- SECTION: Rent Optimization -->
+                    <div id="section-rent-optimization" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h3 class="mb-1"><i class="fas fa-robot text-warning me-2"></i>AI Rent Optimizer
+                                    <span class="badge ms-2 fw-semibold" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#f0c040;font-size:0.65rem;letter-spacing:0.04em;vertical-align:middle;">🤖 AI AUTO-MANAGED</span>
+                                </h3>
+                                <p class="text-muted small mb-0">Prices are automatically optimized every 1st of the month using live Calamba &amp; Nuvali market data.</p>
+                            </div>
+                            <button class="btn btn-outline-secondary rounded-pill" onclick="RentPricingModule.loadHistory()">
+                                <i class="fas fa-history me-1"></i>View Pricing History
+                            </button>
+                        </div>
+
+                        <!-- Auto-schedule info bar -->
+                        <div class="d-flex gap-3 mb-4 flex-wrap">
+                            <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#0f3460,#16213e);color:#fff;">
+                                <div class="small text-white-50 mb-1">🕐 Last Auto-Update</div>
+                                <div class="fw-bold" id="lastAutoUpdate">Loading...</div>
+                            </div>
+                            <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#1a1a2e,#533483);color:#fff;">
+                                <div class="small text-white-50 mb-1">⏰ Next Auto-Update</div>
+                                <div class="fw-bold" id="nextAutoUpdate">Loading...</div>
+                            </div>
+                            <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;">
+                                <div class="small text-white-50 mb-1">📊 Market Sources</div>
+                                <div class="fw-bold">Gemini AI · Calamba &amp; Nuvali</div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm border-0 mb-4" style="background: #fff; border-left: 5px solid #c5a059 !important;">
+                            <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h5 class="mb-0 fw-bold">Live Market Pulse
+                                        <span class="badge bg-light text-success border ms-2 small fw-normal" style="font-size:0.7rem;" id="marketPulseBadge">Loading...</span>
+                                    </h5>
+                                    <span class="text-muted small"><i class="fas fa-lock me-1"></i>Auto-managed · Manual search &amp; override supported</span>
+                                </div>
+                                <div id="rentPricingHeaderActions"></div>
+                            </div>
+                            <div class="card-body">
+                                <div id="rentPricingContainer" class="row g-3">
+                                    <div class="col-12 text-center py-5">
+                                        <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
+                                        <p class="mt-3 text-muted">AI is analyzing market trends in Calamba &amp; Nuvali...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert border-0 shadow-sm rounded-4" style="background:linear-gradient(135deg,#e8f4f8,#d1ecf1);">
+                            <h6 class="fw-bold"><i class="fas fa-magic me-2 text-primary"></i>How Auto-Optimization Works</h6>
+                            <p class="small mb-0">On the <strong>1st of every month at 2:00 AM</strong>, our AI automatically searches for current rental prices for <strong>Studio/1BR · 28–42 sqm · Fully Furnished · CCTV · Fiber Optic</strong> units in Calamba and Nuvali/Santa Rosa. It then factors in your occupancy rate and inquiry demand to compute the optimal price — and applies it automatically. You can still <strong>override any price</strong> at any time using the card buttons below.</p>
+                        </div>
+                    </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">My Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img id="profilePreview" src="https://via.placeholder.com/150" class="rounded-circle" width="100" height="100" style="object-fit: cover;">
+                        <div class="mt-2">
+                            <input type="file" id="profileImageInput" class="form-control form-control-sm" accept="image/*" onchange="previewProfileImage(this, 'profilePreview')">
+                        </div>
+                    </div>
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="profileName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="profilePhone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="profileEmail" readonly disabled>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Tenant Modal -->
+    <div class="modal fade" id="editTenantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Tenant Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editTenantId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Personal Info</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="editTenantName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="editTenantPhone" required>
+                            </div>
+                             <div class="mb-3">
+                                <label class="form-label">Room Assignment</label>
+                                <select class="form-select" id="editTenantRoom">
+                                    <option value="">Select Room...</option>
+                                    <!-- Dynamic Options -->
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Contract Start</label>
+                                    <input type="date" class="form-control" id="editTenantLeaseStart">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Contract End</label>
+                                    <input type="date" class="form-control" id="editTenantLeaseEnd">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Guardian Info</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Name</label>
+                                <input type="text" class="form-control" id="editGuardianName">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Address</label>
+                                <input type="text" class="form-control" id="editGuardianAddress">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Guardian Contact</label>
+                                <input type="text" class="form-control" id="editGuardianContact">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTenantChanges()">Save Tenant</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Tenant Notice Modal -->
+    <div class="modal fade" id="sendNoticeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;">
+                <div class="modal-header" style="background:#1a1a2e;border:none;">
+                    <h5 class="modal-title" style="color:#fff;font-size:0.95rem;"><i class="fas fa-bullhorn me-2" style="color:#c5a059;"></i>Send Tenant Notice</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="noticeTopic">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:0.85rem;">Issue Topic</label>
+                        <input type="text" id="noticeTopicDisplay" class="form-control" readonly style="background:#f8f9fa;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:0.85rem;">Message to Active Tenants</label>
+                        <textarea id="noticeMessageBody" class="form-control" rows="4" style="font-size:0.9rem;"></textarea>
+                    </div>
+                    <div style="font-size:0.75rem;color:#888;"><i class="fas fa-envelope me-1"></i>This notice will be emailed directly to all active tenants.</div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #eee;">
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill" onclick="submitSendTenantNotice()"><i class="fas fa-paper-plane me-1"></i>Send Notice</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proof Modal -->
+    <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;">
+                <div class="modal-header" style="background:#1a1a2e;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <h5 class="modal-title" style="color:#fff;font-size:0.95rem;"><i class="fas fa-image me-2" style="color:#c5a059;"></i>Proof Image</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="background:#111;display:flex;align-items:center;justify-content:center;padding:20px;min-height:200px;">
+                    <img id="proofImage" src="" alt="Proof" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Preview Modal (Fraud Module) -->
+    <div class="modal fade" id="receiptPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-receipt me-2" style="color:#c5a059"></i>Receipt Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-3">
+                    <img id="fraud-receipt-preview-img" src="" alt="Receipt" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:8px">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;">
+                <div class="modal-header" style="background:#1a1a2e;border:none;">
+                    <h5 class="modal-title" style="color:#fff;font-size:0.95rem;"><i class="fas fa-tools me-2" style="color:#c5a059;"></i>Update Maintenance Request</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="updateMaintenanceId">
+                    <label class="form-label fw-bold" style="font-size:0.85rem;">New Status</label>
+                    <select id="newStatus" class="form-select mb-3">
+                        <option value="pending">🟡 Pending</option>
+                        <option value="in_progress">🔵 In Progress</option>
+                        <option value="resolved">🟢 Resolved</option>
+                    </select>
+                    <label class="form-label fw-bold" style="font-size:0.85rem;">Admin Note <span class="fw-normal text-muted">(optional)</span></label>
+                    <textarea id="adminNote" class="form-control" rows="3" placeholder="e.g., Electrician scheduled for tomorrow morning..." style="font-size:0.9rem;"></textarea>
+                    <div class="mt-2" style="font-size:0.75rem;color:#999;"><i class="fas fa-envelope me-1"></i>Tenant will be notified by email of this update.</div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #eee;">
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill" onclick="submitStatusUpdate()"><i class="fas fa-check me-1"></i>Save & Notify</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Room Modal -->
+    <div class="modal fade" id="roomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roomModalTitle">Add New Room</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roomForm">
+                        <input type="hidden" id="roomId">
+                        <div class="mb-3">
+                            <label class="form-label">Room Number/Name</label>
+                            <input type="text" class="form-control" id="roomNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="roomType" required>
+                                <option value="dorm">Dormitory</option>
+                                <option value="condo">Condo Unit</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Capacity (Beds)</label>
+                            <input type="number" class="form-control" id="roomCapacity" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monthly Rate</label>
+                            <input type="number" class="form-control" id="roomRate" required min="0" step="0.01">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitSaveRoom()">Save Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Meter Reading Modal -->
+    <div class="modal fade" id="addReadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-bolt me-2"></i>Add Meter Reading</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addReadingForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Tenant</label>
+                            <select class="form-select" id="readingTenantSelect" required>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Water Reading (m³)</label>
+                                <input type="number" class="form-control" name="water_reading" required step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Electric Reading (kWh)</label>
+                                <input type="number" class="form-control" name="electric_reading" required step="0.01">
+                            </div>
+                        </div>
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle me-1"></i> Admin-entered readings are automatically verified.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddReading()">Submit Reading</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tenant Modal (Replaces Create Account) -->
+    <div class="modal fade" id="addTenantModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add New Tenant</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTenantForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" required placeholder="John Doe">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" name="email" required placeholder="john@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="09123456789">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Room Assignment</label>
+                            <select class="form-select" name="room_id" id="addTenantRoomSelect">
+                                <option value="">Select Room (Optional)...</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Lease Start Date</label>
+                                <input type="date" class="form-control" name="lease_start" value="">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Lease End Date</label>
+                                <input type="date" class="form-control" name="lease_end" value="">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddTenant()">Add Tenant</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         Fraud Detail Drawer (slide-in panel)
+    ════════════════════════════════════════════════════════════ -->
+    <div id="fraud-drawer-overlay" class="fraud-drawer-overlay" onclick="closeFraudDrawer()"></div>
+    <div id="fraud-drawer" class="fraud-drawer">
+        <div class="drawer-header">
+            <h5><i class="fas fa-shield-alt me-2" style="color:#c5a059"></i>Payment Fraud Details</h5>
+            <button class="drawer-close" onclick="closeFraudDrawer()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="drawer-body" id="fraud-drawer-body">
+            <!-- Populated by JS -->
+        </div>
+        <div class="drawer-footer">
+            <div class="me-auto">
+                <textarea id="fraud-admin-note" rows="1" placeholder="Admin note (optional)..."
+                    style="background:#1e293b;border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;border-radius:8px;padding:7px 12px;font-size:0.82rem;width:220px;resize:none;outline:none"></textarea>
+            </div>
+            <button class="btn btn-sm" onclick="reRunAnalysis()"
+                style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.8rem">
+                <i class="fas fa-redo me-1"></i>Re-Analyze
+            </button>
+            <button class="btn btn-sm btn-success" onclick="submitFraudDecision('MANUAL_APPROVED')" style="font-size:0.8rem;border-radius:8px">
+                <i class="fas fa-check me-1"></i>Approve
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="submitFraudDecision('MANUAL_BLOCKED')" style="font-size:0.8rem;border-radius:8px">
+                <i class="fas fa-ban me-1"></i>Block
+            </button>
+        </div>
+    </div>
+
+    <!-- Inquiry Detail Drawer -->
+    <div id="inq-drawer-overlay" class="inq-drawer-overlay" onclick="closeInquiryDrawer()"></div>
+    <div id="inq-drawer" class="inq-drawer">
+        <div class="inq-drawer-header">
+            <h5><i class="fas fa-envelope-open-text me-2" style="color:#c5a059"></i>Inquiry Details</h5>
+            <button class="inq-drawer-close" onclick="closeInquiryDrawer()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="inq-drawer-body" id="inq-drawer-body">
+            <!-- Populated by inquiries.js -->
+        </div>
+        <div class="inq-drawer-footer">
+            <button class="btn btn-sm btn-success" onclick="updateInquiryStatus(InquiryDashboard.drawerInquiryId,'approved')">
+                <i class="fas fa-check me-1"></i>Approve
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="updateInquiryStatus(InquiryDashboard.drawerInquiryId,'flagged')">
+                <i class="fas fa-flag me-1"></i>Flag as Spam
+            </button>
+            <button class="btn btn-sm btn-outline-danger ms-auto" onclick="deleteInquiry(InquiryDashboard.drawerInquiryId)">
+                <i class="fas fa-trash me-1"></i>Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Rent Pricing History Modal -->
+    <div class="modal fade" id="rentHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-history me-2 text-warning"></i>Pricing Adjustment History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Room</th>
+                                    <th>Old Rate</th>
+                                    <th>New Rate</th>
+                                    <th>Change</th>
+                                    <th>Applied By</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rentHistoryTableBody">
+                                <!-- Dynamic History -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Socket.io -->
+<!-- Renew Lease Modal -->
+<div class="modal fade" id="renewLeaseModal" tabindex="-1" aria-labelledby="renewLeaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 bg-light rounded-top-4 py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0" id="renewLeaseModalLabel">
+                    <i class="fas fa-file-signature text-warning me-2 fs-4"></i> Extend / Renew Lease
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="renewTenantId">
+                <div class="bg-light p-3 rounded-3 border mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Tenant Name:</span>
+                        <strong id="renewTenantName" class="text-dark">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Unit:</span>
+                        <strong id="renewTenantRoom" class="text-dark">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Current Lease Expiry:</span>
+                        <span id="renewCurrentEnd" class="text-danger fw-bold">--</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase text-dark">Quick Extension Term</label>
+                    <div class="d-flex gap-2 mb-3">
+                        <button type="button" class="btn btn-outline-warning w-50 rounded-pill fw-bold" onclick="setQuickExtension(6)">+ 6 Months</button>
+                        <button type="button" class="btn btn-outline-warning w-50 rounded-pill fw-bold" onclick="setQuickExtension(12)">+ 1 Year</button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="renewNewEndDate" class="form-label fw-bold small text-uppercase text-dark">New Lease Expiry Date</label>
+                    <input type="date" class="form-control rounded-3" id="renewNewEndDate" required>
+                </div>
+
+                <button type="button" class="btn btn-warning btn-lg w-100 rounded-pill fw-bold text-dark shadow-sm" onclick="submitLeaseRenewal()">
+                    <i class="fas fa-check-circle me-2"></i> Confirm Lease Extension
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- FingerprintJS (Fraud Detection Device Fingerprinting) -->
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <!-- Chart.js (Inquiry Analytics) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Admin Modules -->
+    <script src="js/admin/modules/stats.js"></script>
+    <script src="js/admin/modules/rooms.js"></script>
+    <script src="js/admin/modules/tenants.js"></script>
+    <script src="js/admin/modules/payments.js"></script>
+    <script src="js/admin/modules/maintenance.js"></script>
+    <script src="js/admin/modules/feedback.js"></script>
+    <script src="js/admin/modules/profile.js"></script>
+    <script src="js/admin/modules/fraud.js"></script>
+    <script src="js/admin/modules/inquiries.js"></script>
+    <script src="js/admin/modules/vacancyAnalytics.js"></script>
+    <script src="js/admin/modules/reports.js"></script>
+    <script src="js/admin/modules/rentPricing.js"></script>
+    <script src="js/admin/modules/liveChat.js"></script>
+
+    
+    <!-- Main Entry Point -->
+    <script src="js/admin/main.js"></script>
+</body>
+</html>
+

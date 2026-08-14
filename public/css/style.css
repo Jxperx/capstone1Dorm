@@ -1,0 +1,27 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.table th {
+    font-weight: 600;
+    color: #555;
+}

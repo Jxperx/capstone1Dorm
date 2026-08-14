@@ -1,0 +1,300 @@
+/**
+ * routes/fraud.js
+ * Admin-facing routes for the Fraud Detection Dashboard:
+ * - GET /api/admin/fraud          → paginated fraud payment list
+ * - GET /api/admin/fraud/analytics → summary stats
+ * - GET /api/admin/fraud/:id      → single payment detail
+ * - POST /api/admin/fraud/:id/decision → manual approve/block
+ * - POST /api/admin/fraud/:id/analyze  → re-run fraud analysis
+ */
+
+const express = require('express');
+const router = express.Router();
+const { poolPromise, sql } = require('../config/db');
+const { analyzePayment } = require('../utils/fraudEngine');
+
+// ─── Middleware: Admin only ───────────────────────────────────
+function requireAdmin(req, res, next) {
+    if (!req.session?.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required.' });
+    }
+    next();
+}
+
+// ─── GET /api/admin/fraud/analytics ──────────────────────────
+router.get('/analytics', requireAdmin, async (req, res) => {
+    try {
+        const pool = await poolPromise;
+
+        const result = await pool.request().query(`
+            SELECT
+                COUNT(fs.id)                                          AS total_analyzed,
+                COUNT(CASE WHEN fs.risk_level IN ('HIGH','CRITICAL') THEN 1 END) AS high_risk_count,
+                COUNT(CASE WHEN fs.decision = 'BLOCKED' THEN 1 END)  AS blocked_count,
+                COUNT(CASE WHEN fs.decision = 'PENDING_REVIEW' THEN 1 END) AS pending_review_count,
+                COUNT(CASE WHEN fs.decision IN ('AUTO_APPROVED','MANUAL_APPROVED') THEN 1 END) AS approved_count,
+                COUNT(CASE WHEN fs.risk_level = 'SAFE'     THEN 1 END) AS safe_count,
+                COUNT(CASE WHEN fs.risk_level = 'LOW'      THEN 1 END) AS low_count,
+                COUNT(CASE WHEN fs.risk_level = 'MEDIUM'   THEN 1 END) AS medium_count,
+                COUNT(CASE WHEN fs.risk_level = 'HIGH'     THEN 1 END) AS high_count,
+                COUNT(CASE WHEN fs.risk_level = 'CRITICAL' THEN 1 END) AS critical_count
+            FROM fraud_scores fs
+        `);
+
+        const flagsResult = await pool.request().query(`
+            SELECT TOP 10 flag_code, COUNT(*) as occurrences
+            FROM fraud_flags
+            GROUP BY flag_code
+            ORDER BY occurrences DESC
+        `);
+
+        res.json({
+            summary: result.recordset[0],
+            topFraudReasons: flagsResult.recordset
+        });
+    } catch (err) {
+        console.error('[Fraud Analytics Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── GET /api/admin/fraud ─────────────────────────────────────
+// Paginated list with filters
+router.get('/', requireAdmin, async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const { riskLevel, method, flagged, dateFrom, dateTo, search } = req.query;
+
+    try {
+        const pool = await poolPromise;
+
+        // Build WHERE clause using only named parameters — no string interpolation of user input
+        let where = 'WHERE 1=1';
+        const filterParams = {}; // { paramName: { type, value } }
+
+        if (riskLevel && riskLevel !== 'ALL') {
+            where += ' AND fs.risk_level = @riskLevel';
+            filterParams.riskLevel = { type: sql.NVarChar(20), value: riskLevel.toUpperCase() };
+        }
+        if (method && method !== 'ALL') {
+            where += ' AND p.payment_method = @method';
+            filterParams.method = { type: sql.NVarChar(50), value: method };
+        }
+        // flagged is a boolean flag — no user value is injected; EXISTS subquery is static
+        if (flagged === 'true') {
+            where += ' AND (SELECT COUNT(*) FROM fraud_flags ff WHERE ff.payment_id = p.id) > 0';
+        }
+        if (dateFrom) {
+            where += ' AND p.created_at >= @dateFrom';
+            filterParams.dateFrom = { type: sql.DateTime2, value: new Date(dateFrom) };
+        }
+        if (dateTo) {
+            // Use start-of-next-day so the whole dateTo day is included
+            const toDate = new Date(dateTo);
+            toDate.setDate(toDate.getDate() + 1);
+            where += ' AND p.created_at < @dateTo';
+            filterParams.dateTo = { type: sql.DateTime2, value: toDate };
+        }
+        if (search) {
+            where += ' AND (u.full_name LIKE @search OR p.reference_number LIKE @search)';
+            filterParams.search = { type: sql.NVarChar(255), value: `%${search}%` };
+        }
+
+        // Helper: attach all filter params to a request object
+        function bindFilters(req) {
+            for (const [name, param] of Object.entries(filterParams)) {
+                req.input(name, param.type, param.value);
+            }
+        }
+
+        const query = `
+            SELECT
+                p.id                    AS payment_id,
+                p.amount                AS amount_paid,
+                p.expected_amount,
+                p.payment_method,
+                p.reference_number,
+                p.gateway_transaction_id,
+                p.gateway_status,
+                p.status                AS payment_status,
+                p.created_at,
+                p.proof_image_url,
+                p.booking_id,
+                u.full_name             AS tenant_name,
+                u.email                 AS tenant_email,
+                t.id                    AS tenant_id,
+                r.room_number,
+                fs.risk_score,
+                fs.risk_level,
+                fs.decision,
+                fs.analyzed_at,
+                fs.admin_note,
+                pr.sha256_hash,
+                pr.phash_value,
+                pr.ocr_raw_text,
+                pr.ocr_ref_number,
+                pr.ocr_amount,
+                pr.ocr_timestamp,
+                pr.file_path            AS receipt_path,
+                STUFF((SELECT ', ' + ff.flag_code FROM fraud_flags ff WHERE ff.payment_id = p.id FOR XML PATH('')), 1, 2, '') AS flags
+            FROM payments p
+            LEFT JOIN tenants t ON p.tenant_id = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN rooms r ON t.room_id = r.id
+            LEFT JOIN fraud_scores fs ON p.id = fs.payment_id
+            OUTER APPLY (
+                SELECT TOP 1 sha256_hash, phash_value, ocr_raw_text, ocr_ref_number, ocr_amount, ocr_timestamp, file_path
+                FROM payment_receipts WHERE payment_id = p.id ORDER BY uploaded_at DESC
+            ) pr
+            ${where}
+            ORDER BY p.created_at DESC
+            OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY
+        `;
+
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM payments p
+            LEFT JOIN tenants t ON p.tenant_id = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN fraud_scores fs ON p.id = fs.payment_id
+            ${where}
+        `;
+
+        // Bind filter params to each request separately (mssql requests are not reusable)
+        const dataReq = pool.request();
+        bindFilters(dataReq);
+        const countReq = pool.request();
+        bindFilters(countReq);
+
+        const [dataResult, countResult] = await Promise.all([
+            dataReq.query(query),
+            countReq.query(countQuery)
+        ]);
+
+        res.json({
+            data: dataResult.recordset,
+            total: countResult.recordset[0].total,
+            page,
+            limit
+        });
+    } catch (err) {
+        console.error('[Fraud List Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── GET /api/admin/fraud/:id ─────────────────────────────────
+router.get('/:id', requireAdmin, async (req, res) => {
+    const paymentId = parseInt(req.params.id);
+    try {
+        const pool = await poolPromise;
+
+        const payResult = await pool.request()
+            .input('id', sql.Int, paymentId)
+            .query(`
+                SELECT
+                    p.*,
+                    u.full_name AS tenant_name, u.email AS tenant_email, u.phone_number,
+                    t.id AS tenant_id, r.room_number,
+                    fs.risk_score, fs.risk_level, fs.decision, fs.analyzed_at, fs.admin_note
+                FROM payments p
+                LEFT JOIN tenants t ON p.tenant_id = t.id
+                LEFT JOIN users u ON t.user_id = u.id
+                LEFT JOIN rooms r ON t.room_id = r.id
+                LEFT JOIN fraud_scores fs ON p.id = fs.payment_id
+                WHERE p.id = @id
+            `);
+
+        if (!payResult.recordset.length) return res.status(404).json({ error: 'Payment not found.' });
+
+        const receiptResult = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query('SELECT * FROM payment_receipts WHERE payment_id = @pid ORDER BY uploaded_at DESC');
+
+        const flagsResult = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query('SELECT * FROM fraud_flags WHERE payment_id = @pid ORDER BY created_at DESC');
+
+        const attemptsResult = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query('SELECT TOP 10 * FROM payment_attempt_logs WHERE payment_id = @pid ORDER BY attempted_at DESC');
+
+        const tenantId = payResult.recordset[0].tenant_id;
+        const deviceResult = tenantId ? await pool.request()
+            .input('tid', sql.Int, tenantId)
+            .query(`
+                SELECT df.*, 
+                       (SELECT COUNT(DISTINCT tenant_id) FROM device_fingerprints WHERE device_hash = df.device_hash) AS shared_by_count
+                FROM device_fingerprints df
+                WHERE df.tenant_id = @tid
+                ORDER BY df.last_seen DESC
+            `) : { recordset: [] };
+
+        res.json({
+            payment: payResult.recordset[0],
+            receipts: receiptResult.recordset,
+            flags: flagsResult.recordset,
+            attempts: attemptsResult.recordset,
+            devices: deviceResult.recordset
+        });
+    } catch (err) {
+        console.error('[Fraud Detail Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── POST /api/admin/fraud/:id/decision ──────────────────────
+router.post('/:id/decision', requireAdmin, async (req, res) => {
+    const paymentId = parseInt(req.params.id);
+    const { decision, note } = req.body;
+    const allowed = ['MANUAL_APPROVED', 'MANUAL_BLOCKED'];
+
+    if (!allowed.includes(decision)) {
+        return res.status(400).json({ error: `Decision must be one of: ${allowed.join(', ')}` });
+    }
+
+    try {
+        const pool = await poolPromise;
+        const adminName = req.session.user.email || 'Admin';
+
+        await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .input('dec', sql.NVarChar, decision)
+            .input('note', sql.NVarChar, note || null)
+            .input('admin', sql.NVarChar, adminName)
+            .query(`
+                IF EXISTS (SELECT 1 FROM fraud_scores WHERE payment_id = @pid)
+                    UPDATE fraud_scores SET decision = @dec, admin_note = @note, reviewed_by = @admin WHERE payment_id = @pid
+                ELSE
+                    INSERT INTO fraud_scores (payment_id, risk_score, risk_level, decision, admin_note, reviewed_by)
+                    VALUES (@pid, 0, 'SAFE', @dec, @note, @admin)
+            `);
+
+        // Sync payment status
+        const payStatus = decision === 'MANUAL_APPROVED' ? 'approved' : 'rejected';
+        await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .input('st', sql.NVarChar, payStatus)
+            .query('UPDATE payments SET status = @st WHERE id = @pid');
+
+        res.json({ success: true, decision, paymentStatus: payStatus });
+    } catch (err) {
+        console.error('[Fraud Decision Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── POST /api/admin/fraud/:id/analyze ───────────────────────
+router.post('/:id/analyze', requireAdmin, async (req, res) => {
+    const paymentId = parseInt(req.params.id);
+    try {
+        const result = await analyzePayment(paymentId);
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('[Re-analyze Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+module.exports = router;
