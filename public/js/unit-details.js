@@ -58,7 +58,7 @@ async function loadUnitDetails() {
 
         // Fallback map embeds per property type
         const FALLBACK_MAPS = {
-            dorm:  'https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685460381!5m2!1sen!2sph!6m8!1m7!1s2ga9JEFvoZQ1AgYXzo4SlQ!2m2!1d14.18461196793502!2d121.1375198833002!3f101.9223496897032!4f-6.111879035718218!5f0.7820865974627469',
+            dorm:  'https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685460381!5m2!1sen!2sph!6m8!1m7!1sbSPznQdEBNgHTS7KmGUD0A!2m2!1d14.1846702!2d121.1375905!3f42.03968566802905!4f-9.663768123331309!5f0.7820865974627469',
             condo: 'https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685884257!5m2!1sen!2sph!6m8!1m7!1sriOdGSCtvHmZQKl0O6Aauw!2m2!1d14.24048350795415!2d121.0425856352331!3f129.15545414837314!4f-2.0124363928627105!5f0.7820865974627469'
         };
 
