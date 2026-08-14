@@ -10,6 +10,7 @@ const fs = require('fs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const logger = require('./utils/logger');
 
 // DB (needed by socket.io handlers too)
 const { poolPromise, sql } = require('./config/db');
@@ -22,6 +23,23 @@ if (!fs.existsSync('public/uploads')) {
 // App Initialization
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Trust first reverse proxy (Nginx, Cloudflare, AWS ALB) in production
+// so req.ip returns the real client IP and req.protocol reports 'https'
+if (isProduction) {
+    app.set('trust proxy', 1);
+}
+
+// SESSION_SECRET validation
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+    console.warn('[Security Warning] SESSION_SECRET is missing or too short (minimum 32 characters).');
+    console.warn('[Security Warning] Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+    if (isProduction) {
+        console.error('[Security Error] Refusing to start in production without a strong SESSION_SECRET.');
+        process.exit(1);
+    }
+}
 
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -51,8 +69,8 @@ app.use(session({
     cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax'
     }
 }));
 
@@ -174,7 +192,7 @@ let adminOnline = false;
 
 function setupSocketIO(io) {
     io.on('connection', (socket) => {
-        console.log('[Socket.io] Connected:', socket.id);
+        logger.debug('[Socket.io] Connected:', socket.id);
 
         // ── Tenant joins their private room ──────────────────────────────────
         socket.on('tenant:join', ({ tenantId, tenantName, roomNumber }) => {
@@ -196,7 +214,7 @@ function setupSocketIO(io) {
             socket.isAdmin = true;
             adminOnline = true;
             io.emit('admin:status', { online: true });
-            console.log('[Socket.io] Admin connected');
+            logger.debug('[Socket.io] Admin connected');
         });
 
         // ── Tenant sends message ─────────────────────────────────────────────
@@ -251,7 +269,7 @@ function setupSocketIO(io) {
         socket.on('admin:set-status', ({ online }) => {
             adminOnline = online;
             io.emit('admin:status', { online });
-            console.log(`[Socket.io] Admin status → ${online ? 'ONLINE' : 'BUSY'}`);
+            logger.debug(`[Socket.io] Admin status → ${online ? 'ONLINE' : 'BUSY'}`);
         });
 
         // ── Disconnect ───────────────────────────────────────────────────────
@@ -261,7 +279,7 @@ function setupSocketIO(io) {
                 if (!adminRoom || adminRoom.size === 0) {
                     adminOnline = false;
                     io.emit('admin:status', { online: false });
-                    console.log('[Socket.io] Admin disconnected — status OFFLINE');
+                    logger.debug('[Socket.io] Admin disconnected — status OFFLINE');
                 }
             }
         });
@@ -284,11 +302,11 @@ function startServer(port, attempt = 1) {
     setupSocketIO(io);
 
     httpServer.listen(port, () => {
-        console.log(`Server running on http://localhost:${port}`);
-        console.log(`Login: http://localhost:${port}/login`);
-        console.log(`Admin Dashboard: http://localhost:${port}/admin`);
-        console.log('Socket.io: Real-time Live Chat enabled.');
-        console.log('Scheduling automatic monthly rent reminders (sent on the 28th).');
+        logger.info(`Server running on http://localhost:${port}`);
+        logger.info(`Login: http://localhost:${port}/login`);
+        logger.info(`Admin Dashboard: http://localhost:${port}/admin`);
+        logger.info('Socket.io: Real-time Live Chat enabled.');
+        logger.info('Scheduling automatic monthly rent reminders (sent on the 28th).');
         scheduleDormRentReminders();
         scheduleMonthlyMarketSearch();
     });
@@ -305,3 +323,19 @@ function startServer(port, attempt = 1) {
 }
 
 startServer(PORT);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global Error Safety Nets (last-resort crash handlers for production)
+// ─────────────────────────────────────────────────────────────────────────────
+process.on('uncaughtException', (err) => {
+    logger.error('[FATAL] Uncaught Exception:', err.message);
+    logger.error(err.stack);
+    // Let PM2 detect the exit and auto-restart
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('[FATAL] Unhandled Promise Rejection:', reason);
+    // Let PM2 detect the exit and auto-restart
+    process.exit(1);
+});

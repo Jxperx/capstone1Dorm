@@ -7,6 +7,7 @@ node_modules/
 
 # Logs
 *.log
+logs/
 server.log
 server_utf8.log
 test_results.log

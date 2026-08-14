@@ -1,5 +1,6 @@
 const session = require('express-session');
 const { poolPromise, sql } = require('./db');
+const logger = require('../utils/logger');
 
 /**
  * Custom express-session Store using mssql/msnodesqlv8
@@ -36,9 +37,9 @@ class SqlServerStore extends session.Store {
                 END
             `;
             await pool.request().query(createTableScript);
-            console.log(`[SessionStore] Table '${this.tableName}' is ready.`);
+            logger.info(`[SessionStore] Table '${this.tableName}' is ready.`);
         } catch (error) {
-            console.error('[SessionStore] Error initializing session table:', error);
+            logger.error('[SessionStore] Error initializing session table:', error);
         }
     }
 

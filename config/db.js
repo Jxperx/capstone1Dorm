@@ -1,4 +1,5 @@
 require('dotenv').config();
+const logger = require('../utils/logger');
 
 const dbUser = process.env.DB_USER && process.env.DB_USER.trim();
 const dbPass = process.env.DB_PASSWORD || process.env.DB_PASS;
@@ -21,7 +22,7 @@ if (dbUser) {
             enableArithAbort: true
         }
     };
-    console.log(`[DB] Initializing SQL Server Authentication for host '${process.env.DB_SERVER}', database '${process.env.DB_DATABASE}'.`);
+    logger.info(`[DB] Initializing SQL Server Authentication for host '${process.env.DB_SERVER}', database '${process.env.DB_DATABASE}'.`);
 } else {
     // Windows Authentication Fallback (Local Windows Dev Environment)
     sql = require('mssql/msnodesqlv8');
@@ -33,17 +34,17 @@ if (dbUser) {
             enableArithAbort: true
         }
     };
-    console.log(`[DB] Initializing Windows Authentication (msnodesqlv8) for server '${process.env.DB_SERVER}'.`);
+    logger.info(`[DB] Initializing Windows Authentication (msnodesqlv8) for server '${process.env.DB_SERVER}'.`);
 }
 
 const poolPromise = new sql.ConnectionPool(config)
     .connect()
     .then(pool => {
-        console.log('[DB] Connected to MSSQL Server successfully!');
+        logger.info('[DB] Connected to MSSQL Server successfully!');
         return pool;
     })
     .catch(err => {
-        console.error('[DB] Database Connection Failed!', err.message || err);
+        logger.error('[DB] Database Connection Failed!', err.message || err);
         throw err;
     });
 

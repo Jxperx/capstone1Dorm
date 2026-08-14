@@ -3,9 +3,36 @@ const router = express.Router();
 const { poolPromise, sql } = require('../config/db');
 const bcrypt = require('bcrypt');
 const transporter = require('../utils/email');
+const rateLimit = require('express-rate-limit');
+const logger = require('../utils/logger');
+
+// Rate Limiters for Auth Endpoints
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,   // 15 minutes
+    max: 10,
+    message: { error: 'Too many login attempts. Please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,   // 15 minutes
+    max: 5,
+    message: { error: 'Too many OTP attempts. Please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,   // 1 hour
+    max: 5,
+    message: { error: 'Too many registration attempts. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 // API: Register
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
     const { fullName, email, password, phone } = req.body;
     
     try {
@@ -28,7 +55,7 @@ router.post('/register', async (req, res) => {
 });
 
 // API: Login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -92,9 +119,9 @@ router.post('/login', async (req, res) => {
 
                 try {
                     await transporter.sendMail(mailOptions);
-                    console.log(`✅ OTP sent successfully to ${user.email}`);
+                    logger.debug(`[Auth] OTP sent successfully to ${user.email}`);
                 } catch (mailError) {
-                    console.error('❌ Nodemailer Error details:', mailError);
+                    logger.error('[Auth] Nodemailer Error:', mailError.message);
                     return res.status(500).json({ 
                         error: 'Failed to send OTP email.', 
                         details: mailError.message 
@@ -110,21 +137,21 @@ router.post('/login', async (req, res) => {
             // Admin Login (No OTP for now)
             req.session.user = { id: user.id, role: user.role, name: user.full_name };
             req.session.save((err) => {
-                if (err) console.error('Session Save Error (Admin):', err);
-                console.log('Session saved for Admin:', req.session.user.name);
+                if (err) logger.error('[Auth] Session Save Error (Admin):', err);
+                logger.debug('[Auth] Session saved for Admin:', req.session.user.name);
                 return res.json({ role: user.role });
             });
         } else {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
     } catch (err) {
-        console.error('Login Error:', err);
+        logger.error('[Auth] Login Error:', err.message);
         return res.status(500).json({ error: 'Server error' });
     }
 });
 
 // API: Verify OTP
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', otpLimiter, async (req, res) => {
     const { otp } = req.body;
 
     if (!req.session.otp) {
@@ -181,13 +208,13 @@ router.post('/verify-otp', async (req, res) => {
 
         delete req.session.otp;
         req.session.save((err) => {
-            if (err) console.error('Session Save Error (Tenant):', err);
-            console.log('Session saved for Tenant:', req.session.user.name);
+            if (err) logger.error('[Auth] Session Save Error (Tenant):', err);
+            logger.debug('[Auth] Session saved for Tenant:', req.session.user.name);
             res.json({ success: true, role: 'tenant' });
         });
 
     } catch (err) {
-        console.error('OTP Verification Error:', err);
+        logger.error('[Auth] OTP Verification Error:', err.message);
         res.status(500).json({ error: 'Server error during verification.' });
     }
 });
