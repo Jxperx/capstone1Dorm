@@ -662,10 +662,28 @@
     const unitSel = el('unitPref');
     if (!unitSel) return;
 
-    unitSel.addEventListener('change', () => {
-      if (isDormUnit(unitSel)) showRoomMatchingQuiz();
-      else hideRoomMatchingQuiz();
-    });
+    function checkVisibility() {
+      if (isDormUnit(unitSel)) {
+        showRoomMatchingQuiz();
+      } else {
+        hideRoomMatchingQuiz();
+      }
+    }
+
+    unitSel.addEventListener('change', checkVisibility);
+    unitSel.addEventListener('input', checkVisibility);
+
+    // Watch for dynamic option populating / attribute changes on unitPref
+    if (window.MutationObserver) {
+      const observer = new MutationObserver(() => checkVisibility());
+      observer.observe(unitSel, { childList: true, subtree: true, attributes: true });
+    }
+
+    // Check visibility immediately on load and after dynamic room load
+    checkVisibility();
+    setTimeout(checkVisibility, 300);
+    setTimeout(checkVisibility, 800);
+    setTimeout(checkVisibility, 1500);
 
     const prevBtn = el('rq-prev');
     const nextBtn = el('rq-next');

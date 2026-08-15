@@ -2642,6 +2642,7 @@
                 const opt = [...sel.options].find(o => o.value == unitId);
                 if (opt) {
                     sel.value = unitId;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
                 } else {
                     // Retry after rooms are loaded (in case JS is still fetching)
                     setTimeout(doSelect, 300);
