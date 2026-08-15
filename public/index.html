@@ -2453,6 +2453,7 @@
                         '<option value="any">Open to Any Unit</option>'
                     ];
                     unitSel.innerHTML = '<option value="" disabled selected>Select a unit</option>' + opts.join('');
+                    unitSel.dispatchEvent(new Event('change', { bubbles: true }));
 
                     // ── Show availability info panel on unit selection ──
                     unitSel.addEventListener('change', function() {

@@ -583,37 +583,35 @@
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
-  function showRoomMatchingQuiz() {
+  function showRoomMatchingQuiz(force = false) {
     const quiz = el('room-matching-quiz');
-    if (!quiz || quizVisible) return;
+    if (!quiz) return;
+    if (quizVisible && !force && quiz.style.display === 'block') return;
+
     quizVisible = true;
     currentStep = 0;
     answers = {};
-    quiz.style.maxHeight = '0';
-    quiz.style.opacity   = '0';
-    quiz.style.display   = 'block';
-    quiz.style.overflow  = 'hidden';
-    quiz.style.transition = 'max-height 0.5s ease, opacity 0.4s ease';
-    requestAnimationFrame(() => {
-      quiz.style.maxHeight = '3000px';
-      quiz.style.opacity   = '1';
-      // After animation, allow overflow so nothing is clipped
-      setTimeout(() => { quiz.style.overflow = 'visible'; }, 520);
-    });
-    el('rq-summary').style.display = 'none';
-    el('rq-nav').style.display = '';
-    el('rq-fields').style.display = '';
+    quiz.style.display = 'block';
+    quiz.style.opacity = '1';
+    quiz.style.maxHeight = 'none';
+    quiz.style.overflow = 'visible';
+
+    const sumEl = el('rq-summary');
+    if (sumEl) sumEl.style.display = 'none';
+    const navEl = el('rq-nav');
+    if (navEl) navEl.style.display = '';
+    const fieldsEl = el('rq-fields');
+    if (fieldsEl) fieldsEl.style.display = '';
+
     renderStep();
   }
 
   function hideRoomMatchingQuiz() {
     const quiz = el('room-matching-quiz');
-    if (!quiz || !quizVisible) return;
+    if (!quiz) return;
     quizVisible = false;
-    quiz.style.overflow  = 'hidden';
-    quiz.style.maxHeight = '0';
-    quiz.style.opacity   = '0';
-    setTimeout(() => { quiz.style.display = 'none'; }, 500);
+    quiz.style.display = 'none';
+
     // clear hidden fields
     const hjson = el('rq-hidden-json');
     if (hjson) hjson.value = '';
@@ -662,28 +660,27 @@
     const unitSel = el('unitPref');
     if (!unitSel) return;
 
-    function checkVisibility() {
+    function checkVisibility(force = false) {
       if (isDormUnit(unitSel)) {
-        showRoomMatchingQuiz();
+        showRoomMatchingQuiz(force);
       } else {
         hideRoomMatchingQuiz();
       }
     }
 
-    unitSel.addEventListener('change', checkVisibility);
-    unitSel.addEventListener('input', checkVisibility);
+    unitSel.addEventListener('change', () => checkVisibility(true));
+    unitSel.addEventListener('input', () => checkVisibility(true));
 
     // Watch for dynamic option populating / attribute changes on unitPref
     if (window.MutationObserver) {
-      const observer = new MutationObserver(() => checkVisibility());
+      const observer = new MutationObserver(() => checkVisibility(true));
       observer.observe(unitSel, { childList: true, subtree: true, attributes: true });
     }
 
-    // Check visibility immediately on load and after dynamic room load
-    checkVisibility();
-    setTimeout(checkVisibility, 300);
-    setTimeout(checkVisibility, 800);
-    setTimeout(checkVisibility, 1500);
+    // Initial sync
+    checkVisibility(true);
+    setTimeout(() => checkVisibility(true), 300);
+    setTimeout(() => checkVisibility(true), 800);
 
     const prevBtn = el('rq-prev');
     const nextBtn = el('rq-next');
