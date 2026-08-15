@@ -5,59 +5,74 @@
 (function () {
   'use strict';
 
-  // ── Compatibility Algorithm ────────────────────────────────────────────────
-  function scoreWakeTime(a, b) {
-    const order = ['Before 6 AM','6–8 AM','8–10 AM','After 10 AM'];
-    const diff = Math.abs(order.indexOf(a) - order.indexOf(b));
-    return diff <= 1 ? 20 : diff === 2 ? 10 : 0;
-  }
-  function scoreSleepTime(a, b) {
-    const order = ['Before 10 PM','10 PM–12 AM','12–2 AM','After 2 AM'];
-    const diff = Math.abs(order.indexOf(a) - order.indexOf(b));
-    return diff <= 1 ? 20 : diff === 2 ? 10 : 0;
-  }
-  function scoreSchedule(a, b) { return a === b ? 10 : 0; }
-  function scoreStudyHours(a, b) {
-    const order = ['Less than 1 hour','1–3 hours','3–5 hours','More than 5 hours'];
-    return Math.abs(order.indexOf(a) - order.indexOf(b)) <= 1 ? 10 : 5;
-  }
-  function scoreCleanliness(a, b) { return Math.abs(a - b) <= 1 ? 10 : 5; }
-  function scoreNoise(a, b) {
-    const diff = Math.abs(a - b);
-    if (diff === 0) return 10;
-    if (diff <= 1) return 7;
-    if (diff >= 3) return -10;
-    return 3;
-  }
-  function scoreGuests(a, b) {
-    const order = ['Never','Rarely','Sometimes','Often'];
-    const ai = order.indexOf(a), bi = order.indexOf(b);
-    return Math.abs(ai - bi) <= 1 ? 10 : 5;
-  }
-  function scorePersonality(a, b) { return a === b ? 10 : 5; }
-  function scoreInteraction(a, b) {
-    const order = ['Keep to myself','Casual interaction','Very social'];
-    return Math.abs(order.indexOf(a) - order.indexOf(b)) <= 1 ? 10 : 5;
-  }
-
+  // ── Compatibility Algorithm (Normalized Weighted Percentage) ─────────────
   function computeCompatibilityScore(a, b) {
-    let schedule = 0, lifestyle = 0, personality = 0, prefs = 0, bonus = 0;
-    schedule += scoreWakeTime(a.wake_time, b.wake_time);
-    schedule += scoreSchedule(a.class_schedule, b.class_schedule);
-    schedule += scoreStudyHours(a.study_hours, b.study_hours);
-    lifestyle += scoreCleanliness(a.cleanliness, b.cleanliness);
-    lifestyle += scoreNoise(a.noise_tolerance, b.noise_tolerance);
-    lifestyle += scoreGuests(a.guest_frequency, b.guest_frequency);
-    personality += scorePersonality(a.personality, b.personality);
-    personality += scoreInteraction(a.interaction_level, b.interaction_level);
-    prefs += a.room_preference === b.room_preference ? 3 : 0;
-    prefs += a.lights_sleep === b.lights_sleep ? 3 : 0;
-    prefs += a.sharing_ok === b.sharing_ok ? 4 : 0;
-    bonus += a.class_schedule === b.class_schedule ? 5 : 0;
-    bonus += a.school_location && b.school_location &&
-             a.school_location.toLowerCase() === b.school_location.toLowerCase() ? 5 : 0;
-    const raw = (schedule * 0.4) + (lifestyle * 0.3) + (personality * 0.2) + (prefs * 0.1) + bonus;
-    return Math.min(100, Math.max(0, Math.round(raw)));
+    let earnedPoints = 0;
+    let totalPossible = 0;
+
+    function compareValues(valA, valB, maxPts, orderArray = null) {
+      totalPossible += maxPts;
+      if (!valA || !valB) {
+        earnedPoints += maxPts * 0.70; // neutral credit if optional field not selected
+        return;
+      }
+      if (orderArray) {
+        const idxA = orderArray.indexOf(valA);
+        const idxB = orderArray.indexOf(valB);
+        if (idxA !== -1 && idxB !== -1) {
+          const diff = Math.abs(idxA - idxB);
+          if (diff === 0) earnedPoints += maxPts;
+          else if (diff === 1) earnedPoints += maxPts * 0.85;
+          else if (diff === 2) earnedPoints += maxPts * 0.60;
+          else earnedPoints += maxPts * 0.40;
+          return;
+        }
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        const diff = Math.abs(valA - valB);
+        if (diff === 0) earnedPoints += maxPts;
+        else if (diff === 1) earnedPoints += maxPts * 0.85;
+        else if (diff === 2) earnedPoints += maxPts * 0.65;
+        else earnedPoints += maxPts * 0.45;
+        return;
+      }
+      if (valA === valB) {
+        earnedPoints += maxPts;
+      } else {
+        earnedPoints += maxPts * 0.50; // partial credit for non-strict string match
+      }
+    }
+
+    // 1. Schedule Alignment (35% Weight)
+    compareValues(a.wake_time, b.wake_time, 15, ['Before 6 AM','6–8 AM','8–10 AM','After 10 AM']);
+    compareValues(a.sleep_time, b.sleep_time, 15, ['Before 10 PM','10 PM–12 AM','12–2 AM','After 2 AM']);
+    compareValues(a.class_schedule, b.class_schedule, 10);
+    compareValues(a.study_hours, b.study_hours, 10, ['Less than 1 hour','1–3 hours','3–5 hours','More than 5 hours']);
+
+    // 2. Lifestyle & Noise Environment (30% Weight)
+    compareValues(a.cleanliness, b.cleanliness, 15);
+    compareValues(a.noise_tolerance, b.noise_tolerance, 15);
+    compareValues(a.guest_frequency, b.guest_frequency, 10, ['Never','Rarely','Sometimes','Often']);
+
+    // 3. Room & Cooling Preferences (25% Weight)
+    if (a.room_preference && b.room_preference) {
+      totalPossible += 20;
+      if (a.room_preference === b.room_preference || a.room_preference === 'Either' || b.room_preference === 'Either') {
+        earnedPoints += 20;
+      } else {
+        earnedPoints += 8; // slight penalty for Aircon vs Fan mismatch
+      }
+    }
+    compareValues(a.lights_sleep, b.lights_sleep, 10);
+    compareValues(a.sharing_ok, b.sharing_ok, 10);
+
+    // 4. Personality & Interaction (10% Weight)
+    compareValues(a.personality, b.personality, 10, ['Introvert','Ambivert','Extrovert']);
+    compareValues(a.interaction_level, b.interaction_level, 10, ['Keep to myself','Casual interaction','Very social']);
+
+    if (totalPossible === 0) return 75;
+    const score = Math.round((earnedPoints / totalPossible) * 100);
+    return Math.min(98, Math.max(35, score));
   }
 
   // ── Quiz Questions Definition ──────────────────────────────────────────────
@@ -285,32 +300,32 @@
     'A1': {
       label: 'Dorm A1',
       tagline: 'Quiet Study Haven · Air-Conditioned',
-      emoji: '🌙',
-      description: 'Best for focused students who prefer a quiet, orderly environment with air conditioning.',
+      emoji: '❄️',
+      description: 'Air-conditioned rooms tailored for focused students who prefer a peaceful, study-friendly environment.',
       wake_time: '6–8 AM',
       sleep_time: '10 PM–12 AM',
       class_schedule: 'Morning',
       study_hours: '3–5 hours',
       study_in_room: true,
-      cleanliness: 5,
+      cleanliness: 4,
       noise_tolerance: 2,
       plays_music: false,
       music_time: null,
-      guest_frequency: 'Never',
-      guest_tolerance: false,
-      personality: 'Introvert',
-      interaction_level: 'Keep to myself',
+      guest_frequency: 'Rarely',
+      guest_tolerance: true,
+      personality: 'Ambivert',
+      interaction_level: 'Casual interaction',
       room_preference: 'Aircon',
       lights_sleep: 'Lights off',
-      sharing_ok: false,
+      sharing_ok: true,
       school_location: null,
       work_from_home: false
     },
     'A2': {
       label: 'Dorm A2',
-      tagline: 'Social & Lively · Fan-Cooled',
-      emoji: '☀️',
-      description: 'Best for outgoing students who enjoy a social atmosphere and casual shared living.',
+      tagline: 'Social & Fan-Cooled Value',
+      emoji: '🌀',
+      description: 'Budget-friendly fan-cooled rooms for students who enjoy a friendly, social, and flexible community environment.',
       wake_time: '8–10 AM',
       sleep_time: '12–2 AM',
       class_schedule: 'Afternoon',
@@ -319,11 +334,11 @@
       cleanliness: 3,
       noise_tolerance: 4,
       plays_music: true,
-      music_time: 'Anytime',
+      music_time: 'Afternoon',
       guest_frequency: 'Sometimes',
       guest_tolerance: true,
-      personality: 'Extrovert',
-      interaction_level: 'Very social',
+      personality: 'Ambivert',
+      interaction_level: 'Casual interaction',
       room_preference: 'Fan',
       lights_sleep: 'Dim light',
       sharing_ok: true,
@@ -331,11 +346,9 @@
       work_from_home: false
     }
   };
-  // Aliases for different DB naming conventions (DormA1, dorma1, etc.)
   DORM_PROFILES['DORMA1'] = DORM_PROFILES['A1'];
   DORM_PROFILES['DORMA2'] = DORM_PROFILES['A2'];
 
-  // Fallback profile for any extra dorms not explicitly listed above
   function getFallbackProfile(roomNumber) {
     return {
       label: `Dorm ${roomNumber}`,
@@ -349,7 +362,6 @@
     };
   }
 
-  // ── Summary Card ──────────────────────────────────────────────────────────
   function getPersonalityEmoji(p) {
     if (p === 'Introvert') return '🌙';
     if (p === 'Extrovert') return '☀️';
@@ -357,10 +369,10 @@
   }
 
   function getMatchLabel(score) {
-    if (score >= 80) return { label: 'Excellent Match', color: '#27ae60' };
-    if (score >= 60) return { label: 'Good Match',      color: '#c5a059' };
-    if (score >= 40) return { label: 'Fair Match',      color: '#e67e22' };
-    return               { label: 'Low Match',          color: '#e74c3c' };
+    if (score >= 85) return { label: 'Excellent Match', color: '#27ae60' };
+    if (score >= 70) return { label: 'Great Match',      color: '#c5a059' };
+    if (score >= 55) return { label: 'Good Match',       color: '#e67e22' };
+    return               { label: 'Perspective Choice Required', color: '#3498db' };
   }
 
   async function renderSummary() {
@@ -470,10 +482,61 @@
           <div class="rq-rec-match-label" style="color:${matchInfo.color}">${matchInfo.label}</div>
         </div>
       </div>
-      ${best.room.id ? `
+
+      ${best.score < 55 ? `
+      <!-- Low Match Perspective Guidance Box (rendered when score < 55) -->
+      <div style="background:rgba(52, 152, 219, 0.08); border:1px solid rgba(52, 152, 219, 0.3); border-radius:6px; padding:20px; margin-top:18px;">
+        <div style="font-size:12px; font-weight:700; color:#3498db; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>💡</span> Custom Selection Guidance — Choose Based On Your Perspective
+        </div>
+        <p style="font-size:12px; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:16px;">
+          Your lifestyle answers are unique! Both of our dorm options can accommodate you depending on what you prioritize most:
+        </p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <!-- Dorm A1 Perspective -->
+          <div style="background:#1e1e24; border:1px solid rgba(212,175,55,0.25); border-radius:4px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#c5a059; margin-bottom:4px;">❄️ Dorm A1 (Quiet & Aircon)</div>
+              <div style="font-size:10.5px; color:rgba(255,255,255,0.5); margin-bottom:10px;">Best if you value study focus & quiet hours</div>
+              <ul style="font-size:11px; color:rgba(255,255,255,0.75); line-height:1.5; padding-left:14px; margin:0 0 14px 0;">
+                <li>Air-conditioned comfort</li>
+                <li>Quiet study atmosphere</li>
+                <li>Peaceful routine</li>
+              </ul>
+            </div>
+            <button type="button" onclick="selectDormPerspective('Dorm A1')" 
+              style="width:100%; padding:9px; background:transparent; border:1px solid #c5a059; color:#c5a059; border-radius:3px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.3s ease;"
+              onmouseover="this.style.background='#c5a059';this.style.color='#1a1a1a'"
+              onmouseout="this.style.background='transparent';this.style.color='#c5a059'">
+              Select Dorm A1 Preference
+            </button>
+          </div>
+
+          <!-- Dorm A2 Perspective -->
+          <div style="background:#1e1e24; border:1px solid rgba(212,175,55,0.25); border-radius:4px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#c5a059; margin-bottom:4px;">🌀 Dorm A2 (Social & Fan Value)</div>
+              <div style="font-size:10.5px; color:rgba(255,255,255,0.5); margin-bottom:10px;">Best if you value budget & friendly social vibe</div>
+              <ul style="font-size:11px; color:rgba(255,255,255,0.75); line-height:1.5; padding-left:14px; margin:0 0 14px 0;">
+                <li>Budget-friendly fan cooling</li>
+                <li>Lively social community</li>
+                <li>Flexible routine</li>
+              </ul>
+            </div>
+            <button type="button" onclick="selectDormPerspective('Dorm A2')" 
+              style="width:100%; padding:9px; background:#c5a059; border:none; color:#1a1a1a; border-radius:3px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.3s ease;"
+              onmouseover="this.style.background='#d4af37'"
+              onmouseout="this.style.background='#c5a059'">
+              Select Dorm A2 Preference
+            </button>
+          </div>
+        </div>
+      </div>
+      ` : (best.room.id ? `
       <a href="/unit.html?roomId=${best.room.id}" class="rq-rec-cta">
         View ${best.profile.label} <i class="fas fa-arrow-right" style="margin-left:6px"></i>
-      </a>` : ''}
+      </a>` : '')}
 
       <!-- Other options -->
       ${rest.length ? `
@@ -489,6 +552,8 @@
       </div>` : ''}
       ` : '<div class="rq-rec-desc" style="text-align:center;padding:16px">No dorm rooms available at the moment.</div>'}
     `;
+    card.style.display = 'block';
+  }
     card.style.display = 'block';
   }
 
@@ -609,6 +674,35 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+
+  // Global helper for Low-Match Perspective Guidance selection
+  window.selectDormPerspective = function(dormName) {
+    const prefSelect = document.getElementById('unitPref') || document.querySelector('select[name="preferred_unit"]');
+    if (prefSelect) {
+      let matched = false;
+      for (let i = 0; i < prefSelect.options.length; i++) {
+        const opt = prefSelect.options[i];
+        if ((opt.text || '').toLowerCase().includes(dormName.toLowerCase()) || (opt.value || '').toLowerCase().includes(dormName.toLowerCase())) {
+          prefSelect.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && prefSelect.options.length > 1) {
+        prefSelect.selectedIndex = 1;
+      }
+    }
+    const inquiryForm = document.getElementById('inquiryForm') || document.querySelector('form');
+    if (inquiryForm) {
+      inquiryForm.scrollIntoView({ behavior: 'smooth' });
+    }
+    const toast = document.getElementById('rq-toast');
+    if (toast) {
+      toast.textContent = `Selected ${dormName} preference for your inquiry!`;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+  };
 
   // Expose for external use
   window.RoomQuiz = { computeCompatibilityScore, showRoomMatchingQuiz, hideRoomMatchingQuiz };

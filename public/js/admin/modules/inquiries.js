@@ -1131,7 +1131,8 @@ function buildRoommateProfileCard(quizJson) {
             ${row('❄️','Room Pref.', q.room_preference)}
             ${row('💡','Lights', q.lights_sleep)}
         </div>
-        ${q.course ? `<div style="font-size:12px;color:#c5a059;padding:8px 0;border-top:1px solid #f0e8d8">🎓 ${escHtml(q.course)}${q.school_location ? ' · ' + escHtml(q.school_location) : ''}</div>` : ''}
+        ${q.recommended_room ? `<div style="font-size:11.5px;color:#27ae60;font-weight:600;padding:6px 0;border-top:1px solid #f0e8d8">💡 Preferred Choice: ${escHtml(q.recommended_room)}</div>` : ''}
+        ${q.course ? `<div style="font-size:12px;color:#c5a059;padding:6px 0;border-top:1px solid #f0e8d8">🎓 ${escHtml(q.course)}${q.school_location ? ' · ' + escHtml(q.school_location) : ''}</div>` : ''}
         ${q.notes ? `<div style="font-size:12px;color:#888;font-style:italic;margin-top:8px">"${escHtml(q.notes)}"</div>` : ''}
     </div>`;
 }
