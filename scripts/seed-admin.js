@@ -4,8 +4,8 @@ const bcrypt = require('bcrypt');
 async function seedAdmin() {
     try {
         const pool = await poolPromise;
-        const email = 'admin@admin.com';
-        const password = 'admin'; // Simple password for now
+        const email = 'jxperx@gmail.com';
+        const password = 'admin123';
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Check if admin exists
@@ -14,10 +14,13 @@ async function seedAdmin() {
             .query('SELECT * FROM users WHERE email = @email');
 
         if (result.recordset.length > 0) {
-            console.log('Admin user already exists.');
+            await pool.request()
+                .input('email', sql.NVarChar, email)
+                .input('password_hash', sql.NVarChar, hashedPassword)
+                .query(`UPDATE users SET role = 'admin', password_hash = @password_hash WHERE email = @email`);
+            console.log(`Updated user ${email} to Admin role.`);
             console.log(`Email: ${email}`);
-            // We won't show password as it's hashed, but we can assume it's known or reset it if needed.
-            console.log('If you forgot the password, you might need to delete this user from DB or update the password hash.');
+            console.log(`Password: ${password}`);
         } else {
             await pool.request()
                 .input('full_name', sql.NVarChar, 'System Admin')

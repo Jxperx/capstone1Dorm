@@ -27,3 +27,14 @@ eng.traineddata
 tmp_*.txt
 diag_out.txt
 columns.json
+
+# One-off diagnostic & dev scripts (do not deploy)
+check_*.js
+test_*.js
+addDorm.js
+list_models.js
+migrate_market.js
+run_fraud_migration.js
+
+# SQL scratch files
+SQLQuery1.sql

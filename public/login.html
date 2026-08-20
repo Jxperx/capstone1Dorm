@@ -26,59 +26,152 @@
 <div class="auth-card reverse">
     <div class="auth-image">
         <div class="auth-overlay">
-            <h2 class="display-5 mb-3" style="font-family: 'Playfair Display', serif;">Welcome Back</h2>
-            <p class="lead fw-light">Experience premium student living at its finest.</p>
+            <h2 class="display-5 mb-3" style="font-family: 'Playfair Display', serif;" id="authOverlayTitle">Welcome Back</h2>
+            <p class="lead fw-light" id="authOverlayDesc">Experience premium student living at its finest.</p>
         </div>
     </div>
     <div class="auth-form">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">Tenant Portal</h3>
-            <p class="text-muted small">Please sign in to continue</p>
+
+        <!-- ── Panel 1: Login ── -->
+        <div id="panel-login" class="auth-panel">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">Tenant Portal</h3>
+                <p class="text-muted small">Please sign in to continue</p>
+            </div>
+            
+            <form id="login-form" action="/api/login" method="POST">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-envelope text-muted"></i></span>
+                        <input type="email" name="email" id="login-email" class="form-control border-start-0 rounded-0 ps-0" placeholder="john@example.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-lock text-muted"></i></span>
+                        <input type="password" name="password" id="login-password" class="form-control border-start-0 rounded-0 ps-0" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input rounded-0" type="checkbox" id="remember">
+                        <label class="form-check-label small text-muted" for="remember">Remember me</label>
+                    </div>
+                    <a href="#" id="forgotPasswordLink" class="small text-decoration-none" style="color: var(--accent);">Forgot Password?</a>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Log In</button>
+            </form>
         </div>
-        
-        <form action="/api/login" method="POST">
-            <div class="mb-4">
-                <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Email Address</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-envelope text-muted"></i></span>
-                    <input type="email" name="email" class="form-control border-start-0 rounded-0 ps-0" placeholder="john@example.com" required>
-                </div>
-            </div>
 
-            <div class="mb-4">
-                <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-lock text-muted"></i></span>
-                    <input type="password" name="password" class="form-control border-start-0 rounded-0 ps-0" placeholder="••••••••" required>
-                </div>
+        <!-- ── Panel 2: OTP Verification (Login) ── -->
+        <div id="panel-otp" class="auth-panel d-none">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">Verification</h3>
+                <p class="text-muted small">We sent a 6-digit code to your email. Please enter it below.</p>
             </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="form-check">
-                    <input class="form-check-input rounded-0" type="checkbox" id="remember">
-                    <label class="form-check-label small text-muted" for="remember">Remember me</label>
+            <form id="otp-form">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Verification Code</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-key text-muted"></i></span>
+                        <input type="text" name="otp" class="form-control border-start-0 rounded-0 ps-0" placeholder="Enter 6-digit code" maxlength="6" required>
+                    </div>
+                    <div class="form-text text-center mt-2 fst-italic">Check your email for the verification code.</div>
                 </div>
-                <a href="#" class="small text-decoration-none" style="color: var(--accent);">Forgot Password?</a>
+                <button type="submit" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Verify Login</button>
+                <button type="button" id="back-to-login" class="btn btn-outline-secondary w-100 btn-sm rounded-0">Back to Login</button>
+            </form>
+        </div>
+
+        <!-- ── Panel 3: Forgot Password — Enter Email ── -->
+        <div id="panel-forgot" class="auth-panel d-none">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">Reset Password</h3>
+                <p class="text-muted small">Enter your registered email and we'll send you a reset code.</p>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Log In</button>
-        </form>
-
-        <!-- OTP Verification Form (Hidden by default) -->
-        <form id="otp-form" class="d-none">
-            <div class="mb-4">
-                <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Verification Code</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-key text-muted"></i></span>
-                    <input type="text" name="otp" class="form-control border-start-0 rounded-0 ps-0" placeholder="Enter 6-digit code" maxlength="6" required>
+            <form id="forgot-form">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-envelope text-muted"></i></span>
+                        <input type="email" id="forgot-email" class="form-control border-start-0 rounded-0 ps-0" placeholder="john@example.com" required>
+                    </div>
                 </div>
-                <div class="form-text text-center mt-2 fst-italic">Check your email for the verification code.</div>
+                <button type="submit" id="forgot-submit-btn" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Send Reset Code</button>
+                <button type="button" class="back-to-login-link" onclick="showPanel('login')">← Back to Login</button>
+            </form>
+        </div>
+
+        <!-- ── Panel 4: Forgot Password — Verify OTP ── -->
+        <div id="panel-reset-otp" class="auth-panel d-none">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">Enter Reset Code</h3>
+                <p class="text-muted small" id="reset-otp-hint">A 6-digit code was sent to your email.</p>
             </div>
-            <button type="submit" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Verify Login</button>
-            <button type="button" id="back-to-login" class="btn btn-outline-secondary w-100 btn-sm rounded-0">Back to Login</button>
-        </form>
-    </div>
-</div>
+            <form id="reset-otp-form">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Reset Code</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-shield-alt text-muted"></i></span>
+                        <input type="text" id="reset-otp-input" name="otp" class="form-control border-start-0 rounded-0 ps-0" placeholder="• • • • • •" maxlength="6" required autocomplete="one-time-code">
+                    </div>
+                </div>
+                <!-- Resend countdown -->
+                <div class="resend-wrap mb-3">
+                    <span class="resend-timer" id="resend-timer">Resend code in <strong id="resend-countdown">60</strong>s</span>
+                    <button type="button" class="resend-btn d-none" id="resend-btn" onclick="handleResendCode()">Resend Code</button>
+                </div>
+                <button type="submit" id="reset-otp-submit-btn" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Verify Code</button>
+                <button type="button" class="back-to-login-link" onclick="showPanel('forgot')">← Back</button>
+            </form>
+        </div>
+
+        <!-- ── Panel 5: Forgot Password — Set New Password ── -->
+        <div id="panel-new-password" class="auth-panel d-none">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1" style="font-family: 'Playfair Display', serif; color: var(--primary);">New Password</h3>
+                <p class="text-muted small">Choose a strong password for your account.</p>
+            </div>
+            <form id="new-password-form">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">New Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-lock text-muted"></i></span>
+                        <input type="password" id="new-password-input" class="form-control border-start-0 rounded-0 ps-0" placeholder="Min. 8 characters" required minlength="8">
+                        <button type="button" class="input-group-text pwd-toggle-btn rounded-0" onclick="togglePwd('new-password-input', this)" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <!-- Strength bar -->
+                    <div class="pwd-strength-wrap">
+                        <div class="pwd-strength-bar-track">
+                            <div class="pwd-strength-bar-fill" id="pwd-strength-fill"></div>
+                        </div>
+                        <span class="pwd-strength-label" id="pwd-strength-label" style="color:#aaa;">—</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase" style="letter-spacing: 1px;">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="fas fa-lock text-muted"></i></span>
+                        <input type="password" id="confirm-password-input" class="form-control border-start-0 rounded-0 ps-0" placeholder="Repeat your password" required minlength="8">
+                        <button type="button" class="input-group-text pwd-toggle-btn rounded-0" onclick="togglePwd('confirm-password-input', this)" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-text text-danger d-none" id="pwd-match-error">Passwords do not match.</div>
+                </div>
+                <button type="submit" id="new-password-submit-btn" class="btn btn-primary w-100 mb-3 rounded-0 text-uppercase fw-bold" style="letter-spacing: 1px;">Set New Password</button>
+            </form>
+        </div>
+
+    </div><!-- /.auth-form -->
+</div><!-- /.auth-card -->
 
 <script src="js/login.js"></script>
 

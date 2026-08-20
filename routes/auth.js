@@ -254,4 +254,196 @@ router.get('/session-user', (req, res) => {
     res.json({ id: req.session.user.id, role: req.session.user.role, name: req.session.user.name });
 });
 
+// ── Password Reset Flow ────────────────────────────────────────────────────────
+
+const forgotLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3,
+    message: { error: 'Too many reset requests. Please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const resetOtpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Too many OTP attempts. Please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// POST /api/forgot-password
+// Sends a 6-digit reset OTP to the user's email.
+// Always returns a generic response to prevent email enumeration.
+router.post('/forgot-password', forgotLimiter, async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+    const GENERIC_OK = { success: true, message: 'If that email is registered, a reset code has been sent.' };
+
+    try {
+        const pool = await poolPromise;
+
+        // Look up the user
+        const result = await pool.request()
+            .input('email', sql.NVarChar, email.trim().toLowerCase())
+            .query('SELECT id, full_name FROM users WHERE LOWER(email) = @email');
+
+        if (result.recordset.length === 0) {
+            // Don't reveal whether email exists
+            return res.json(GENERIC_OK);
+        }
+
+        const user = result.recordset[0];
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // Invalidate any existing unused tokens for this user
+        await pool.request()
+            .input('user_id', sql.Int, user.id)
+            .query('UPDATE password_reset_tokens SET used = 1 WHERE user_id = @user_id AND used = 0');
+
+        // Store new OTP
+        await pool.request()
+            .input('user_id',    sql.Int,      user.id)
+            .input('otp_code',   sql.NVarChar, otp)
+            .input('expires_at', sql.DateTime, expiresAt)
+            .query('INSERT INTO password_reset_tokens (user_id, otp_code, expires_at) VALUES (@user_id, @otp_code, @expires_at)');
+
+        // Send email
+        const mailOptions = {
+            from: `"EliteStay Manager" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `${otp} is your EliteStay password reset code`,
+            html: `
+                <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px;color:#1a1a1a;border:1px solid #f0f0f0;">
+                    <div style="text-align:center;margin-bottom:30px;">
+                        <h1 style="color:#c5a059;font-family:'Playfair Display',serif;margin:0;font-size:28px;">EliteStay</h1>
+                        <p style="text-transform:uppercase;letter-spacing:2px;font-size:10px;margin-top:5px;color:#666;">Password Reset</p>
+                    </div>
+                    <div style="background-color:#f9f9f9;padding:30px;border-radius:4px;text-align:center;">
+                        <p style="margin-top:0;color:#444;">Hello <strong>${user.full_name}</strong>,</p>
+                        <p style="color:#444;">Your password reset code is:</p>
+                        <div style="font-size:38px;font-weight:bold;letter-spacing:8px;margin:25px 0;color:#1a1a1a;font-family:monospace;">${otp}</div>
+                        <p style="font-size:13px;color:#888;margin-bottom:0;">This code is valid for <strong>10 minutes</strong>. If you did not request a password reset, please ignore this email.</p>
+                    </div>
+                    <div style="margin-top:30px;font-size:12px;color:#999;text-align:center;">
+                        <p style="margin-top:20px;border-top:1px solid #eee;padding-top:20px;">© ${new Date().getFullYear()} EliteStay Management. All rights reserved.</p>
+                    </div>
+                </div>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (mailErr) {
+            logger.error('[Auth] Forgot-password email error:', mailErr.message);
+            return res.status(500).json({ error: 'Failed to send reset email. Please try again.' });
+        }
+
+        return res.json(GENERIC_OK);
+    } catch (err) {
+        logger.error('[Auth] Forgot-password error:', err.message);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+});
+
+// POST /api/verify-reset-otp
+// Verifies the OTP and stores a short-lived session flag allowing the reset step.
+router.post('/verify-reset-otp', resetOtpLimiter, async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required.' });
+
+    try {
+        const pool = await poolPromise;
+
+        const result = await pool.request()
+            .input('email', sql.NVarChar, email.trim().toLowerCase())
+            .input('otp',   sql.NVarChar, otp.trim())
+            .query(`
+                SELECT t.id, t.user_id, t.expires_at, t.used
+                FROM password_reset_tokens t
+                INNER JOIN users u ON u.id = t.user_id
+                WHERE LOWER(u.email) = @email
+                  AND t.otp_code = @otp
+                  AND t.used = 0
+            `);
+
+        if (result.recordset.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired reset code.' });
+        }
+
+        const token = result.recordset[0];
+
+        if (new Date() > new Date(token.expires_at)) {
+            return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+        }
+
+        // Store verified flag in session — required by reset-password endpoint
+        req.session.passwordReset = {
+            userId:  token.user_id,
+            tokenId: token.id,
+            email:   email.trim().toLowerCase(),
+            expires: Date.now() + 10 * 60 * 1000 // 10 more minutes to complete
+        };
+
+        req.session.save((err) => {
+            if (err) logger.error('[Auth] Session save error (reset-otp):', err);
+        });
+
+        return res.json({ success: true });
+    } catch (err) {
+        logger.error('[Auth] Verify-reset-otp error:', err.message);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+});
+
+// POST /api/reset-password
+// Sets the new password. Requires a valid passwordReset session flag from verify-reset-otp.
+router.post('/reset-password', async (req, res) => {
+    const { newPassword } = req.body;
+
+    if (!req.session.passwordReset) {
+        return res.status(403).json({ error: 'Session expired or invalid. Please start the reset process again.' });
+    }
+
+    const { userId, tokenId, expires } = req.session.passwordReset;
+
+    if (Date.now() > expires) {
+        delete req.session.passwordReset;
+        return res.status(403).json({ error: 'Reset session expired. Please request a new code.' });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+
+    try {
+        const pool = await poolPromise;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        await pool.request()
+            .input('password_hash', sql.NVarChar, hashedPassword)
+            .input('user_id',       sql.Int,      userId)
+            .query('UPDATE users SET password_hash = @password_hash WHERE id = @user_id');
+
+        // Mark OTP as used
+        await pool.request()
+            .input('token_id', sql.Int, tokenId)
+            .query('UPDATE password_reset_tokens SET used = 1 WHERE id = @token_id');
+
+        // Clear reset session flag
+        delete req.session.passwordReset;
+        req.session.save((err) => {
+            if (err) logger.error('[Auth] Session save error (reset-password):', err);
+        });
+
+        return res.json({ success: true, message: 'Password updated successfully.' });
+    } catch (err) {
+        logger.error('[Auth] Reset-password error:', err.message);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+});
+
 module.exports = router;

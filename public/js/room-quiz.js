@@ -554,8 +554,6 @@
     `;
     card.style.display = 'block';
   }
-    card.style.display = 'block';
-  }
 
   function normalizeAnswers(a) {
     return {
@@ -680,7 +678,7 @@
     // Initial sync
     checkVisibility(true);
     setTimeout(() => checkVisibility(true), 300);
-    setTimeout(() => checkVisibility(true), 800);
+    setTimeout(() => checkVisibility(true), 2000);
 
     const prevBtn = el('rq-prev');
     const nextBtn = el('rq-next');

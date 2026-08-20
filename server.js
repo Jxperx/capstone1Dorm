@@ -25,6 +25,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// FIX 2 — CORS allowlist (env-configurable)
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3000', 'http://localhost:3001'];
+
 // Trust first reverse proxy (Nginx, Cloudflare, AWS ALB) in production
 // so req.ip returns the real client IP and req.protocol reports 'https'
 if (isProduction) {
@@ -41,8 +46,34 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
     }
 }
 
-// Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+// FIX 3 — Helmet with full CSP
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', 'https://fpnpmcdn.net', 'https://challenges.cloudflare.com'],
+            styleSrc:  ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
+            fontSrc:   ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+            imgSrc:    ["'self'", 'data:', 'https:', 'blob:'],
+            connectSrc:["'self'", 'wss:', 'ws:', 'https://api.paymongo.com'],
+            frameSrc:  ["'self'", 'https://www.google.com', 'https://challenges.cloudflare.com'],
+            objectSrc: ["'none'"],
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false
+}));
+
+// FIX 2 — Strict CORS with origin allowlist
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+        logger.warn('[CORS] Blocked origin:', origin);
+        callback(new Error('Not allowed by CORS policy'));
+    },
+    credentials: true
+}));
 
 // Rate limiter for inquiry submissions: 5 per 15 min per IP
 const inquiryLimiter = rateLimit({
@@ -53,7 +84,21 @@ const inquiryLimiter = rateLimit({
     legacyHeaders: false
 });
 
-app.use(cors({ origin: true, credentials: true }));
+// FIX 4 — Rate limiters for visits and applications
+const visitLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: { success: false, message: 'Too many visit scheduling attempts. Please try again later.' },
+    standardHeaders: true, legacyHeaders: false
+});
+
+const applicationLimiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000,
+    max: 3,
+    message: { success: false, message: 'Too many rental applications submitted. Please try again tomorrow.' },
+    standardHeaders: true, legacyHeaders: false
+});
+
 app.use(express.json({
     verify: (req, res, buf) => {
         req.rawBody = buf;
@@ -87,6 +132,8 @@ const fraudRoutes         = require('./routes/fraud');
 const fraudCheckRoutes    = require('./routes/fraud-check');
 const inquiriesRoutes     = require('./routes/inquiries');
 const liveChatRoutes      = require('./routes/liveChat');
+const visitsRoutes        = require('./routes/visits');
+const applicationsRoutes  = require('./routes/applications');
 
 // Admin Route Imports
 const adminRoomsRoutes       = require('./routes/admin/rooms');
@@ -100,6 +147,8 @@ const adminReportsRoutes     = require('./routes/admin/reports');
 const adminRentPricingRoutes = require('./routes/admin/rent-pricing');
 const adminLiveChatRoutes    = require('./routes/admin/liveChat');
 const adminInquiryDocsRoutes = require('./routes/admin/inquiryDocs');
+const adminVisitsRoutes      = require('./routes/admin/visits');
+const adminApplicationsRoutes = require('./routes/admin/applications');
 
 
 
@@ -114,6 +163,11 @@ app.use('/api/feedback', feedbackRoutes);
 app.post('/api/inquiries/submit', inquiryLimiter);
 app.use('/api/inquiries', inquiriesRoutes);
 app.use('/api/live-chat', liveChatRoutes);
+// FIX 4 — Apply rate limiters before the route handler
+app.post('/api/visits/schedule', visitLimiter);
+app.use('/api/visits', visitsRoutes);
+app.post('/api/applications/submit', applicationLimiter);
+app.use('/api/applications', applicationsRoutes);
 
 // Mount Routes - Admin
 app.use('/api/rooms', adminRoomsRoutes);
@@ -132,6 +186,8 @@ app.use('/api/admin/reports', adminReportsRoutes);
 app.use('/api/admin/rent-pricing', adminRentPricingRoutes);
 app.use('/api/admin/live-chat', adminLiveChatRoutes);
 app.use('/api/admin/inquiry-docs', adminInquiryDocsRoutes);
+app.use('/api/admin/visits', adminVisitsRoutes);
+app.use('/api/admin/applications', adminApplicationsRoutes);
 
 
 
@@ -148,6 +204,16 @@ app.get('/admin', (req, res) => {
 app.get('/tenant', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     res.sendFile(path.join(__dirname, 'public', 'tenant-dashboard.html'));
+});
+
+// FIX 4 — Health check — used by AWS ALB, Route 53, and uptime monitors
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV || 'development'
+    });
 });
 
 // PayMongo Success Redirect Handler
@@ -209,12 +275,19 @@ function setupSocketIO(io) {
         });
 
         // ── Admin joins admin room ────────────────────────────────────────────
+        // FIX 1 — Verify session role before granting admin-room access
         socket.on('admin:join', () => {
+            const sessionUser = socket.request?.session?.user;
+            if (!sessionUser || sessionUser.role !== 'admin') {
+                logger.warn('[Socket.io] Rejected admin:join — not authenticated as admin. Socket:', socket.id);
+                socket.emit('admin:join:rejected', { error: 'Unauthorized' });
+                return;
+            }
             socket.join('admin-room');
             socket.isAdmin = true;
             adminOnline = true;
             io.emit('admin:status', { online: true });
-            logger.debug('[Socket.io] Admin connected');
+            logger.debug('[Socket.io] Admin connected:', sessionUser.name);
         });
 
         // ── Tenant sends message ─────────────────────────────────────────────
@@ -295,9 +368,20 @@ const { scheduleMonthlyMarketSearch } = require('./utils/monthlyMarketCron');
 
 function startServer(port, attempt = 1) {
     const httpServer = http.createServer(app);
+    // FIX 2 — Lock down Socket.io CORS to ALLOWED_ORIGINS
     const io = new Server(httpServer, {
-        cors: { origin: true, credentials: true }
+        cors: { origin: ALLOWED_ORIGINS, credentials: true }
     });
+
+    // FIX 1 — Share Express session with Socket.io so we can authenticate socket connections
+    const sessionMiddlewareForSocket = session({
+        store: new SqlServerStore({ clearExpired: true, checkExpirationInterval: 900000 }),
+        secret: process.env.SESSION_SECRET || 'change-this-session-secret',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, secure: isProduction, sameSite: isProduction ? 'strict' : 'lax' }
+    });
+    io.use((socket, next) => sessionMiddlewareForSocket(socket.request, socket.request.res || {}, next));
 
     setupSocketIO(io);
 

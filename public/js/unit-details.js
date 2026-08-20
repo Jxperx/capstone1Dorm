@@ -4,8 +4,11 @@ function getRoomIdFromQuery() {
     return id ? parseInt(id, 10) : null;
 }
 
+let currentRoomId = null;
+
 async function loadUnitDetails() {
     const roomId = getRoomIdFromQuery();
+    currentRoomId = roomId;
     if (!roomId) {
         document.getElementById('unitTitle').textContent = 'Unit not found';
         return;
@@ -29,6 +32,16 @@ async function loadUnitDetails() {
         if (bookBtn) {
             bookBtn.href = `index.html?unit=${roomId}#inquire`;
             bookBtn.textContent = 'Inquire Today';
+        }
+
+        // ── Wire up new sidebar buttons ──────────────────────────────────────
+        const visitBtn = document.getElementById('scheduleVisitBtn');
+        if (visitBtn) {
+            visitBtn.addEventListener('click', () => openVisitModal(roomId, room.room_number));
+        }
+        const rentBtn = document.getElementById('rentNowBtn');
+        if (rentBtn) {
+            rentBtn.addEventListener('click', () => handleRentNowClick(roomId, unitName));
         }
 
         // UI Updates
@@ -97,11 +110,23 @@ async function loadUnitDetails() {
             mapEl.innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-direction:column; gap:10px;"><i class="fas fa-map-marked-alt fa-3x"></i><span>Map Not Available</span></div>';
         }
 
-        // Initialize Calendar with active tenant leases
-        initCalendar(isOccupied, data.leases || []);
+        // Fetch visit availability then initialize calendar
+        const visitData = await fetchVisitAvailability(roomId);
+        initCalendar(isOccupied, data.leases || [], visitData);
 
     } catch (err) {
         console.error('Error loading unit details:', err);
+    }
+}
+
+// ─── Fetch visit availability from API ───────────────────────────────────────
+async function fetchVisitAvailability(roomId) {
+    try {
+        const res = await fetch(`/api/visits/availability/${roomId}`);
+        if (!res.ok) return { bookedDates: [], maxPerSlot: 3 };
+        return await res.json();
+    } catch (_) {
+        return { bookedDates: [], maxPerSlot: 3 };
     }
 }
 
@@ -140,7 +165,7 @@ function initGalleryThumbnails(mainUrl, dbGallery = []) {
     });
 }
 
-function initCalendar(isOccupied, leases = []) {
+function initCalendar(isOccupied, leases = [], visitData = {}) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
@@ -183,6 +208,24 @@ function initCalendar(isOccupied, leases = []) {
         });
     }
 
+    // Build a set of fully-booked visit dates and partially-booked dates
+    const bookedDates   = visitData.bookedDates || [];
+    const visitDateSet  = new Set(bookedDates.filter(b => b.fullyBooked).map(b => b.date));
+    const partialVisits = new Set(bookedDates.filter(b => !b.fullyBooked).map(b => b.date));
+
+    // Add teal visit events for partial/full visit bookings
+    bookedDates.forEach(b => {
+        calendarEvents.push({
+            title: b.fullyBooked ? 'VISITS FULL' : 'VISIT SLOTS',
+            start: b.date,
+            allDay: true,
+            display: 'block',
+            color: b.fullyBooked ? '#0891b2' : '#06b6d4',
+            textColor: '#ffffff',
+            extendedProps: { isVisit: true }
+        });
+    });
+
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
@@ -196,6 +239,7 @@ function initCalendar(isOccupied, leases = []) {
         dayCellDidMount: function(arg) {
             const dateStr = arg.date.toISOString().split('T')[0];
             const isDateOccupied = calendarEvents.some(ev => {
+                if (ev.extendedProps?.isVisit) return false;
                 return dateStr >= ev.start && dateStr <= ev.end;
             });
 
@@ -206,6 +250,13 @@ function initCalendar(isOccupied, leases = []) {
                 arg.el.style.backgroundColor = 'rgba(34, 197, 94, 0.12)';
                 arg.el.style.border = '1px solid rgba(34, 197, 94, 0.2)';
             }
+
+            // Mon/Tue — mark as not available for visits
+            const dayOfWeek = arg.date.getDay(); // 1=Mon, 2=Tue
+            if (dayOfWeek === 1 || dayOfWeek === 2) {
+                arg.el.style.opacity = '0.5';
+                arg.el.title = 'Not available for site visits (Mon–Tue)';
+            }
         }
     });
 
@@ -213,5 +264,296 @@ function initCalendar(isOccupied, leases = []) {
 }
 
 
-document.addEventListener('DOMContentLoaded', loadUnitDetails);
+// ════════════════════════════════════════════════════════════════════
+//  VISIT MODAL LOGIC
+// ════════════════════════════════════════════════════════════════════
 
+let visitAvailabilityCache = null;
+
+async function openVisitModal(unitId, unitName) {
+    if (!visitAvailabilityCache) {
+        visitAvailabilityCache = await fetchVisitAvailability(unitId);
+    }
+
+    const modal = document.getElementById('visitModal');
+    if (!modal) return;
+
+    document.getElementById('visitUnitLabel').textContent = unitName || `Unit #${unitId}`;
+
+    // Reset form fields
+    ['visitDate','visitSlot','visitName','visitPhone','visitEmail','visitNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('slotHint').textContent = '';
+    document.getElementById('visitErrors').style.display = 'none';
+    document.getElementById('visitErrors').innerHTML  = '';
+    document.getElementById('visitSuccess').style.display  = 'none';
+    document.getElementById('visitFormBody').style.display = 'block';
+
+    // Set min date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('visitDate').min = tomorrow.toISOString().split('T')[0];
+
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVisitModal() {
+    const modal = document.getElementById('visitModal');
+    if (modal) { modal.classList.remove('open'); document.body.style.overflow = ''; }
+}
+
+// Validate slot availability when date + slot changes
+function updateSlotAvailability() {
+    const dateVal = document.getElementById('visitDate').value;
+    const slotVal = document.getElementById('visitSlot').value;
+    const hint    = document.getElementById('slotHint');
+    if (!dateVal || !slotVal || !visitAvailabilityCache) { hint.textContent = ''; return; }
+
+    const dateObj = new Date(dateVal + 'T00:00:00');
+    const day = dateObj.getDay();
+
+    if (day === 1 || day === 2) {
+        hint.textContent = '⚠️ Monday and Tuesday are not available for visits.';
+        hint.style.color = '#ef4444';
+        return;
+    }
+
+    const bookedEntry = visitAvailabilityCache.bookedDates?.find(b => b.date === dateVal);
+    const bookedCount = bookedEntry?.slots?.[slotVal] || 0;
+    const maxPerSlot  = visitAvailabilityCache.maxPerSlot || 3;
+    const remaining   = maxPerSlot - bookedCount;
+
+    if (remaining <= 0) {
+        hint.textContent = '❌ This slot is fully booked. Please choose another.';
+        hint.style.color = '#ef4444';
+    } else if (remaining === 1) {
+        hint.textContent = '⚠️ Only 1 slot remaining!';
+        hint.style.color = '#eab308';
+    } else {
+        hint.textContent = `✅ ${remaining} slot(s) available`;
+        hint.style.color = '#22c55e';
+    }
+}
+
+async function submitVisitForm() {
+
+    const unitId   = currentRoomId;
+    const date     = document.getElementById('visitDate').value;
+    const slot     = document.getElementById('visitSlot').value;
+    const name     = document.getElementById('visitName').value.trim();
+    const email    = document.getElementById('visitEmail').value.trim();
+    const phone    = document.getElementById('visitPhone').value.trim();
+    const notes    = document.getElementById('visitNotes').value.trim();
+    const errEl    = document.getElementById('visitErrors');
+    const submitBtn = document.getElementById('visitSubmitBtn');
+
+    errEl.style.display = 'none';
+    errEl.innerHTML = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Scheduling…';
+
+    try {
+        const res = await fetch('/api/visits/schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unit_id: unitId, visit_date: date, time_slot: slot, name, email, phone, notes })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById('visitFormBody').style.display = 'none';
+            document.getElementById('visitSuccess').style.display = 'block';
+            visitAvailabilityCache = null; // refresh next time
+        } else {
+            errEl.innerHTML = (data.errors || ['Unknown error.']).map(e => `<li>${e}</li>`).join('');
+            errEl.style.display = 'block';
+        }
+    } catch (_) {
+        errEl.innerHTML = '<li>Network error. Please try again.</li>';
+        errEl.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Schedule Visit';
+    }
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+//  RENT NOW MODAL LOGIC
+// ════════════════════════════════════════════════════════════════════
+
+let rentUnitId   = null;
+let rentStep     = 1;
+let rentFormData = {};
+
+async function handleRentNowClick(unitId, unitName) {
+    // Check auth first
+    try {
+        const res  = await fetch('/api/applications/check-auth');
+        const data = await res.json();
+
+        if (!data.loggedIn) {
+            // Redirect to login with a return URL
+            const returnUrl = encodeURIComponent(window.location.href);
+            window.location.href = `/login?returnTo=${returnUrl}&reason=rent`;
+            return;
+        }
+
+        // User is logged in — open the rent modal
+        rentUnitId = unitId;
+        openRentModal(unitId, unitName, data.user);
+    } catch (_) {
+        window.location.href = '/login';
+    }
+}
+
+function openRentModal(unitId, unitName, user) {
+    rentStep = 1;
+    rentFormData = {};
+
+    const modal = document.getElementById('rentModal');
+    if (!modal) return;
+
+    document.getElementById('rentUnitLabel').textContent = unitName || `Unit #${unitId}`;
+    document.getElementById('rentSuccess').style.display = 'none';
+    document.getElementById('rentWizard').style.display  = 'block';
+    document.getElementById('rentErrors').style.display  = 'none';
+    document.getElementById('rentErrors').innerHTML      = '';
+
+    // Pre-fill name from session
+    if (user?.name) {
+        const nameEl = document.getElementById('rentFullName');
+        if (nameEl) nameEl.value = user.name;
+    }
+
+    // Set min move-in date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('rentMoveIn').min = tomorrow.toISOString().split('T')[0];
+
+    showRentStep(1);
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRentModal() {
+    const modal = document.getElementById('rentModal');
+    if (modal) { modal.classList.remove('open'); document.body.style.overflow = ''; }
+}
+
+function showRentStep(step) {
+    rentStep = step;
+    for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`rentStep${i}`);
+        if (el) el.style.display = (i === step) ? 'block' : 'none';
+        const dot = document.getElementById(`stepDot${i}`);
+        if (dot) {
+            dot.className = 'step-dot' + (i === step ? ' active' : i < step ? ' done' : '');
+        }
+    }
+}
+
+function rentNext() {
+    const errEl = document.getElementById('rentErrors');
+    errEl.style.display = 'none';
+
+    if (rentStep === 1) {
+        const phone  = document.getElementById('rentPhone').value.trim();
+        const moveIn = document.getElementById('rentMoveIn').value;
+        const stay   = document.getElementById('rentStay').value;
+
+        const errors = [];
+        if (!phone)  errors.push('Phone number is required.');
+        if (!moveIn) errors.push('Move-in date is required.');
+        if (!stay || parseInt(stay) < 1) errors.push('Please enter intended stay duration.');
+
+        if (errors.length) {
+            errEl.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+            errEl.style.display = 'block';
+            return;
+        }
+
+        rentFormData.phone             = phone;
+        rentFormData.guardian_phone    = document.getElementById('rentGuardianPhone').value.trim();
+        rentFormData.move_in_date      = moveIn;
+        rentFormData.intended_stay_months = parseInt(stay);
+        rentFormData.message           = document.getElementById('rentMessage').value.trim();
+
+        // Populate review step
+        populateReview();
+        showRentStep(2);
+
+    } else if (rentStep === 2) {
+        // ID upload step — just proceed, validation on submit
+        showRentStep(3);
+    }
+}
+
+function rentBack() {
+    if (rentStep > 1) showRentStep(rentStep - 1);
+}
+
+function populateReview() {
+    const moveInDate = new Date(rentFormData.move_in_date);
+    document.getElementById('reviewUnit').textContent     = document.getElementById('rentUnitLabel').textContent;
+    document.getElementById('reviewMoveIn').textContent   = moveInDate.toDateString();
+    document.getElementById('reviewStay').textContent     = `${rentFormData.intended_stay_months} month(s)`;
+    document.getElementById('reviewPhone').textContent    = rentFormData.phone;
+}
+
+async function submitRentApplication() {
+    const errEl     = document.getElementById('rentErrors');
+    const submitBtn = document.getElementById('rentSubmitBtn');
+
+    errEl.style.display = 'none';
+    errEl.innerHTML = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    const formData = new FormData();
+    formData.append('unit_id',               rentUnitId);
+    formData.append('move_in_date',          rentFormData.move_in_date);
+    formData.append('intended_stay_months',  rentFormData.intended_stay_months);
+    formData.append('phone',                 rentFormData.phone);
+    formData.append('guardian_phone',        rentFormData.guardian_phone || '');
+    formData.append('message',               rentFormData.message || '');
+
+    const schoolId = document.getElementById('rentSchoolId').files[0];
+    const govtId   = document.getElementById('rentGovtId').files[0];
+    if (schoolId) formData.append('school_id', schoolId);
+    if (govtId)   formData.append('govt_id',   govtId);
+
+    try {
+        const res  = await fetch('/api/applications/submit', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById('rentWizard').style.display  = 'none';
+            document.getElementById('rentSuccess').style.display = 'block';
+        } else {
+            errEl.innerHTML = (data.errors || ['Unknown error.']).map(e => `<li>${e}</li>`).join('');
+            errEl.style.display = 'block';
+        }
+    } catch (_) {
+        errEl.innerHTML = '<li>Network error. Please try again.</li>';
+        errEl.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUnitDetails();
+
+    // Close modals when clicking the dark backdrop
+    document.getElementById('visitModal')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeVisitModal();
+    });
+    document.getElementById('rentModal')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeRentModal();
+    });
+});
