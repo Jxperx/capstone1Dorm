@@ -50,14 +50,17 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'"],
+            defaultSrc:    ["'self'"],
             scriptSrc:     ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', 'https://fpnpmcdn.net', 'https://challenges.cloudflare.com'],
             scriptSrcAttr: ["'unsafe-inline'"],   // FIX: allow onclick="..." event handler attributes
             styleSrc:      ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
             fontSrc:       ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
             imgSrc:        ["'self'", 'data:', 'https:', 'blob:'],
+            mediaSrc:      ["'self'", 'data:', 'blob:'],
             connectSrc:    ["'self'", 'wss:', 'ws:', 'https://api.paymongo.com'],
             frameSrc:      ["'self'", 'https://www.google.com', 'https://challenges.cloudflare.com'],
+            workerSrc:     ["'self'", 'blob:'],   // FIX: allow Marzipano WebGL 360 texture workers
+            childSrc:      ["'self'", 'blob:'],
             objectSrc:     ["'none'"],
         }
     },
