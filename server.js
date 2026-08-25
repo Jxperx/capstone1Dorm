@@ -72,7 +72,7 @@ app.use(helmet({
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.onrender.com')) return callback(null, true);
         logger.warn('[CORS] Blocked origin:', origin);
         callback(new Error('Not allowed by CORS policy'));
     },
@@ -119,7 +119,7 @@ app.use(session({
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax'
+        sameSite: 'lax'
     }
 }));
 

@@ -177,10 +177,11 @@ if (loginForm) {
                     window.location.href = result.role === 'admin' ? '/admin' : '/tenant';
                 }
             } else {
-                showError(result.error || 'Login failed.');
+                showError(result.error || result.message || 'Login failed.');
             }
         } catch (err) {
-            showError('An error occurred during login.');
+            console.error('[Login Error]', err);
+            showError(err.message || 'An error occurred during login.');
         } finally {
             setButtonLoading(btn, false);
         }
