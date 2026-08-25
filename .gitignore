@@ -38,3 +38,13 @@ run_fraud_migration.js
 
 # SQL scratch files
 SQLQuery1.sql
+
+# AI agent local cache and configuration files
+.gemini/
+scripts/cloud_sync.js
+scripts/direct_sync.js
+scripts/test_error.js
+scripts/restore_cloud.js
+scripts/dump_local.js
+scratch/
+local_dump.json

@@ -1,14 +1,14 @@
-'use strict';
+﻿'use strict';
 
 /**
  * utils/aiFeedbackSentimentAnalyzer.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Gemini-powered AI sentiment analyzer for tenant feedback.
  * Provides accurate, professional sentiment analysis with narrative summaries.
  * Falls back to a rule-based engine if Gemini is unavailable.
  */
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
 const FALLBACK_RESULT = {
     sentiment: 'Neutral',
@@ -20,7 +20,7 @@ const FALLBACK_RESULT = {
     confidence: 0.50
 };
 
-// ─── Rule-Based Fallback ───────────────────────────────────────────────────────
+// â”€â”€â”€ Rule-Based Fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TOPIC_KEYWORDS = {
     'Internet / WiFi': ['wifi', 'internet', 'connection', 'slow', 'disconnect', 'router', 'network'],
     'Noise': ['noise', 'noisy', 'loud', 'music', 'party', 'yelling', 'shouting', 'fight', 'fighting'],
@@ -104,7 +104,7 @@ function _ruleBased(text) {
     };
 }
 
-// ─── Gemini AI Analysis ────────────────────────────────────────────────────────
+// â”€â”€â”€ Gemini AI Analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function _geminiAnalyze(text) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
@@ -170,7 +170,7 @@ Rules:
     };
 }
 
-// ─── Main Export ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function analyzeFeedback(text) {
     if (!text || typeof text !== 'string' || text.trim().length < 3) {
         return { ...FALLBACK_RESULT };
@@ -179,7 +179,7 @@ async function analyzeFeedback(text) {
     // Try Gemini first (high quality), fall back to rule-based engine
     try {
         const result = await _geminiAnalyze(text);
-        console.log(`[AI Feedback] Gemini analysis complete — ${result.sentiment} (${Math.round(result.confidence * 100)}% confidence)`);
+        console.log(`[AI Feedback] Gemini analysis complete â€” ${result.sentiment} (${Math.round(result.confidence * 100)}% confidence)`);
         return result;
     } catch (err) {
         console.warn('[AI Feedback] Gemini unavailable, using rule-based fallback:', err.message);

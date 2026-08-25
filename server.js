@@ -51,13 +51,14 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', 'https://fpnpmcdn.net', 'https://challenges.cloudflare.com'],
-            styleSrc:  ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
-            fontSrc:   ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
-            imgSrc:    ["'self'", 'data:', 'https:', 'blob:'],
-            connectSrc:["'self'", 'wss:', 'ws:', 'https://api.paymongo.com'],
-            frameSrc:  ["'self'", 'https://www.google.com', 'https://challenges.cloudflare.com'],
-            objectSrc: ["'none'"],
+            scriptSrc:     ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', 'https://fpnpmcdn.net', 'https://challenges.cloudflare.com'],
+            scriptSrcAttr: ["'unsafe-inline'"],   // FIX: allow onclick="..." event handler attributes
+            styleSrc:      ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
+            fontSrc:       ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+            imgSrc:        ["'self'", 'data:', 'https:', 'blob:'],
+            connectSrc:    ["'self'", 'wss:', 'ws:', 'https://api.paymongo.com'],
+            frameSrc:      ["'self'", 'https://www.google.com', 'https://challenges.cloudflare.com'],
+            objectSrc:     ["'none'"],
         }
     },
     crossOriginEmbedderPolicy: false,
@@ -149,6 +150,7 @@ const adminLiveChatRoutes    = require('./routes/admin/liveChat');
 const adminInquiryDocsRoutes = require('./routes/admin/inquiryDocs');
 const adminVisitsRoutes      = require('./routes/admin/visits');
 const adminApplicationsRoutes = require('./routes/admin/applications');
+const adminMeterReadingsRoutes = require('./routes/admin/meter-readings');
 
 
 
@@ -188,6 +190,7 @@ app.use('/api/admin/live-chat', adminLiveChatRoutes);
 app.use('/api/admin/inquiry-docs', adminInquiryDocsRoutes);
 app.use('/api/admin/visits', adminVisitsRoutes);
 app.use('/api/admin/applications', adminApplicationsRoutes);
+app.use('/api/admin/meter-readings', adminMeterReadingsRoutes);
 
 
 

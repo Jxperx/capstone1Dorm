@@ -170,6 +170,20 @@ const RentPricingModule = {
                 ? `<span class="text-muted" style="font-size:0.7rem;"><i class="fas fa-database me-1"></i>Market Data: ${lastUpdated}</span>`
                 : `<span class="text-muted" style="font-size:0.7rem;"><i class="fas fa-clock me-1"></i>Market Active</span>`;
 
+            // Specs Label Compiler
+            let specLabel = '';
+            if (s.unitType === 'condo') {
+                const sqmText = s.sqm ? `${s.sqm} sqm` : '';
+                const balconyText = s.hasBalcony ? 'Balcony' : 'No Balcony';
+                const furnishedText = s.isFullyFurnished ? 'Furnished' : '';
+                specLabel = [sqmText, balconyText, furnishedText].filter(Boolean).join(' · ');
+            } else {
+                const furnishedText = s.isFullyFurnished ? 'Furnished' : '';
+                const acText = s.hasAc ? 'AC' : '';
+                const wifiText = s.hasWifi ? 'Free WiFi' : '';
+                specLabel = [furnishedText, acText, wifiText].filter(Boolean).join(' · ');
+            }
+
             return `
             <div class="col-lg-6 col-xl-4">
                 <div class="card h-100 border-0 shadow-sm" style="${borderStyle} border-radius:12px; overflow:hidden;">
@@ -182,6 +196,9 @@ const RentPricingModule = {
                         <h5 class="fw-bold mb-1">
                             <i class="fas fa-home text-warning me-2"></i>Unit: ${s.roomNumber}
                         </h5>
+                        <div class="small text-muted mb-3 fw-semibold" style="font-size:0.75rem; letter-spacing:0.02em;">
+                            <i class="fas fa-sliders-h me-1 text-secondary"></i>${specLabel}
+                        </div>
                         <p class="small text-muted mb-3">
                             Current Rate: <strong>₱${Number(s.currentRate).toLocaleString()}</strong>
                             <span class="mx-2">|</span>
@@ -301,8 +318,30 @@ const RentPricingModule = {
             const cctvTag = item.has_cctv ? `<span class="badge bg-secondary-subtle text-secondary border me-1">CCTV</span>` : '';
             const fiberTag = item.has_fiber ? `<span class="badge bg-primary-subtle text-primary border me-1">Fiber</span>` : '';
 
-            const isAirbnb = (item.source_url && item.source_url.includes('airbnb.com')) || (item.property_name && item.property_name.toLowerCase().includes('airbnb'));
-            const airbnbBadge = isAirbnb ? `<span class="badge me-1 shadow-sm" style="background:#FF5A5F; color:#fff; font-size:0.65rem;"><i class="fab fa-airbnb me-1"></i>Airbnb</span>` : '';
+            const urlLower = (item.source_url || '').toLowerCase();
+            const nameLower = (item.property_name || '').toLowerCase();
+
+            const isAirbnb = urlLower.includes('airbnb.com') || nameLower.includes('airbnb');
+            const isBooking = urlLower.includes('booking.com');
+            const isKlook = urlLower.includes('klook.com');
+
+            let badgeHtml = '';
+            let linkClass = 'text-primary';
+            let siteName = 'Web';
+
+            if (isAirbnb) {
+                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#FF5A5F; color:#fff; font-size:0.65rem;"><i class="fab fa-airbnb me-1"></i>Airbnb</span>`;
+                linkClass = 'text-danger';
+                siteName = 'Airbnb';
+            } else if (isBooking) {
+                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#003580; color:#fff; font-size:0.65rem;"><i class="fas fa-hotel me-1"></i>Booking.com</span>`;
+                linkClass = 'text-primary';
+                siteName = 'Booking.com';
+            } else if (isKlook) {
+                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#FF5B00; color:#fff; font-size:0.65rem;"><i class="fas fa-ticket-alt me-1"></i>Klook</span>`;
+                linkClass = 'text-warning';
+                siteName = 'Klook';
+            }
 
             let rawUrl = item.source_url && item.source_url.startsWith('http')
                 ? item.source_url
@@ -316,8 +355,8 @@ const RentPricingModule = {
                     : 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes';
             }
 
-            const sourceDisplay = `<a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold ${isAirbnb ? 'text-danger' : 'text-primary'} text-truncate d-inline-block" style="max-width:200px;" title="View '${this.escapeHtml(item.property_name)}' on ${isAirbnb ? 'Airbnb' : 'Web'}">
-                ${airbnbBadge}${this.escapeHtml(item.property_name)} <i class="fas fa-external-link-alt ms-1" style="font-size:0.7rem;"></i>
+            const sourceDisplay = `<a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold ${linkClass} text-truncate d-inline-block" style="max-width:200px;" title="View '${this.escapeHtml(item.property_name)}' on ${siteName}">
+                ${badgeHtml}${this.escapeHtml(item.property_name)} <i class="fas fa-external-link-alt ms-1" style="font-size:0.7rem;"></i>
             </a>`;
 
             return `

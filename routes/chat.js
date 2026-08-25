@@ -1,13 +1,13 @@
 'use strict';
 /**
  * routes/chat.js
- * ─────────────────────────────────────────────────────────────────────────────
- * AI Chatbot endpoint — powered by Groq (primary, free).
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * AI Chatbot endpoint â€” powered by Groq (primary, free).
  *
  * Fallback chain:
  *   1. Groq  llama-3.3-70b-versatile  (free, fast, 14,400 req/day)
  *   2. Groq  llama-3.1-8b-instant     (free, fastest, higher quota)
- *   3. Gemini gemini-2.0-flash        (backup if Groq unavailable)
+ *   3. Gemini gemini-3.6-flash        (backup if Groq unavailable)
  *   4. Rule-based keyword fallback    (offline, no AI needed)
  */
 
@@ -16,22 +16,22 @@ const router  = express.Router();
 const axios   = require('axios');
 const { getRuleBasedReply } = require('../utils/ruleBasedChat');
 
-// ─── Config ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TIMEOUT_MS    = 20000;
 const GROQ_BASE     = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODELS   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+const GROQ_MODELS   = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
 const GEMINI_BASE   = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL  = 'gemini-2.0-flash';
+const GEMINI_MODEL  = 'gemini-3.6-flash';
 
-// ─── System Prompt ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ System Prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SYSTEM_PROMPT = `You are a smart, friendly AI assistant named "Dorm AI" built into the EliteStay student boarding house management system in the Philippines.
 
 You have TWO roles:
-1. **General AI Assistant** — You can answer ANY question a student might have: homework help, science, math, news, technology, general knowledge, language questions, advice, etc. Be helpful, accurate, and conversational.
-2. **Boarding House Expert** — You have detailed knowledge about this boarding house:
+1. **General AI Assistant** â€” You can answer ANY question a student might have: homework help, science, math, news, technology, general knowledge, language questions, advice, etc. Be helpful, accurate, and conversational.
+2. **Boarding House Expert** â€” You have detailed knowledge about this boarding house:
 
    HOUSE RULES:
-   - Quiet hours: 10:00 PM – 6:00 AM (no loud music, parties, or noise)
+   - Quiet hours: 10:00 PM â€“ 6:00 AM (no loud music, parties, or noise)
    - No smoking anywhere inside the building
    - Visitors allowed until 9:00 PM only; overnight guests are not allowed
    - Keep common areas (kitchen, bathroom, hallway) clean at all times
@@ -42,7 +42,7 @@ You have TWO roles:
    - Rent is due on the 28th of every month
    - Pay through the Payments section in the tenant dashboard
    - We accept GCash and QRPH (via PayMongo)
-   - Late payments may incur a penalty — contact admin for details
+   - Late payments may incur a penalty â€” contact admin for details
 
    UTILITY BILLS:
    - Electricity and water are billed monthly based on your room's sub-meter reading
@@ -50,7 +50,7 @@ You have TWO roles:
 
    MAINTENANCE:
    - Report broken items using the "Report Issue" button in your dashboard
-   - Maintenance team responds within 24–48 hours on weekdays
+   - Maintenance team responds within 24â€“48 hours on weekdays
    - For urgent issues (flooding, no electricity), contact admin directly
 
    WIFI / INTERNET:
@@ -59,7 +59,7 @@ You have TWO roles:
    - If slow, try restarting the router in the common area
 
    CONTACT / ADMIN:
-   - Admin office on the ground floor, open 9 AM – 5 PM weekdays
+   - Admin office on the ground floor, open 9 AM â€“ 5 PM weekdays
    - For urgent matters, use the Live Chat feature in this app
 
    EMERGENCY:
@@ -68,13 +68,13 @@ You have TWO roles:
 
 GUIDELINES:
 - Be warm, friendly, and use simple English appropriate for students
-- Answer ANY general question fully — NEVER redirect general questions to admin
-- For boarding house questions you can answer from the info above — answer them directly
+- Answer ANY general question fully â€” NEVER redirect general questions to admin
+- For boarding house questions you can answer from the info above â€” answer them directly
 - Only suggest contacting admin for things ONLY admin can do: viewing specific account data, approving requests, resolving disputes, account-specific changes
 - Format responses using markdown: **bold** for important info, bullet points for lists, numbered lists for steps
 - Keep responses concise but complete`;
 
-// ─── Build messages array (OpenAI-compatible format, used by Groq) ─────────────
+// â”€â”€â”€ Build messages array (OpenAI-compatible format, used by Groq) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildMessages(history, message) {
     const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
     if (history && Array.isArray(history)) {
@@ -87,7 +87,7 @@ function buildMessages(history, message) {
     return messages;
 }
 
-// ─── Build Gemini request body (backup) ───────────────────────────────────────
+// â”€â”€â”€ Build Gemini request body (backup) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildGeminiBody(history, message) {
     const contents = [];
     if (history && Array.isArray(history)) {
@@ -104,7 +104,7 @@ function buildGeminiBody(history, message) {
     };
 }
 
-// ─── Route: POST /chat ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Route: POST /chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.post('/chat', async (req, res) => {
     const { message, history } = req.body;
 
@@ -116,7 +116,7 @@ router.post('/chat', async (req, res) => {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     const messages       = buildMessages(history, message);
 
-    // ── 1. Try Groq models (primary — free, fast) ─────────────────────────────
+    // â”€â”€ 1. Try Groq models (primary â€” free, fast) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (GROQ_API_KEY) {
         for (const model of GROQ_MODELS) {
             try {
@@ -135,27 +135,27 @@ router.post('/chat', async (req, res) => {
                 const reply = response.data?.choices?.[0]?.message?.content;
                 if (!reply) throw new Error(`Empty response from Groq ${model}`);
 
-                console.log(`[Chatbot] ✓ Groq ${model} replied`);
+                console.log(`[Chatbot] âœ“ Groq ${model} replied`);
                 return res.json({ reply, model, provider: 'groq' });
 
             } catch (err) {
                 const status = err.response?.status;
                 if (status === 429) {
-                    console.warn(`[Chatbot] Groq ${model} rate limited — trying next`);
+                    console.warn(`[Chatbot] Groq ${model} rate limited â€” trying next`);
                     continue;
                 }
                 if (status === 401) {
-                    console.error('[Chatbot] Groq invalid API key — skipping Groq');
+                    console.error('[Chatbot] Groq invalid API key â€” skipping Groq');
                     break;
                 }
                 console.warn(`[Chatbot] Groq ${model} failed (${status}): ${err.message}`);
             }
         }
     } else {
-        console.warn('[Chatbot] GROQ_API_KEY not set — skipping Groq');
+        console.warn('[Chatbot] GROQ_API_KEY not set â€” skipping Groq');
     }
 
-    // ── 2. Fallback: Gemini ────────────────────────────────────────────────────
+    // â”€â”€ 2. Fallback: Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (GEMINI_API_KEY) {
         try {
             const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
@@ -165,15 +165,15 @@ router.post('/chat', async (req, res) => {
             });
             const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!reply) throw new Error('Empty Gemini response');
-            console.log('[Chatbot] ✓ Gemini (backup) replied');
+            console.log('[Chatbot] âœ“ Gemini (backup) replied');
             return res.json({ reply, model: GEMINI_MODEL, provider: 'gemini' });
         } catch (err) {
             console.warn(`[Chatbot] Gemini backup failed: ${err.response?.status} ${err.message}`);
         }
     }
 
-    // ── 3. Last resort: rule-based offline fallback ───────────────────────────
-    console.warn('[Chatbot] All AI providers failed — using rule-based fallback');
+    // â”€â”€ 3. Last resort: rule-based offline fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    console.warn('[Chatbot] All AI providers failed â€” using rule-based fallback');
     return res.json({ reply: getRuleBasedReply(message), fallback: true });
 });
 

@@ -64,7 +64,7 @@
                     <a href="#" class="list-group-item list-group-item-action" onclick="prepareAddTenant()">
                         <i class="fas fa-user-plus me-2"></i>Add Tenant
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action" onclick="showSection('profile', this)" data-bs-toggle="modal" data-bs-target="#profileModal">
+                    <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#profileModal">
                         <i class="fas fa-user-circle me-2"></i>Profile
                     </a>
                     <a href="/logout" class="list-group-item list-group-item-action text-danger">
@@ -419,9 +419,16 @@
                 <div id="section-tenants" class="content-section">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h3>Tenant Management</h3>
-                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="prepareAddTenant()">
-                            <i class="fas fa-user-plus me-2"></i>Add New Tenant
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-warning rounded-pill shadow-sm"
+                                    data-bs-toggle="modal" data-bs-target="#addReadingModal"
+                                    onclick="loadTenantsForCalc()">
+                                <i class="fas fa-bolt me-2"></i>Log Meter Reading
+                            </button>
+                            <button class="btn btn-primary rounded-pill shadow-sm" onclick="prepareAddTenant()">
+                                <i class="fas fa-user-plus me-2"></i>Add New Tenant
+                            </button>
+                        </div>
                     </div>
                     <div class="card shadow-sm">
                         <div class="card-body">
@@ -1556,19 +1563,19 @@
     <script src="js/admin/modules/rooms.js"></script>
     <script src="js/admin/modules/tenants.js"></script>
     <script src="js/admin/modules/payments.js"></script>
-    <script src="js/admin/modules/maintenance.js"></script>
+    <script src="js/admin/modules/maintenance.js?v=1.1"></script>
     <script src="js/admin/modules/feedback.js"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>
     <script src="js/admin/modules/vacancyAnalytics.js"></script>
     <script src="js/admin/modules/reports.js"></script>
-    <script src="js/admin/modules/rentPricing.js"></script>
+    <script src="js/admin/modules/rentPricing.js?v=1.1"></script>
     <script src="js/admin/modules/liveChat.js"></script>
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js"></script>
+    <script src="js/admin/main.js?v=1.1"></script>
 </body>
 </html>
 

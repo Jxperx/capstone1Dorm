@@ -1,21 +1,21 @@
-'use strict';
+﻿'use strict';
 /**
  * utils/osintSearch.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Open-Source Intelligence (OSINT) engine for inquiry verification.
  *
  * Checks performed (all gracefully degrade if API keys are missing):
- *   1. Phone validation  — Numverify (carrier, line type, validity) w/ PH local fallback
- *   2. Email reputation  — EmailRep.io  (age, spam history, social profiles)
- *   3. Web name search   — Google Custom Search API ("Name" + Philippines)
- *   4. AI Trust Score    — Groq/Gemini synthesises all findings → score 0-100
+ *   1. Phone validation  â€” Numverify (carrier, line type, validity) w/ PH local fallback
+ *   2. Email reputation  â€” EmailRep.io  (age, spam history, social profiles)
+ *   3. Web name search   â€” Google Custom Search API ("Name" + Philippines)
+ *   4. AI Trust Score    â€” Groq/Gemini synthesises all findings â†’ score 0-100
  *                          + recommendation: SAFE | VERIFY | AVOID
- *   5. ID document analysis — Groq vision reads School ID + Govt ID images
+ *   5. ID document analysis â€” Groq vision reads School ID + Govt ID images
  *
  * Trust Score thresholds:
- *   ≥ 70  → HIGH   (green)  → Recommendation: SAFE
- *   40-69 → MEDIUM (yellow) → Recommendation: VERIFY
- *   < 40  → LOW    (red)    → Recommendation: AVOID — score < 30 auto-flags
+ *   â‰¥ 70  â†’ HIGH   (green)  â†’ Recommendation: SAFE
+ *   40-69 â†’ MEDIUM (yellow) â†’ Recommendation: VERIFY
+ *   < 40  â†’ LOW    (red)    â†’ Recommendation: AVOID â€” score < 30 auto-flags
  *
  * Returns: {
  *   trustScore: 0-100,
@@ -37,7 +37,7 @@ const dns   = require('dns').promises;
 const fs    = require('fs');
 const path  = require('path');
 
-// ─── Known temporary/disposable email domains ─────────────────────────────────
+// â”€â”€â”€ Known temporary/disposable email domains â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TEMP_EMAIL_DOMAINS = new Set([
     'mailinator.com','guerrillamail.com','10minutemail.com','tempmail.com',
     'throwam.com','yopmail.com','sharklasers.com','guerrillamailblock.com',
@@ -48,7 +48,7 @@ const TEMP_EMAIL_DOMAINS = new Set([
     'discard.email','fakeinbox.com','mailnesia.com','mailnull.com'
 ]);
 
-// ─── Philippine carrier detection from prefix ────────────────────────────────
+// â”€â”€â”€ Philippine carrier detection from prefix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function detectPHCarrier(phone) {
     const digits = phone.replace(/\D/g, '');
     // Strip country code if present (63)
@@ -88,7 +88,7 @@ function isPHNumber(phone) {
     return digits.startsWith('63') || digits.startsWith('09');
 }
 
-// ─── Phone Validation (Numverify — primary; local PH fallback) ───────────────
+// â”€â”€â”€ Phone Validation (Numverify â€” primary; local PH fallback) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function validatePhone(phone) {
     const numverifyKey  = process.env.NUMVERIFY_API_KEY;
@@ -96,7 +96,7 @@ async function validatePhone(phone) {
     const phNumber      = isPHNumber(phone);
     const normalized    = phone.replace(/[\s\-().]/g, '');
 
-    // ── Numverify (primary) ───────────────────────────────────────────────────
+    // â”€â”€ Numverify (primary) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (numverifyKey) {
         try {
             const res = await axios.get('http://apilayer.net/api/validate', {
@@ -134,7 +134,7 @@ async function validatePhone(phone) {
         }
     }
 
-    // ── Local PH carrier detection only (no API key or Numverify failed) ──────
+    // â”€â”€ Local PH carrier detection only (no API key or Numverify failed) â”€â”€â”€â”€â”€â”€
     return {
         valid:        null,
         carrier:      phCarrier || 'N/A',
@@ -149,12 +149,12 @@ async function validatePhone(phone) {
     };
 }
 
-// ─── Email Reputation (EmailRep.io) ──────────────────────────────────────────
+// â”€â”€â”€ Email Reputation (EmailRep.io) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function checkEmailRep(email) {
     const apiKey = process.env.EMAILREP_API_KEY;
 
-    // Check temp domain locally — always works, no API needed
+    // Check temp domain locally â€” always works, no API needed
     const domain       = (email.split('@')[1] || '').toLowerCase();
     const isTempDomain = TEMP_EMAIL_DOMAINS.has(domain);
 
@@ -165,10 +165,10 @@ async function checkEmailRep(email) {
         const res = await axios.get(`https://emailrep.io/${encodeURIComponent(email)}`, {
             headers,
             timeout: 8000,
-            validateStatus: null // don't throw on any HTTP status — handle manually
+            validateStatus: null // don't throw on any HTTP status â€” handle manually
         });
 
-        // ── Rate limited (free tier allows only 1 req/day without an API key) ──
+        // â”€â”€ Rate limited (free tier allows only 1 req/day without an API key) â”€â”€
         if (res.status === 429) {
             console.warn('[OSINT] EmailRep.io rate limit hit (429). Add EMAILREP_API_KEY to .env for higher limits.');
             return {
@@ -178,11 +178,11 @@ async function checkEmailRep(email) {
                 firstSeen: 'N/A', isTempDomain, domain,
                 rawResponse: null, skipped: false,
                 rateLimited: true,
-                error: 'Rate limited — EmailRep.io free tier allows 1 request/day. Add EMAILREP_API_KEY to .env for unlimited access.'
+                error: 'Rate limited â€” EmailRep.io free tier allows 1 request/day. Add EMAILREP_API_KEY to .env for unlimited access.'
             };
         }
 
-        // ── Other non-2xx errors ──────────────────────────────────────────────
+        // â”€â”€ Other non-2xx errors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (res.status < 200 || res.status >= 300) {
             throw new Error(`EmailRep.io returned HTTP ${res.status}`);
         }
@@ -215,14 +215,14 @@ async function checkEmailRep(email) {
     }
 }
 
-// ─── Email Deliverability Verification ─────────────────────────────────────────────
+// â”€â”€â”€ Email Deliverability Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Checks DNS MX records (free, always runs) + AbstractAPI email validation (optional).
 // Tells you whether the email address domain can actually receive mail.
 
 async function verifyEmailDeliverability(email) {
     const domain = (email.split('@')[1] || '').toLowerCase();
 
-    // ── Step 1: DNS MX lookup (free, no API key needed) ──────────────────────
+    // â”€â”€ Step 1: DNS MX lookup (free, no API key needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let mxExists   = false;
     let mxRecords  = [];
     let dnsError   = null;
@@ -240,7 +240,7 @@ async function verifyEmailDeliverability(email) {
     const isFormatValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     const isDisposable  = TEMP_EMAIL_DOMAINS.has(domain);
 
-    // ── Step 2: AbstractAPI Email Validation (optional) ───────────────────────
+    // â”€â”€ Step 2: AbstractAPI Email Validation (optional) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const apiKey = process.env.ABSTRACT_API_EMAIL_KEY;
     if (apiKey) {
         try {
@@ -267,7 +267,7 @@ async function verifyEmailDeliverability(email) {
         }
     }
 
-    // ── Fallback: DNS-only result ─────────────────────────────────────────────
+    // â”€â”€ Fallback: DNS-only result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return {
         formatValid:    isFormatValid,
         mxExists,
@@ -286,7 +286,7 @@ async function verifyEmailDeliverability(email) {
     };
 }
 
-// ─── Google Web Search (Custom Search API) ────────────────────────────────────
+// â”€â”€â”€ Google Web Search (Custom Search API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function searchByName(firstName, lastName) {
     const apiKey   = process.env.GOOGLE_SEARCH_API_KEY;
@@ -320,7 +320,7 @@ async function searchByName(firstName, lastName) {
     }
 }
 
-// ─── Social Media Manual Search Links ────────────────────────────────────────
+// â”€â”€â”€ Social Media Manual Search Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function buildSocialLinks(firstName, lastName, phone) {
     const fullName    = `${firstName} ${lastName}`;
@@ -347,7 +347,7 @@ function buildSocialLinks(firstName, lastName, phone) {
     };
 }
 
-// ─── Build AI Flags ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Build AI Flags â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function buildFlags(phoneData, emailData, webData) {
     const flags = [];
@@ -367,7 +367,7 @@ function buildFlags(phoneData, emailData, webData) {
     return flags;
 }
 
-// ─── Gemini AI Trust Score ────────────────────────────────────────────────────
+// â”€â”€â”€ Gemini AI Trust Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function computeTrustScore({ firstName, lastName, email, phone, message, phoneData, emailData, webData }) {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -415,7 +415,7 @@ ${flags.length > 0 ? flags.join(', ') : 'None'}
 
 == SCORING CRITERIA ==
 Consider all factors. KEY RED FLAGS that heavily reduce score:
-- VOIP phone number (-25 points) — commonly used for fake inquiries
+- VOIP phone number (-25 points) â€” commonly used for fake inquiries
 - Temporary/disposable email domain (-30 points)
 - Blacklisted or suspicious email (-20 points)
 - Invalid or non-Philippine phone number (-15 points)
@@ -435,7 +435,7 @@ Respond ONLY in this exact JSON format (no markdown, no extra text, no code fenc
 {"trustScore":75,"trustLevel":"HIGH","recommendation":"SAFE","summary":"2-3 sentence human-readable explanation of your findings and reasoning.","flags":["FLAG1","FLAG2"]}
 
 RULES:
-- trustLevel must be exactly: "HIGH" (score ≥ 70), "MEDIUM" (40-69), or "LOW" (< 40)
+- trustLevel must be exactly: "HIGH" (score â‰¥ 70), "MEDIUM" (40-69), or "LOW" (< 40)
 - recommendation must be exactly: "SAFE" (HIGH trust), "VERIFY" (MEDIUM trust), or "AVOID" (LOW trust)
 - flags array: include any of: VOIP_PHONE, INVALID_PHONE, NON_PH_NUMBER, TEMP_EMAIL_DOMAIN, BLACKLISTED_EMAIL, SUSPICIOUS_EMAIL, NO_WEB_PRESENCE, CLEAN_PROFILE, VERIFIED_CARRIER
 - Keep summary concise and professional
@@ -443,7 +443,7 @@ RULES:
 
     if (apiKey) {
         try {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -502,7 +502,7 @@ RULES:
     };
 }
 
-// ─── Master OSINT Function ────────────────────────────────────────────────────
+// â”€â”€â”€ Master OSINT Function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Run a full OSINT background check on an inquiry.
@@ -543,12 +543,12 @@ async function runOsintCheck(inquiry) {
         checkedAt:    new Date().toISOString()
     };
 
-    console.log(`[OSINT] Complete — Trust: ${trustScore}/100 (${trustLevel}) [${recommendation}] for ${firstName} ${lastName}`);
+    console.log(`[OSINT] Complete â€” Trust: ${trustScore}/100 (${trustLevel}) [${recommendation}] for ${firstName} ${lastName}`);
 
     return result;
 }
 
-// ─── AI ID Document Analysis (Groq Vision) ───────────────────────────────────
+// â”€â”€â”€ AI ID Document Analysis (Groq Vision) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Analyze School ID and Government ID images using Groq vision AI.
@@ -563,7 +563,7 @@ async function runOsintCheck(inquiry) {
 async function analyzeIdDocuments(inquiryId, schoolPath, govtPath, formName) {
     const groqKey = process.env.GROQ_API_KEY;
     if (!groqKey) {
-        console.warn(`[OSINT] GROQ_API_KEY not set — skipping ID analysis for inquiry #${inquiryId}`);
+        console.warn(`[OSINT] GROQ_API_KEY not set â€” skipping ID analysis for inquiry #${inquiryId}`);
         return { skipped: true, reason: 'No GROQ_API_KEY configured' };
     }
 
@@ -671,7 +671,7 @@ Rules for verdict:
         return {
             skipped:  false,
             verdict:  'FLAG',
-            reason:   'AI analysis failed — manual review required.',
+            reason:   'AI analysis failed â€” manual review required.',
             error:    err.message,
             analyzedAt: new Date().toISOString()
         };

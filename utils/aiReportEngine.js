@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 const { analyzeFeedback } = require('./aiFeedbackSentimentAnalyzer');
 const { classifyMaintenance } = require('./aiMaintenanceClassifier');
 
-const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
-// ─── Priority scoring weights ─────────────────────────────────────────────────
+// â”€â”€â”€ Priority scoring weights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function calcPriority(urgencyW, freqW, impactW, timeW) {
     const score = (urgencyW * 0.4) + (freqW * 0.3) + (impactW * 0.2) + (timeW * 0.1);
     if (score >= 0.85) return { priority: 'Critical', risk: 'High' };
@@ -13,7 +13,7 @@ function calcPriority(urgencyW, freqW, impactW, timeW) {
     return                    { priority: 'Low',       risk: 'Low' };
 }
 
-// ─── Gemini executive summary (falls back to rule-based) ─────────────────────
+// â”€â”€â”€ Gemini executive summary (falls back to rule-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function geminiSummary(prompt) {
     if (!process.env.GEMINI_API_KEY) return null;
     try {
@@ -28,7 +28,7 @@ async function geminiSummary(prompt) {
     } catch { return null; }
 }
 
-// ─── Auto-tags ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Auto-tags â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function autoTag(type, data) {
     const tags = [type];
     if (data.emergencyCount > 0) tags.push('Emergency');
@@ -38,9 +38,9 @@ function autoTag(type, data) {
     return tags.join(',');
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  MAINTENANCE REPORT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function buildMaintenanceReport(rows, filters) {
     const total = rows.length;
     const emergency = rows.filter(r => r.ai_is_emergency);
@@ -86,17 +86,17 @@ async function buildMaintenanceReport(rows, filters) {
         .slice(0, 5)
         .map((r, i) => ({
             rank: i + 1,
-            item: `[${r.ai_priority || 'N/A'}] ${r.title} — ${r.full_name || 'Unknown'} (${r.room_number || '—'})`,
+            item: `[${r.ai_priority || 'N/A'}] ${r.title} â€” ${r.full_name || 'Unknown'} (${r.room_number || 'â€”'})`,
             emergency: !!r.ai_is_emergency
         }));
 
     // Insights
     const insights = [];
-    if (emergency.length > 0) insights.push(`⚠️ ${emergency.length} emergency request(s) require immediate attention.`);
-    if (hotUnits.length > 0) insights.push(`🔁 Recurring issues detected in: ${hotUnits.map(([u, v]) => `${u} (${v.length}x)`).join(', ')}.`);
+    if (emergency.length > 0) insights.push(`âš ï¸ ${emergency.length} emergency request(s) require immediate attention.`);
+    if (hotUnits.length > 0) insights.push(`ðŸ” Recurring issues detected in: ${hotUnits.map(([u, v]) => `${u} (${v.length}x)`).join(', ')}.`);
     const topCat = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
-    if (topCat) insights.push(`📊 Most common category: ${topCat[0]} (${topCat[1]} requests).`);
-    if (missingAI > 0) insights.push(`ℹ️ ${missingAI} request(s) not yet classified by AI.`);
+    if (topCat) insights.push(`ðŸ“Š Most common category: ${topCat[0]} (${topCat[1]} requests).`);
+    if (missingAI > 0) insights.push(`â„¹ï¸ ${missingAI} request(s) not yet classified by AI.`);
 
     const recs = [];
     if (emergency.length > 0) recs.push('Dispatch emergency response team immediately for flagged requests.');
@@ -133,9 +133,9 @@ async function buildMaintenanceReport(rows, filters) {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  FINANCIAL REPORT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function buildFinancialReport(rows, filters) {
     const approved = rows.filter(r => r.status === 'approved');
     const pending  = rows.filter(r => r.status === 'pending');
@@ -167,10 +167,10 @@ async function buildFinancialReport(rows, filters) {
     const confidence = Math.round(((rows.length - pending.length * 0.3) / Math.max(rows.length, 1)) * 100);
 
     const insights = [];
-    if (latePayments.length > 0) insights.push(`⚠️ ${latePayments.length} payment(s) overdue by more than 30 days.`);
-    if (anomalies.length > 0) insights.push(`🔍 ${anomalies.length} duplicate payment pattern(s) detected — possible anomaly.`);
-    insights.push(`💰 Total approved revenue: ₱${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`);
-    if (pendingAmount > 0) insights.push(`⏳ ₱${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} awaiting approval.`);
+    if (latePayments.length > 0) insights.push(`âš ï¸ ${latePayments.length} payment(s) overdue by more than 30 days.`);
+    if (anomalies.length > 0) insights.push(`ðŸ” ${anomalies.length} duplicate payment pattern(s) detected â€” possible anomaly.`);
+    insights.push(`ðŸ’° Total approved revenue: â‚±${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`);
+    if (pendingAmount > 0) insights.push(`â³ â‚±${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} awaiting approval.`);
 
     const recs = [];
     if (latePayments.length > 0) recs.push(`Send reminders to ${latePayments.length} tenant(s) with overdue payments.`);
@@ -178,16 +178,16 @@ async function buildFinancialReport(rows, filters) {
     if (pending.length > 0) recs.push(`Approve or reject ${pending.length} pending payment(s) promptly.`);
     recs.push('Ensure all payments are logged with valid reference numbers.');
 
-    const summaryPrompt = `Write a 3-sentence financial summary: Total revenue ₱${totalRevenue.toFixed(2)}, ${pending.length} pending payments worth ₱${pendingAmount.toFixed(2)}, ${latePayments.length} overdue, ${anomalies.length} anomalies detected. Professional tone.`;
+    const summaryPrompt = `Write a 3-sentence financial summary: Total revenue â‚±${totalRevenue.toFixed(2)}, ${pending.length} pending payments worth â‚±${pendingAmount.toFixed(2)}, ${latePayments.length} overdue, ${anomalies.length} anomalies detected. Professional tone.`;
     const aiSummary = await geminiSummary(summaryPrompt);
-    const summary = aiSummary || `Total approved revenue stands at ₱${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })} from ${approved.length} transactions. There are ${pending.length} payments pending approval worth ₱${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}. ${latePayments.length > 0 ? `${latePayments.length} payment(s) are overdue and require immediate follow-up.` : 'No overdue payments detected.'}`;
+    const summary = aiSummary || `Total approved revenue stands at â‚±${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })} from ${approved.length} transactions. There are ${pending.length} payments pending approval worth â‚±${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}. ${latePayments.length > 0 ? `${latePayments.length} payment(s) are overdue and require immediate follow-up.` : 'No overdue payments detected.'}`;
 
     const ranked = [...latePayments]
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
         .slice(0, 5)
         .map((r, i) => ({
             rank: i + 1,
-            item: `Late Payment — ${r.full_name || 'Unknown'} (Room ${r.room_number || '—'}) ₱${parseFloat(r.amount).toLocaleString()} — ${Math.round((now - new Date(r.created_at)) / 86400000)} days overdue`,
+            item: `Late Payment â€” ${r.full_name || 'Unknown'} (Room ${r.room_number || 'â€”'}) â‚±${parseFloat(r.amount).toLocaleString()} â€” ${Math.round((now - new Date(r.created_at)) / 86400000)} days overdue`,
             emergency: false
         }));
 
@@ -208,9 +208,9 @@ async function buildFinancialReport(rows, filters) {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  COMPLAINTS (FEEDBACK) REPORT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function buildComplaintsReport(rows, filters) {
     const negative = rows.filter(r => r.ai_sentiment === 'Negative');
     const positive = rows.filter(r => r.ai_sentiment === 'Positive');
@@ -242,11 +242,11 @@ async function buildComplaintsReport(rows, filters) {
 
     const topTopic = Object.entries(topicMap).sort((a, b) => b[1] - a[1])[0];
     const insights = [];
-    if (negative.length > 0) insights.push(`😟 ${negative.length} negative feedback(s) detected — ${Math.round(negative.length / rows.length * 100)}% of total.`);
-    if (positive.length > 0) insights.push(`😊 ${positive.length} positive feedback(s) received.`);
-    if (topTopic) insights.push(`📌 Most complained topic: "${topTopic[0]}" (${topTopic[1]} mentions).`);
+    if (negative.length > 0) insights.push(`ðŸ˜Ÿ ${negative.length} negative feedback(s) detected â€” ${Math.round(negative.length / rows.length * 100)}% of total.`);
+    if (positive.length > 0) insights.push(`ðŸ˜Š ${positive.length} positive feedback(s) received.`);
+    if (topTopic) insights.push(`ðŸ“Œ Most complained topic: "${topTopic[0]}" (${topTopic[1]} mentions).`);
     const hotUnit = Object.entries(unitMap).sort((a, b) => b[1].negative - a[1].negative)[0];
-    if (hotUnit && hotUnit[1].negative > 1) insights.push(`🏠 Unit ${hotUnit[0]} has the most complaints (${hotUnit[1].negative} negative).`);
+    if (hotUnit && hotUnit[1].negative > 1) insights.push(`ðŸ  Unit ${hotUnit[0]} has the most complaints (${hotUnit[1].negative} negative).`);
 
     const recs = [];
     if (needsAttn.length > 0) recs.push(`Follow up on ${needsAttn.length} feedback(s) flagged as needing attention.`);
@@ -262,7 +262,7 @@ async function buildComplaintsReport(rows, filters) {
         .slice(0, 5)
         .map((r, i) => ({
             rank: i + 1,
-            item: `Negative — ${r.tenant_name || 'Unknown'} (${r.room_number || '—'}): "${(r.feedback_text || '').slice(0, 80)}..."`,
+            item: `Negative â€” ${r.tenant_name || 'Unknown'} (${r.room_number || 'â€”'}): "${(r.feedback_text || '').slice(0, 80)}..."`,
             emergency: false
         }));
 
@@ -283,9 +283,9 @@ async function buildComplaintsReport(rows, filters) {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  BOOKING ACTIVITY REPORT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function buildBookingReport(inquiries, tenants, filters) {
     const approved = inquiries.filter(i => i.status === 'approved');
     const flagged  = inquiries.filter(i => i.status === 'flagged');
@@ -300,10 +300,10 @@ async function buildBookingReport(inquiries, tenants, filters) {
     const confidence = 85;
 
     const insights = [];
-    insights.push(`📬 ${inquiries.length} total inquiries received; ${convRate}% conversion rate.`);
-    if (flagged.length > 0) insights.push(`🚩 ${flagged.length} inquiry/inquiries flagged as spam or suspicious.`);
-    insights.push(`🏠 ${active.length} active tenants currently occupying units.`);
-    if (convRate < 30) insights.push('⚠️ Low inquiry-to-tenant conversion — consider marketing improvements.');
+    insights.push(`ðŸ“¬ ${inquiries.length} total inquiries received; ${convRate}% conversion rate.`);
+    if (flagged.length > 0) insights.push(`ðŸš© ${flagged.length} inquiry/inquiries flagged as spam or suspicious.`);
+    insights.push(`ðŸ  ${active.length} active tenants currently occupying units.`);
+    if (convRate < 30) insights.push('âš ï¸ Low inquiry-to-tenant conversion â€” consider marketing improvements.');
 
     const recs = [];
     if (convRate < 30) recs.push('Launch targeted promotional campaign to boost conversions.');
@@ -325,15 +325,15 @@ async function buildBookingReport(inquiries, tenants, filters) {
         priorityRisk: { priority, risk, confidence },
         insights,
         recommendations: recs,
-        topCriticalItems: flagged.slice(0, 5).map((i, idx) => ({ rank: idx + 1, item: `Flagged Inquiry — ${i.full_name || i.name || 'Unknown'} (${i.email || '—'})`, emergency: false })),
+        topCriticalItems: flagged.slice(0, 5).map((i, idx) => ({ rank: idx + 1, item: `Flagged Inquiry â€” ${i.full_name || i.name || 'Unknown'} (${i.email || 'â€”'})`, emergency: false })),
         dataQualityNotes: { totalRecordsAnalyzed: inquiries.length + tenants.length },
         conclusion: `Booking activity is at ${priority.toLowerCase()} priority. ${recs[0] || 'Monitor occupancy trends.'}`
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  INCIDENT REPORT  (emergency maintenance only)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function buildIncidentReport(rows, filters) {
     const incidents = rows.filter(r => r.ai_is_emergency || r.ai_priority === 'Emergency');
     const resolved  = incidents.filter(r => r.status === 'resolved');
@@ -346,9 +346,9 @@ async function buildIncidentReport(rows, filters) {
     const { priority, risk } = calcPriority(urgencyW, freqW, impactW, timeW);
 
     const insights = [];
-    if (open.length > 0) insights.push(`🚨 ${open.length} ACTIVE incident(s) not yet resolved — immediate action required.`);
-    if (resolved.length > 0) insights.push(`✅ ${resolved.length} incident(s) have been resolved.`);
-    if (incidents.length === 0) insights.push('✅ No emergency incidents detected in the selected period.');
+    if (open.length > 0) insights.push(`ðŸš¨ ${open.length} ACTIVE incident(s) not yet resolved â€” immediate action required.`);
+    if (resolved.length > 0) insights.push(`âœ… ${resolved.length} incident(s) have been resolved.`);
+    if (incidents.length === 0) insights.push('âœ… No emergency incidents detected in the selected period.');
 
     const recs = [];
     if (open.length > 0) {
@@ -373,15 +373,15 @@ async function buildIncidentReport(rows, filters) {
         priorityRisk: { priority, risk, confidence: 100 },
         insights,
         recommendations: recs,
-        topCriticalItems: open.slice(0, 5).map((r, i) => ({ rank: i + 1, item: `🚨 ${r.title} — ${r.full_name || 'Unknown'} (${r.room_number || '—'})`, emergency: true })),
+        topCriticalItems: open.slice(0, 5).map((r, i) => ({ rank: i + 1, item: `ðŸš¨ ${r.title} â€” ${r.full_name || 'Unknown'} (${r.room_number || 'â€”'})`, emergency: true })),
         dataQualityNotes: { totalRecordsAnalyzed: rows.length, emergencyFlagged: incidents.length },
         conclusion: open.length > 0 ? 'CRITICAL: Unresolved incidents must be addressed immediately.' : 'All incidents resolved. Continue preventive monitoring.'
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  MAIN EXPORT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 module.exports = {
     buildMaintenanceReport,
     buildFinancialReport,

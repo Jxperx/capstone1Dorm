@@ -6,7 +6,9 @@ function showSection(sectionId, linkElement) {
     });
     
     // Show target section
-    document.getElementById('section-' + sectionId).classList.add('active');
+    const targetSection = document.getElementById('section-' + sectionId);
+    if (!targetSection) return; // Guard: section doesn't exist (e.g. modal-only links)
+    targetSection.classList.add('active');
     
     // Update sidebar active state
     document.querySelectorAll('.list-group-item-action').forEach(item => {

@@ -18,8 +18,8 @@ const runMonthlySearch = async (triggerType = 'auto') => {
     try {
         // ── STEP 1: Execute Parallel Scrapes (Google API + Airbnb Deep Search) ────────
         const [rawCondoItems, rawDormItems, airbnbCondos, airbnbDorms] = await Promise.all([
-            searchLiveListings('condo for rent 28sqm OR 30sqm fully furnished Calamba OR Nuvali Laguna site:lamudi.com.ph OR site:carousell.ph OR site:rentpad.com.ph', cx, apiKey),
-            searchLiveListings('dorm bedspace for rent Calamba Parian Laguna site:rentpad.com.ph OR site:carousell.ph OR site:lamudi.com.ph', cx, apiKey),
+            searchLiveListings('condo for rent 28sqm OR 30sqm fully furnished Calamba OR Nuvali Laguna site:lamudi.com.ph OR site:carousell.ph OR site:rentpad.com.ph OR site:booking.com OR site:klook.com', cx, apiKey),
+            searchLiveListings('dorm bedspace for rent Calamba Parian Laguna site:rentpad.com.ph OR site:carousell.ph OR site:lamudi.com.ph OR site:booking.com OR site:klook.com', cx, apiKey),
             scrapeAirbnbListings('Nuvali Santa Rosa Laguna', 'studio'),
             scrapeAirbnbListings('Calamba Laguna', 'dorm-bed')
         ]);
@@ -27,12 +27,8 @@ const runMonthlySearch = async (triggerType = 'auto') => {
         let condoListings = [];
         let dormListings  = [];
 
-        if (rawCondoItems.length > 0) {
-            condoListings = await parseListingsWithAi(rawCondoItems, 'studio');
-        }
-        if (rawDormItems.length > 0) {
-            dormListings = await parseListingsWithAi(rawDormItems, 'dorm-bed');
-        }
+        condoListings = await parseListingsWithAi(rawCondoItems, 'studio');
+        dormListings  = await parseListingsWithAi(rawDormItems, 'dorm-bed');
 
         // Combine Google search results with live Airbnb listings
         condoListings = [...condoListings, ...(airbnbCondos || [])];

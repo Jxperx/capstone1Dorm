@@ -280,3 +280,72 @@ function submitStatusUpdate() {
         showMaintenanceToast('Error updating status. Please try again.', 'error');
     });
 }
+
+// ── Meter Readings ──────────────────────────────────────────────────────────
+
+async function loadTenantsForCalc() {
+    try {
+        const res = await fetch('/api/admin/tenants', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const tenants = Array.isArray(data) ? data : (data.tenants || []);
+        const sel = document.getElementById('readingTenantSelect');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- Select Tenant --</option>';
+        tenants.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = `${t.full_name} — Room ${t.room_number || 'N/A'}`;
+            sel.appendChild(opt);
+        });
+    } catch (err) {
+        console.error('[loadTenantsForCalc]', err);
+    }
+}
+
+async function loadMeterReadings() {
+    // Called from main.js on load — silently succeeds even if no UI element exists yet
+    // Actual data is loaded when section is opened or modal is triggered
+}
+
+async function submitAddReading() {
+    const tenantId = document.getElementById('readingTenantSelect')?.value;
+    const form     = document.getElementById('addReadingForm');
+    if (!tenantId) { alert('Please select a tenant.'); return; }
+
+    const waterReading    = form.querySelector('[name="water_reading"]')?.value;
+    const electricReading = form.querySelector('[name="electric_reading"]')?.value;
+
+    if (!waterReading || !electricReading) {
+        alert('Please fill in both water and electric readings.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/admin/meter-readings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                tenant_id:        parseInt(tenantId),
+                water_reading:    parseFloat(waterReading),
+                electric_reading: parseFloat(electricReading),
+                status:           'verified'
+            })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addReadingModal'));
+            if (modal) modal.hide();
+            form.reset();
+            showMaintenanceToast('✅ Meter reading saved successfully.');
+        } else {
+            alert('❌ Failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('[submitAddReading]', err);
+        alert('❌ Network error. Please try again.');
+    }
+}
+

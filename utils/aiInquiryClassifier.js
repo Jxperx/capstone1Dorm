@@ -1,7 +1,7 @@
-'use strict';
+﻿'use strict';
 /**
  * utils/aiInquiryClassifier.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Classifies an inquiry message as REAL or SPAM using the Gemini REST API.
  * Uses the same direct REST API pattern as the existing chat.js in this project.
  * Falls back gracefully to heuristic rules if the API is unavailable.
@@ -9,7 +9,7 @@
  * Returns: { result: 'REAL'|'SPAM', confidence: 0-100, reasoning: string }
  */
 
-// ─── Heuristic fallback (no API needed) ─────────────────────────────────────
+// â”€â”€â”€ Heuristic fallback (no API needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SPAM_PATTERNS = [
     /\b(buy now|click here|free money|guaranteed|winner|prize|lottery|casino|viagra|crypto|bitcoin|earn \$|make money fast)\b/i,
     /https?:\/\/[^\s]+/i,       // URLs in message body
@@ -34,7 +34,7 @@ function heuristicClassify(message) {
     return { result: 'REAL', confidence: 70, reasoning: 'Passed heuristic checks.' };
 }
 
-// ─── Main classifier ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Main classifier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function classifyInquiry(message, senderName = '') {
     if (!message || message.trim().length < 3) {
         return { result: 'SPAM', confidence: 99, reasoning: 'Empty or near-empty message.' };
@@ -71,7 +71,7 @@ Message:
 ${message}
 """`;
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -101,7 +101,7 @@ ${message}
                 reasoning:  (parsed.reasoning || '').slice(0, 400)
             };
         } catch (err) {
-            console.error('[InquiryClassifier] Gemini API error — falling back to heuristic:', err.message);
+            console.error('[InquiryClassifier] Gemini API error â€” falling back to heuristic:', err.message);
         }
     }
 
