@@ -7,7 +7,7 @@ var APP_DATA = {
         {
           "tileSize": 256,
           "size": 256,
-          "fallbackOnly": true
+          "fallbackOnly": false
         },
         {
           "tileSize": 512,
@@ -38,7 +38,7 @@ var APP_DATA = {
         {
           "tileSize": 256,
           "size": 256,
-          "fallbackOnly": true
+          "fallbackOnly": false
         },
         {
           "tileSize": 512,
@@ -69,7 +69,7 @@ var APP_DATA = {
         {
           "tileSize": 256,
           "size": 256,
-          "fallbackOnly": true
+          "fallbackOnly": false
         },
         {
           "tileSize": 512,
