@@ -1077,12 +1077,55 @@
         }
 
         /* ── Responsive ── */
-        @media (max-width: 1024px) {
+        /* ── Location Card Layout ── */
+        .location-card {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            border: 1px solid rgba(212,175,55,0.12);
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .location-card.reverse {
+            grid-template-columns: 1.6fr 1fr;
+        }
+
+        .location-info-panel {
+            background: #18181a;
+            padding: 48px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 28px;
+        }
+
+        .location-map-wrap {
+            position: relative;
+            min-height: 420px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 992px) {
             .condo-cards { grid-template-columns: 1fr; }
-            .condo-card { aspect-ratio: 16/7; }
+            .condo-card { aspect-ratio: 16/12; min-height: 250px; }
             .inquire { grid-template-columns: 1fr; }
             .inquire-photo { min-height: 320px; }
             .inquire-form-side { padding: clamp(30px, 5vw, 60px) clamp(20px, 4vw, 40px); }
+
+            .location-card,
+            .location-card.reverse {
+                display: flex;
+                flex-direction: column;
+            }
+            .location-info-panel {
+                padding: 32px 20px;
+                order: 1;
+            }
+            .location-map-wrap {
+                min-height: 280px;
+                height: 280px;
+                order: 2;
+            }
         }
 
         @media (max-width: 768px) {
@@ -1097,7 +1140,17 @@
             .footer-copy { text-align: center; }
             .footer-divider { width: 60px; height: 1px; margin: 0 auto; }
             .highlight-item { min-width: 50%; }
-            .dorm-card { flex: 1 1 100%; aspect-ratio: 16/10; }
+
+            .condo-card-content { padding: 22px 18px 18px; }
+            .condo-name { font-size: 24px; margin-bottom: 4px; }
+            .condo-desc { font-size: 11px; margin-bottom: 12px; line-height: 1.4; }
+
+            .dorm-cards { flex-direction: column; align-items: stretch; }
+            .dorm-card { flex: 1 1 100%; width: 100%; max-width: 100%; aspect-ratio: 16/11; min-height: 230px; }
+            .dorm-card-content { padding: 22px 18px 18px; }
+            .dorm-card-name { font-size: 24px; margin-bottom: 4px; }
+            .dorm-card-desc { font-size: 11px; margin-bottom: 12px; line-height: 1.4; }
+
             .tour-tab { padding: 8px 12px; font-size: 10px; letter-spacing: 1px; }
             .tour-window { aspect-ratio: 4/3; }
         }
@@ -1107,7 +1160,8 @@
             .nav-logo { font-size: 19px; letter-spacing: 1px; }
             .nav-btn { padding: 6px 10px; font-size: 9.5px; }
             #ctaNavBtn { display: none; }
-            .dorm-card { flex: 1 1 100%; aspect-ratio: 4/3; }
+            .condo-card { aspect-ratio: 4/3; min-height: 260px; }
+            .dorm-card { flex: 1 1 100%; aspect-ratio: 4/3; min-height: 240px; }
             .hero-subtitle { font-size: 12px; }
             .hero-eyebrow { font-size: 10px; letter-spacing: 1px; }
         }
@@ -2141,10 +2195,10 @@
         <div style="display:flex; flex-direction:column; gap:32px; max-width:1200px; margin:0 auto;">
 
             <!-- ── DORM A1 ── -->
-            <div style="display:grid; grid-template-columns:1fr 1.6fr; border:1px solid rgba(212,175,55,0.12); overflow:hidden; border-radius:4px;">
+            <div class="location-card">
 
                 <!-- Info panel -->
-                <div style="background:#18181a; padding:48px 44px; display:flex; flex-direction:column; justify-content:center; gap:28px;">
+                <div class="location-info-panel">
                     <div>
                         <div style="font-size:9px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-bed" style="font-size:9px;"></i> EliteStay Dorm
@@ -2181,7 +2235,7 @@
                 </div>
 
                 <!-- Dorm Map -->
-                <div style="position:relative; min-height:420px; overflow:hidden;">
+                <div class="location-map-wrap">
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685460381!5m2!1sen!2sph!6m8!1m7!1sbSPznQdEBNgHTS7KmGUD0A!2m2!1d14.1846702!2d121.1375905!3f42.03968566802905!4f-9.663768123331309!5f0.7820865974627469"
                         width="100%" height="100%"
@@ -2197,10 +2251,10 @@
             </div>
 
             <!-- ── CONDO UNITS ── -->
-            <div style="display:grid; grid-template-columns:1.6fr 1fr; border:1px solid rgba(212,175,55,0.12); overflow:hidden; border-radius:4px;">
+            <div class="location-card reverse">
 
-                <!-- Condo Map (LEFT this time for visual variety) -->
-                <div style="position:relative; min-height:420px; overflow:hidden;">
+                <!-- Condo Map -->
+                <div class="location-map-wrap">
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685884257!5m2!1sen!2sph!6m8!1m7!1sriOdGSCtvHmZQKl0O6Aauw!2m2!1d14.24048350795415!2d121.0425856352331!3f129.15545414837314!4f-2.0124363928627105!5f0.7820865974627469"
                         width="100%" height="100%"
@@ -2215,7 +2269,7 @@
                 </div>
 
                 <!-- Info panel -->
-                <div style="background:#18181a; padding:48px 44px; display:flex; flex-direction:column; justify-content:center; gap:28px;">
+                <div class="location-info-panel">
                     <div>
                         <div style="font-size:9px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-building" style="font-size:9px;"></i> EliteStay Condo
