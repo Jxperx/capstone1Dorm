@@ -165,7 +165,7 @@ router.post('/upload-receipt', async (req, res, next) => {
 
     } catch (err) {
         console.error('[Receipt Upload Error]', err.message, err.stack);
-        res.status(500).json({ error: 'Failed to process receipt: ' + err.message });
+        res.status(500).json({ error: 'Failed to process receipt. Please try again.' });
     }
 });
 
@@ -199,7 +199,7 @@ router.post('/fingerprint', async (req, res) => {
         }
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
@@ -222,7 +222,7 @@ router.post('/log-attempt', async (req, res) => {
             .query('INSERT INTO checkout_otp_logs (tenant_id, event_type, device_hash, ip_address) VALUES (@tid, @evt, @dh, @ip)');
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 

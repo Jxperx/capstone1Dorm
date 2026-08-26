@@ -101,7 +101,7 @@ router.post('/create-account', async (req, res) => {
         if (err.number === 2627) { // Unique constraint violation
             return res.status(400).json({ error: 'Email already exists' });
         }
-        res.status(500).json({ error: 'Server error: ' + err.message });
+        res.status(500).json({ error: 'Server error. Please try again.' });
     }
 });
 

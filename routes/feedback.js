@@ -35,19 +35,7 @@ router.post('/submit', async (req, res) => {
     }
 
     if (!tenantId) {
-        try {
-            const pool = await poolPromise;
-            const fallbackRes = await pool.request().query("SELECT TOP 1 id FROM tenants WHERE status = 'active'");
-            if (fallbackRes.recordset.length > 0) {
-                tenantId = fallbackRes.recordset[0].id;
-            }
-        } catch (e) {
-            console.error('Error finding fallback tenant:', e);
-        }
-    }
-
-    if (!tenantId) {
-        return res.status(403).json({ error: 'No active tenant records found in database.' });
+        return res.status(403).json({ error: 'No tenant account linked to your session. Please contact admin.' });
     }
 
     const { feedback_text, survey_id } = req.body;
@@ -130,9 +118,6 @@ router.get('/my-report', async (req, res) => {
             if (tRes.recordset.length > 0) {
                 tenantId = tRes.recordset[0].id;
                 req.session.user.tenant_id = tenantId;
-            } else {
-                const fallbackRes = await pool.request().query("SELECT TOP 1 id FROM tenants WHERE status = 'active'");
-                if (fallbackRes.recordset.length > 0) tenantId = fallbackRes.recordset[0].id;
             }
         } catch (e) { console.error('Error finding tenant for report:', e); }
     }

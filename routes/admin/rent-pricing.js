@@ -23,7 +23,7 @@ router.post('/trigger-search', async (req, res) => {
         });
     } catch (err) {
         console.error('Trigger Search Error:', err);
-        res.status(500).json({ error: 'Market search failed: ' + err.message });
+        res.status(500).json({ error: 'Market search failed. Please try again.' });
     }
 });
 

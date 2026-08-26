@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const { poolPromise, sql } = require('../../config/db');
 
@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
         res.json({ success: true, message: 'Meter reading saved successfully.' });
     } catch (err) {
         console.error('[meter-readings POST]', err);
-        res.status(500).json({ error: 'Failed to save reading: ' + err.message });
+        res.status(500).json({ error: 'Failed to save reading. Please try again.' });
     }
 });
 

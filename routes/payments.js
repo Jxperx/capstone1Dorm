@@ -120,7 +120,7 @@ router.post('/upload', async (req, res, next) => {
         res.json({ message: 'Payment proof uploaded and analyzed successfully!' });
     } catch (err) {
         console.error('Database Insert Error:', err);
-        res.status(500).json({ error: 'Database error: ' + err.message });
+        res.status(500).json({ error: 'Database error. Please try again.' });
     }
 });
 

@@ -268,6 +268,23 @@ app.get('/payment-success', async (req, res) => {
     }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Global Error Handler — catches unhandled errors from all routes
+// Returns a safe JSON response without leaking internal details
+// ─────────────────────────────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+    // Log the full error server-side for debugging
+    logger.error(`[Global Error Handler] ${req.method} ${req.originalUrl}:`, err.message);
+    if (!isProduction) logger.error(err.stack);
+
+    // Send a safe response — never expose err.message in production
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json({
+        error: isProduction
+            ? 'An internal server error occurred. Please try again later.'
+            : err.message
+    });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Socket.io — Admin status tracker (module-level so it survives across sockets)

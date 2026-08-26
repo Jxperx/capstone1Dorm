@@ -299,7 +299,7 @@ router.post('/osint-bulk', async (req, res) => {
     } catch (err) {
         console.error('[Admin Inquiries] Bulk OSINT error:', err);
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Bulk OSINT failed: ' + err.message });
+            res.status(500).json({ error: 'Bulk OSINT check failed. Please try again.' });
         }
     }
 });
@@ -350,7 +350,7 @@ router.post('/:id(\\d+)/osint', async (req, res) => {
         });
     } catch (err) {
         console.error('[Admin Inquiries] OSINT error:', err);
-        return res.status(500).json({ error: 'OSINT check failed: ' + err.message });
+        return res.status(500).json({ error: 'OSINT check failed. Please try again.' });
     }
 });
 

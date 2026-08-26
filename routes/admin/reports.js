@@ -151,7 +151,7 @@ router.post('/maintenance', async (req, res) => {
         res.json(report);
     } catch (err) {
         console.error('[Maintenance Report Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 
@@ -182,7 +182,7 @@ router.post('/financial', async (req, res) => {
         res.json(report);
     } catch (err) {
         console.error('[Financial Report Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 
@@ -222,7 +222,7 @@ router.post('/complaints', async (req, res) => {
         res.json(report);
     } catch (err) {
         console.error('[Complaints Report Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 
@@ -256,7 +256,7 @@ router.post('/booking', async (req, res) => {
         res.json(report);
     } catch (err) {
         console.error('[Booking Report Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 
@@ -287,7 +287,7 @@ router.post('/incident', async (req, res) => {
         res.json(report);
     } catch (err) {
         console.error('[Incident Report Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 

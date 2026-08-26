@@ -54,7 +54,7 @@ router.get('/analytics', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('[Fraud Analytics Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
@@ -180,7 +180,7 @@ router.get('/', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('[Fraud List Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
@@ -240,7 +240,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('[Fraud Detail Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
@@ -281,7 +281,7 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
         res.json({ success: true, decision, paymentStatus: payStatus });
     } catch (err) {
         console.error('[Fraud Decision Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
@@ -293,7 +293,7 @@ router.post('/:id/analyze', requireAdmin, async (req, res) => {
         res.json({ success: true, ...result });
     } catch (err) {
         console.error('[Re-analyze Error]', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
