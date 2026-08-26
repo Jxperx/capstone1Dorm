@@ -1,8 +1,25 @@
+// ── Fetch helper with cold-start retry ──
+const RETRY_DELAYS = [0, 3000, 6000, 12000]; // immediate, 3s, 6s, 12s
+
+async function fetchWithRetry(url) {
+    for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
+        if (RETRY_DELAYS[attempt] > 0) {
+            await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+        }
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (err) {
+            console.warn(`[Landing] Fetch attempt ${attempt + 1}/${RETRY_DELAYS.length} failed:`, err.message);
+            if (attempt === RETRY_DELAYS.length - 1) throw err;
+        }
+    }
+}
+
 async function loadRooms() {
     try {
-        const res = await fetch('/api/rooms');
-        if (!res.ok) throw new Error('Failed to fetch rooms');
-        const data = await res.json();
+        const data = await fetchWithRetry('/api/rooms');
         const rooms = Array.isArray(data) ? data : (data.rooms || []);
         
         const condoContainer = document.getElementById('condoList');

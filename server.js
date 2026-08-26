@@ -212,10 +212,21 @@ app.get('/tenant', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'tenant-dashboard.html'));
 });
 
-// FIX 4 — Health check — used by AWS ALB, Route 53, and uptime monitors
-app.get('/health', (req, res) => {
+// Health check — used by keep-alive pings, uptime monitors, and load balancers
+// Also warms up the database connection to prevent Azure SQL auto-pause
+app.get('/health', async (req, res) => {
+    let dbStatus = 'unknown';
+    try {
+        const pool = await poolPromise;
+        await pool.request().query('SELECT 1');
+        dbStatus = 'connected';
+    } catch (err) {
+        dbStatus = 'reconnecting';
+        logger.warn('[Health] DB ping failed (will auto-reconnect):', err.message);
+    }
     res.status(200).json({
         status: 'ok',
+        db: dbStatus,
         uptime: Math.floor(process.uptime()),
         timestamp: new Date().toISOString(),
         env: process.env.NODE_ENV || 'development'

@@ -2304,12 +2304,44 @@
                 </div>`;
         }
 
+        // ── Fetch helper with cold-start retry ──
+        const RETRY_DELAYS = [0, 3000, 6000, 12000]; // immediate, 3s, 6s, 12s
+        const RETRY_MESSAGES = [
+            'Loading Tours…',
+            'Server is waking up… please wait',
+            'Almost there… connecting to database',
+            'Still connecting…'
+        ];
+
+        async function fetchWithRetry(url) {
+            const loadPanel = document.getElementById('panel-loading');
+            const loadMsg = loadPanel ? loadPanel.querySelector('p') : null;
+
+            for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
+                // Update loading message on retries
+                if (attempt > 0 && loadMsg) {
+                    loadMsg.textContent = RETRY_MESSAGES[attempt] || 'Loading…';
+                }
+
+                if (RETRY_DELAYS[attempt] > 0) {
+                    await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+                }
+
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    console.warn(`[Tour] Fetch attempt ${attempt + 1}/${RETRY_DELAYS.length} failed:`, err.message);
+                    if (attempt === RETRY_DELAYS.length - 1) throw err;
+                }
+            }
+        }
+
         // ── Main loader ──
         async function loadAllRooms() {
             try {
-                const res   = await fetch('/api/rooms');
-                if (!res.ok) throw new Error('Failed to fetch rooms');
-                const data  = await res.json();
+                const data  = await fetchWithRetry('/api/rooms');
                 const rooms = Array.isArray(data) ? data : (data.rooms || []);
 
                 const condos = rooms.filter(r => (r.room_type||'').toLowerCase() === 'condo');
@@ -2341,16 +2373,14 @@
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
                     const img = condoImgs[i % condoImgs.length];
-                    const tourSrc = condoTourSrcs[i] || null; // null → placeholder for unconfigured units
+                    const tourSrc = condoTourSrcs[i] || null;
 
-                    // Tab
                     const tab = document.createElement('div');
                     tab.className = 'tour-tab' + (idx === 0 ? ' active' : '');
                     tab.textContent = 'Condo ' + (i + 1);
                     tab.onclick = () => switchTourByIndex(idx);
                     tabsEl.appendChild(tab);
 
-                    // Panel — use live Marzipano tour if tourSrc is configured
                     const controls = windowEl.querySelector('.tour-controls');
                     controls.insertAdjacentHTML('beforebegin', buildTourPanel(room, panelId, true, img, tourSrc));
                     if (idx === 0) document.getElementById(panelId).classList.add('active');
@@ -2367,16 +2397,14 @@
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
                     const img = dormImgs[i % dormImgs.length];
-                    const tourSrc = dormTourSrcs[i] || null; // null → placeholder for unconfigured dorms
+                    const tourSrc = dormTourSrcs[i] || null;
 
-                    // Tab
                     const tab = document.createElement('div');
                     tab.className = 'tour-tab';
                     tab.textContent = 'Dorm ' + room.room_number.replace(/^dorm/i, '').trim();
                     tab.onclick = () => switchTourByIndex(idx);
                     tabsEl.appendChild(tab);
 
-                    // Panel — use live Marzipano tour if tourSrc is configured
                     const controls = windowEl.querySelector('.tour-controls');
                     controls.insertAdjacentHTML('beforebegin', buildTourPanel(room, panelId, false, img, tourSrc));
                 });
@@ -2516,6 +2544,7 @@
                 }
             }
         }
+
 
         // ── Intersection Observer ──
         const revealEls = document.querySelectorAll('.reveal');
