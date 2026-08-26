@@ -12,9 +12,7 @@ server.log
 server_utf8.log
 test_results.log
 
-# Uploads & Media
-public/uploads/*
-!public/uploads/.gitkeep
+# Uploads & Media (legacy — all uploads now go to Cloudinary)
 uploads/
 
 # OS / Editor files

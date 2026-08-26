@@ -15,10 +15,7 @@ const logger = require('./utils/logger');
 // DB (needed by socket.io handlers too)
 const { poolPromise, sql } = require('./config/db');
 
-// Ensure upload directory exists
-if (!fs.existsSync('public/uploads')) {
-    fs.mkdirSync('public/uploads', { recursive: true });
-}
+// Note: Uploads are now stored on Cloudinary — no local upload directory needed.
 
 // App Initialization
 const app = express();
@@ -109,6 +106,10 @@ app.use(express.json({
     }
 }));
 app.use(express.urlencoded({ extended: true }));
+
+// Block direct access to any /uploads path — all files are served through Cloudinary
+app.use('/uploads', (req, res) => res.status(403).json({ error: 'Direct file access is not allowed.' }));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     store: new SqlServerStore({ clearExpired: true, checkExpirationInterval: 900000 }),

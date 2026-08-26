@@ -16,8 +16,6 @@ const path    = require('path');
 const fs      = require('fs');
 const { poolPromise, sql } = require('../../config/db');
 
-const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'inquiries');
-
 // ─── Auth Guard ───────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
     if (req.session?.user && req.session.user.role === 'admin') return next();
