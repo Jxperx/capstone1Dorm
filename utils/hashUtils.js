@@ -13,7 +13,24 @@ const Jimp = require('jimp');
  * @param {string} filePath - Absolute or relative path to the file.
  * @returns {Promise<string>} Hex string SHA-256 hash.
  */
+const axios = require('axios');
+
+/**
+ * Generate SHA-256 hash from a file path or URL.
+ * @param {string} filePath - Absolute or relative path to the file, or a remote HTTP(S) URL.
+ * @returns {Promise<string>} Hex string SHA-256 hash.
+ */
 async function sha256FromFile(filePath) {
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        try {
+            const response = await axios.get(filePath, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(response.data);
+            return crypto.createHash('sha256').update(buffer).digest('hex');
+        } catch (err) {
+            console.error('[sha256FromFile Error fetching URL]', err.message);
+            throw err;
+        }
+    }
     return new Promise((resolve, reject) => {
         try {
             const buffer = fs.readFileSync(filePath);

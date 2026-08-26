@@ -4,12 +4,8 @@ const { poolPromise, sql } = require('../../config/db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1000) + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+const { roomStorage, deleteFromCloudinary } = require('../../config/cloudinary');
+const upload = multer({ storage: roomStorage });
 
 // ── Auto-migration: ensure room_gallery table exists ──
 let galleryTableReady = false;
@@ -202,8 +198,8 @@ router.post('/:type', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'vi
     const mapEmbed = req.body.mapEmbed || null;
     const imageFile = req.files && req.files.image && req.files.image[0];
     const videoFile = req.files && req.files.video && req.files.video[0];
-    const imageUrl = imageFile ? '/uploads/' + imageFile.filename : null;
-    const videoUrl = videoFile ? '/uploads/' + videoFile.filename : null;
+    const imageUrl = imageFile ? imageFile.path : null;
+    const videoUrl = videoFile ? videoFile.path : null;
 
     try {
         const pool = await poolPromise;
@@ -280,7 +276,7 @@ router.post('/gallery/:roomId', upload.array('images', 25), async (req, res) => 
         for (const file of req.files) {
             await pool.request()
                 .input('room_id', sql.Int, roomId)
-                .input('image_url', sql.NVarChar, '/uploads/' + file.filename)
+                .input('image_url', sql.NVarChar, file.path)
                 .input('sort_order', sql.Int, nextOrder++)
                 .query('INSERT INTO room_gallery (room_id, image_url, sort_order) VALUES (@room_id, @image_url, @sort_order)');
         }
@@ -319,10 +315,9 @@ router.delete('/gallery/image/:id', async (req, res) => {
             .input('id', sql.Int, id)
             .query('DELETE FROM room_gallery WHERE id = @id');
 
-        // Delete file from disk
-        const filePath = path.join(__dirname, '../../public', imageUrl);
-        fs.unlink(filePath, err => {
-            if (err) console.warn('[Gallery] Could not delete file:', filePath, err.message);
+        // Delete file from Cloudinary (non-blocking)
+        deleteFromCloudinary(imageUrl).catch(err => {
+            console.warn('[Gallery] Failed to delete Cloudinary asset:', err.message);
         });
 
         res.json({ message: 'Image deleted' });

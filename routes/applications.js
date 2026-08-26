@@ -21,21 +21,9 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// ─── Multer — ID upload ───────────────────────────────────────────────────────
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads', 'applications');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const tmpDir = path.join(UPLOADS_DIR, 'tmp_' + Date.now());
-        fs.mkdirSync(tmpDir, { recursive: true });
-        req._appUploadDir = req._appUploadDir || tmpDir;
-        cb(null, req._appUploadDir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, file.fieldname + ext);
-    }
-});
+// ─── Multer — ID upload (Cloudinary Private Document Storage) ─────────────────
+const { privateDocumentStorage } = require('../config/cloudinary');
+const storage = privateDocumentStorage;
 
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 const ALLOWED_EXTS  = new Set(['.jpg', '.jpeg', '.png']);
@@ -100,9 +88,6 @@ router.post('/submit', requireAuth, (req, res, next) => {
     if (!schoolIdFile && !govtIdFile) errors.push('Please upload at least one ID document (School ID or Government ID).');
 
     if (errors.length > 0) {
-        if (req._appUploadDir && fs.existsSync(req._appUploadDir)) {
-            fs.rmSync(req._appUploadDir, { recursive: true, force: true });
-        }
         return res.status(422).json({ success: false, errors });
     }
 
@@ -176,14 +161,6 @@ router.post('/submit', requireAuth, (req, res, next) => {
             `);
 
         const appId = result.recordset[0]?.id;
-
-        // Rename upload folder to use actual application ID
-        if (req._appUploadDir && appId) {
-            const finalDir = path.join(UPLOADS_DIR, String(appId));
-            if (fs.existsSync(req._appUploadDir) && !fs.existsSync(finalDir)) {
-                fs.renameSync(req._appUploadDir, finalDir);
-            }
-        }
 
         // ── Admin email notification (non-blocking) ───────────────────────────
         if (process.env.EMAIL_USER) {

@@ -5,11 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const { classifyMaintenance } = require('../utils/aiMaintenanceClassifier');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+const { maintenanceStorage } = require('../config/cloudinary');
+const upload = multer({ storage: maintenanceStorage });
 
 // Helper to resolve tenant_id for the logged-in user
 async function getTenantId(req) {
@@ -44,7 +41,7 @@ router.post('/report', upload.single('image'), async (req, res) => {
     }
 
     const { title, description, urgencyLevel, preferredSchedule } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.file ? req.file.path : null;
 
     try {
         const pool = await poolPromise;

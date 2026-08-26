@@ -25,23 +25,9 @@ const { classifyInquiry }  = require('../utils/aiInquiryClassifier');
 const transporter = require('../utils/email');
 const { runOsintCheck, analyzeIdDocuments } = require('../utils/osintSearch');
 
-// ─── Multer — file upload config for ID documents ─────────────────────────────────
-
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads', 'inquiries');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Create a temp folder; will be renamed to inquiryId after DB insert
-        const tmpDir = path.join(UPLOADS_DIR, 'tmp_' + Date.now());
-        fs.mkdirSync(tmpDir, { recursive: true });
-        req._inquiryUploadDir = req._inquiryUploadDir || tmpDir;
-        cb(null, req._inquiryUploadDir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, file.fieldname + ext);
-    }
-});
+// ─── Multer — file upload config for ID documents (Cloudinary Private Document Storage) ───
+const { privateDocumentStorage } = require('../config/cloudinary');
+const storage = privateDocumentStorage;
 
 const fileFilter = (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -195,10 +181,6 @@ router.post('/submit', (req, res, next) => {
     if (!schoolIdFile && !govtIdFile) errors.push('At least one ID photo is required (School ID or Government ID).');
 
     if (errors.length > 0) {
-        // Clean up uploaded files if validation fails
-        if (req._inquiryUploadDir && fs.existsSync(req._inquiryUploadDir)) {
-            fs.rmSync(req._inquiryUploadDir, { recursive: true, force: true });
-        }
         return res.status(422).json({ success: false, errors });
     }
 
@@ -361,38 +343,10 @@ router.post('/submit', (req, res, next) => {
                                 ORDER BY created_at DESC`);
                     const inqId = idRes.recordset[0]?.id;
                     if (!inqId) return;
-
-                    // Rename temp upload folder to use actual inquiry ID
-                    const finalDir = path.join(UPLOADS_DIR, String(inqId));
-                    if (req._inquiryUploadDir && fs.existsSync(req._inquiryUploadDir) && req._inquiryUploadDir !== finalDir) {
-                        if (!fs.existsSync(finalDir)) {
-                            fs.renameSync(req._inquiryUploadDir, finalDir);
-                        }
-                        // Update stored paths with renamed folder
-                        const newSchoolPath = schoolIdFile
-                            ? path.join(finalDir, path.basename(schoolIdFile.path)).replace(/\\/g, '/')
-                            : null;
-                        const newGovtPath = govtIdFile
-                            ? path.join(finalDir, path.basename(govtIdFile.path)).replace(/\\/g, '/')
-                            : null;
-                        await pool.request()
-                            .input('id',  sql.Int,           inqId)
-                            .input('sip', sql.NVarChar(500), newSchoolPath)
-                            .input('gip', sql.NVarChar(500), newGovtPath)
-                            .query(`UPDATE inquiries SET school_id_path = @sip, govt_id_path = @gip WHERE id = @id`);
-                    }
-
-                    // Run OSINT check in parallel with ID analysis
-                    const schoolFinal = schoolIdFile
-                        ? path.join(finalDir, path.basename(schoolIdFile.path))
-                        : null;
-                    const govtFinal = govtIdFile
-                        ? path.join(finalDir, path.basename(govtIdFile.path))
-                        : null;
-
+                    // Run OSINT check in parallel with ID analysis using Cloudinary URLs
                     const [osintResult, idAnalysis] = await Promise.all([
                         runOsintCheck({ first_name: firstName, last_name: lastName, email, phone, message }),
-                        analyzeIdDocuments(inqId, schoolFinal, govtFinal, `${firstName} ${lastName}`)
+                        analyzeIdDocuments(inqId, schoolIdPath, govtIdPath, `${firstName} ${lastName}`)
                     ]);
 
                     const osintJson      = JSON.stringify(osintResult);

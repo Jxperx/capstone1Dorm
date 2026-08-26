@@ -7,16 +7,8 @@ const { sha256FromFile, computePHash } = require('../utils/hashUtils');
 const { extractReceiptData } = require('../utils/ocrProcessor');
 const { analyzePayment } = require('../utils/fraudEngine');
 
-// Configure Multer for File Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage: storage });
+const { paymentStorage } = require('../config/cloudinary');
+const upload = multer({ storage: paymentStorage });
 
 // 1. Upload Payment Proof
 router.post('/upload', async (req, res, next) => {
@@ -39,7 +31,7 @@ router.post('/upload', async (req, res, next) => {
     });
 }, async (req, res) => {
     const { amount, paymentDate, referenceNumber } = req.body;
-    const proofUrl = req.file ? '/uploads/' + req.file.filename : null;
+    const proofUrl = req.file ? req.file.path : null;
     
     let tenantId = req.session.user.tenant_id;
     

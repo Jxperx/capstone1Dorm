@@ -5,11 +5,8 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+const { tenantStorage } = require('../../config/cloudinary');
+const upload = multer({ storage: tenantStorage });
 
 // Admin Middleware
 router.use((req, res, next) => {
@@ -112,7 +109,7 @@ router.post('/create-account', async (req, res) => {
 router.post('/:id/update', upload.single('profileImage'), async (req, res) => {
     const tenantId = req.params.id;
     const { fullName, phone, roomId, guardianName, guardianAddress, guardianContact, leaseStart, leaseEnd } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+    const imageUrl = req.file ? req.file.path : undefined;
 
     try {
         const pool = await poolPromise;

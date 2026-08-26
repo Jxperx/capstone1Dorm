@@ -20,7 +20,7 @@ const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'inquiries');
 
 // ─── Auth Guard ───────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
-    if (req.session?.admin) return next();
+    if (req.session?.user && req.session.user.role === 'admin') return next();
     return res.status(403).json({ error: 'Forbidden — admin access required.' });
 }
 
@@ -51,6 +51,21 @@ router.get('/:inquiryId/:fileType', requireAdmin, async (req, res) => {
 
         if (!filePath) {
             return res.status(404).json({ error: 'No document uploaded for this field.' });
+        }
+
+        // If it's a Cloudinary URL, generate a temporary signed URL and redirect
+        if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+            const { cloudinary, getPublicIdFromUrl } = require('../../config/cloudinary');
+            const publicId = getPublicIdFromUrl(filePath);
+            if (!publicId) {
+                return res.redirect(filePath);
+            }
+            const signedUrl = cloudinary.url(publicId, {
+                type: 'authenticated',
+                sign_url: true,
+                expires_at: Math.floor(Date.now() / 1000) + 600 // 10 minutes expiry
+            });
+            return res.redirect(signedUrl);
         }
 
         // Resolve absolute path — paths in DB are relative to project root

@@ -4,11 +4,8 @@ const { poolPromise, sql } = require('../config/db');
 const multer = require('multer');
 const path = require('path');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+const { profileStorage } = require('../config/cloudinary');
+const upload = multer({ storage: profileStorage });
 
 // API: Get Current User Profile (Common)
 router.get('/me', async (req, res) => {
@@ -65,7 +62,7 @@ router.post('/update', upload.single('profileImage'), async (req, res) => {
     const userId = req.session.user.id;
     const role = req.session.user.role;
     const { fullName, phone, guardianName, guardianAddress, guardianContact } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+    const imageUrl = req.file ? req.file.path : undefined;
 
     try {
         const pool = await poolPromise;

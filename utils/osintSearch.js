@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /**
  * utils/osintSearch.js
  * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -566,22 +566,34 @@ async function analyzeIdDocuments(inquiryId, schoolPath, govtPath, formName) {
         console.warn(`[OSINT] GROQ_API_KEY not set â€” skipping ID analysis for inquiry #${inquiryId}`);
         return { skipped: true, reason: 'No GROQ_API_KEY configured' };
     }
-
     try {
-        // Read both images and convert to base64
-        const readImage = (filePath) => {
-            if (!filePath || !fs.existsSync(filePath)) return null;
+        // Read both images and convert to base64 (supports local files and remote URLs)
+        const readImage = async (filePath) => {
+            if (!filePath) return null;
+            if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+                try {
+                    const response = await axios.get(filePath, { responseType: 'arraybuffer' });
+                    const buf = Buffer.from(response.data);
+                    const ext = path.extname(filePath.split('?')[0]).toLowerCase().replace('.', '');
+                    const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+                    return { base64: buf.toString('base64'), mime };
+                } catch (e) {
+                    console.error('[OSINT] Failed to download remote ID image:', filePath, e.message);
+                    return null;
+                }
+            }
+            if (!fs.existsSync(filePath)) return null;
             const buf = fs.readFileSync(filePath);
             const ext = path.extname(filePath).toLowerCase().replace('.', '');
             const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
             return { base64: buf.toString('base64'), mime };
         };
 
-        const schoolImg = readImage(schoolPath);
-        const govtImg   = readImage(govtPath);
+        const schoolImg = await readImage(schoolPath);
+        const govtImg   = await readImage(govtPath);
 
         if (!schoolImg && !govtImg) {
-            return { skipped: true, reason: 'No image files found on disk' };
+            return { skipped: true, reason: 'No image files found on disk or remote storage' };
         }
 
         const prompt = `You are an ID document verification system for a Philippine boarding house.

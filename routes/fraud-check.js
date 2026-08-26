@@ -15,18 +15,7 @@ const { sha256FromFile, computePHash } = require('../utils/hashUtils');
 const { extractReceiptData } = require('../utils/ocrProcessor');
 const { analyzePayment } = require('../utils/fraudEngine');
 
-// ─── Multer for receipt uploads ──────────────────────────────
-const receiptStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = 'public/uploads/receipts';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `receipt_${Date.now()}${ext}`);
-    }
-});
+const { receiptStorage } = require('../config/cloudinary');
 const uploadReceipt = multer({
     storage: receiptStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
@@ -71,7 +60,7 @@ router.post('/upload-receipt', async (req, res, next) => {
     }
 
     const filePath = req.file.path;
-    const fileUrl = '/uploads/receipts/' + req.file.filename;
+    const fileUrl = req.file.path;
 
     try {
         const pool = await poolPromise;
