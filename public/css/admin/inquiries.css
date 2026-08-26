@@ -920,3 +920,46 @@ details[open] .osint-acc-title::before { transform: rotate(90deg); }
     border-radius: 3px;
     font-size: 0.77rem;
 }
+
+/* ── Responsive Adaptations ──────────────────────────────────── */
+#inq-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 480px) {
+    .inq-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inq-drawer {
+        width: 100vw;
+        max-width: 100vw;
+    }
+
+    .inq-drawer-body {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .inq-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inq-filter-bar select,
+    .inq-filter-bar input[type="date"],
+    .inq-filter-bar input[type="text"] {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .inq-bulk-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+

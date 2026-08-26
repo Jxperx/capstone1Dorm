@@ -1,5 +1,35 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Fluid media elements */
+img, video, iframe, svg, canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Prevent inputs and buttons from overflowing parent containers */
+input, select, textarea, button {
+    max-width: 100%;
+}
+
+/* Responsive Table Wrapper */
+.table-responsive-wrapper,
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
 }
 
 .card {
@@ -25,3 +55,12 @@ body {
     font-weight: 600;
     color: #555;
 }
+
+/* Ultrawide screen balancing */
+@media (min-width: 1920px) {
+    .container-fluid {
+        max-width: 1800px;
+        margin-inline: auto;
+    }
+}
+

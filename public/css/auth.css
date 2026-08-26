@@ -83,12 +83,31 @@ body::before {
 }
 
 .auth-form {
-    flex: 1 1 400px;
-    padding: 60px 50px;
+    flex: 1 1 320px;
+    padding: clamp(24px, 5vw, 60px) clamp(18px, 5vw, 50px);
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 12px;
+    }
+    .auth-card {
+        flex-direction: column-reverse; /* Stack image on top on mobile */
+        min-height: auto;
+    }
+    .auth-card.reverse {
+        flex-direction: column-reverse;
+    }
+    .auth-image {
+        min-height: 160px;
+        flex: none;
+    }
+}
+
 
 /* Form Controls */
 .form-control {

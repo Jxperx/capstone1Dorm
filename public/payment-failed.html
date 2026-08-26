@@ -22,9 +22,10 @@
             border-radius: 20px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.4);
             max-width: 480px;
-            width: 100%;
-            padding: 3rem 2.5rem;
+            width: min(95vw, 480px);
+            padding: clamp(1.8rem, 5vw, 3rem) clamp(1.2rem, 5vw, 2.5rem);
             text-align: center;
+            margin: 1rem auto;
         }
         .fail-icon {
             width: 90px;

@@ -327,3 +327,25 @@
     .rpt-report-card { box-shadow: none !important; border: 1px solid #ccc !important; }
     .rpt-report-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; }
 }
+
+/* ── Responsive Adaptations ──────────────────────────────────── */
+.rpt-table-wrap,
+.rpt-output-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 575.98px) {
+    .rpt-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rpt-toolbar select,
+    .rpt-toolbar input {
+        width: 100%;
+    }
+}
+

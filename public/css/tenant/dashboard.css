@@ -324,3 +324,53 @@ body {
     font-weight: 600;
     color: #6c757d;
 }
+
+/* ── Responsive Adaptations ──────────────────────────────────── */
+.welcome-overlay {
+    padding: clamp(20px, 4vw, 36px) clamp(20px, 5vw, 40px);
+}
+
+.welcome-overlay h2 {
+    font-size: clamp(1.3rem, 3.5vw, 2.2rem) !important;
+}
+
+.table-responsive,
+.tenant-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 575.98px) {
+    .timeline-pipeline {
+        padding: 0;
+    }
+
+    .timeline-label {
+        font-size: 0.65rem;
+    }
+
+    .timeline-step {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+    }
+
+    .quick-action-tile {
+        padding: 10px 14px;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem auto;
+        max-width: 95vw;
+    }
+}
+
+@media (min-width: 1920px) {
+    .container-fluid {
+        max-width: 1800px;
+        margin-inline: auto;
+    }
+}
+

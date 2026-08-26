@@ -323,3 +323,29 @@
     font-family: 'Inter', sans-serif;
     animation: lc-pulse 1.5s infinite;
 }
+
+/* ── Responsive Adaptations ──────────────────────────────────── */
+@media (max-width: 767.98px) {
+    #section-live-chat .lc-container {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 150px);
+        min-height: 420px;
+    }
+    
+    .lc-msg {
+        max-width: 85%;
+    }
+
+    .lc-chat-header {
+        padding: 12px 16px;
+    }
+
+    .lc-messages {
+        padding: 14px 16px;
+    }
+
+    .lc-input-area {
+        padding: 10px 14px;
+    }
+}
+
