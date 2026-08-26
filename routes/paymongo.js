@@ -229,15 +229,16 @@ function verifyPaymongoSignature(req, webhookSecret) {
 router.post('/webhook', async (req, res) => {
     const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
 
-    // Enforce HMAC signature verification if secret is configured
-    if (webhookSecret && webhookSecret.trim() !== '') {
-        const verification = verifyPaymongoSignature(req, webhookSecret.trim());
-        if (!verification.valid) {
-            console.warn(`[PayMongo Webhook Rejected]: ${verification.reason}`);
-            return res.status(401).json({ error: 'Unauthorized webhook request', details: verification.reason });
-        }
-    } else {
-        console.warn('[PayMongo Webhook Warning]: PAYMONGO_WEBHOOK_SECRET is not configured in .env. Signature verification skipped.');
+    // Enforce HMAC signature verification — reject if secret is not configured
+    if (!webhookSecret || webhookSecret.trim() === '') {
+        console.error('[PayMongo Webhook Rejected]: PAYMONGO_WEBHOOK_SECRET is not configured. Cannot verify authenticity.');
+        return res.status(500).json({ error: 'Webhook secret not configured — cannot process.' });
+    }
+
+    const verification = verifyPaymongoSignature(req, webhookSecret.trim());
+    if (!verification.valid) {
+        console.warn(`[PayMongo Webhook Rejected]: ${verification.reason}`);
+        return res.status(401).json({ error: 'Unauthorized webhook request', details: verification.reason });
     }
 
     const event = req.body;

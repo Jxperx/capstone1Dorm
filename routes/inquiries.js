@@ -104,7 +104,7 @@ async function notifyAdmin(inquiry, status) {
                 IP: ${inquiry.ip_address} &nbsp;|&nbsp; Device: ${(inquiry.device_id||'').slice(0,16)}… &nbsp;|&nbsp;
                 AI: ${inquiry.ai_result} (${inquiry.ai_confidence}%)
             </p>
-            <a href="http://localhost:${process.env.PORT||3000}/admin" 
+            <a href="${process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000)}/admin" 
                style="display:inline-block;margin-top:14px;padding:10px 20px;background:#c5a059;color:#fff;text-decoration:none;border-radius:4px">
                View in Dashboard →
             </a>

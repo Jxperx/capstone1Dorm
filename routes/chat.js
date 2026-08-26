@@ -104,8 +104,17 @@ function buildGeminiBody(history, message) {
     };
 }
 
-// â”€â”€â”€ Route: POST /chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-router.post('/chat', async (req, res) => {
+// ─── Rate Limiter ────────────────────────────────────────────────────────────
+const rateLimit = require('express-rate-limit');
+const chatLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 20,                  // 20 messages per window
+    message: { error: 'Too many chat messages. Please wait a few minutes.' },
+    standardHeaders: true, legacyHeaders: false
+});
+
+// ─── Route: POST /chat ─────────────────────────────────────────────────────
+router.post('/chat', chatLimiter, async (req, res) => {
     const { message, history } = req.body;
 
     if (!message || !message.trim()) {

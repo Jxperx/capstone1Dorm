@@ -174,7 +174,10 @@ router.get('/history', async (req, res) => {
 });
 
 // 3. OCR Receipt Scanner Endpoint (Auto-detect Ref # and Date)
-router.post('/scan-receipt', upload.single('proof'), async (req, res) => {
+router.post('/scan-receipt', (req, res, next) => {
+    if (!req.session?.user) return res.status(401).json({ error: 'Login required.' });
+    next();
+}, upload.single('proof'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No image uploaded for scanning.' });
     }
