@@ -1,7 +1,9 @@
 async function loadRooms() {
     try {
         const res = await fetch('/api/rooms');
-        const rooms = await res.json();
+        if (!res.ok) throw new Error('Failed to fetch rooms');
+        const data = await res.json();
+        const rooms = Array.isArray(data) ? data : (data.rooms || []);
         
         const condoContainer = document.getElementById('condoList');
         const dormContainer = document.getElementById('dormList');

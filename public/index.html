@@ -2308,7 +2308,9 @@
         async function loadAllRooms() {
             try {
                 const res   = await fetch('/api/rooms');
-                const rooms = await res.json();
+                if (!res.ok) throw new Error('Failed to fetch rooms');
+                const data  = await res.json();
+                const rooms = Array.isArray(data) ? data : (data.rooms || []);
 
                 const condos = rooms.filter(r => (r.room_type||'').toLowerCase() === 'condo');
                 const dorms  = rooms.filter(r => ['dorm','room','dormitory'].includes((r.room_type||'').toLowerCase()));
@@ -2503,6 +2505,15 @@
 
             } catch (e) {
                 console.error('loadAllRooms error:', e);
+                const loadPanel = document.getElementById('panel-loading');
+                if (loadPanel) {
+                    loadPanel.innerHTML = `
+                        <div style="padding:40px;text-align:center;color:var(--gold);">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <p style="margin:0;font-size:12px;letter-spacing:1px;text-transform:uppercase;">Unit information temporarily unavailable</p>
+                            <button onclick="loadAllRooms()" style="margin-top:14px;padding:8px 20px;background:var(--gold);color:var(--charcoal);border:none;border-radius:2px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">Retry Loading</button>
+                        </div>`;
+                }
             }
         }
 
