@@ -40,6 +40,11 @@ function showSection(sectionId, linkElement) {
     if (sectionId === 'feedback' && typeof loadAdminFeedback === 'function') {
         loadAdminFeedback();
     }
+
+    // Auto-close sidebar on mobile/tablet devices after selecting a section
+    if (window.innerWidth < 768) {
+        document.body.classList.remove('sb-sidenav-toggled');
+    }
 }
 
 function viewProof(url) {
@@ -62,6 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Sidebar Overlay Click (Tap outside sidebar to close on mobile)
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', () => {
+            document.body.classList.remove('sb-sidenav-toggled');
+        });
+    }
+
     // Load all data
     if(typeof loadStats === 'function') loadStats();
     if(typeof loadRooms === 'function') loadRooms();
@@ -74,3 +87,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if(typeof loadAdminFeedback === 'function') loadAdminFeedback();
     if(typeof loadPropertyMediaAdmin === 'function') loadPropertyMediaAdmin();
 });
+
