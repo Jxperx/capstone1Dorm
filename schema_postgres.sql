@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) DEFAULT 'tenant' CHECK (role IN ('admin', 'tenant')),
     phone_number VARCHAR(20),
+    profile_image_url VARCHAR(255) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -37,7 +38,10 @@ CREATE TABLE IF NOT EXISTS tenants (
     room_id INT REFERENCES rooms(id) ON DELETE SET NULL,
     lease_start_date DATE NOT NULL,
     lease_end_date DATE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'past'))
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'past')),
+    guardian_name VARCHAR(100) NULL,
+    guardian_address VARCHAR(255) NULL,
+    guardian_contact VARCHAR(50) NULL
 );
 
 -- 4. Payments Table
@@ -87,7 +91,9 @@ CREATE TABLE IF NOT EXISTS maintenance_requests (
     urgency_level VARCHAR(20) DEFAULT 'normal',
     preferred_schedule VARCHAR(100) NULL,
     rating INT NULL,
-    feedback_comment TEXT NULL
+    feedback_comment TEXT NULL,
+    image_url VARCHAR(255) NULL,
+    photo_url VARCHAR(255) NULL
 );
 
 -- 7. Payment Receipts Table
@@ -195,6 +201,14 @@ CREATE TABLE IF NOT EXISTS inquiries (
     ai_reasoning VARCHAR(500) NULL,
     admin_note VARCHAR(500) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    room_quiz TEXT NULL,
+    quiz_score INT NULL,
+    osint_result TEXT NULL,
+    school_id_path VARCHAR(255) NULL,
+    govt_id_path VARCHAR(255) NULL,
+    guardian_phone VARCHAR(50) NULL,
+    id_analysis TEXT NULL,
+    id_verify_status VARCHAR(50) NULL,
     type VARCHAR(30) NOT NULL DEFAULT 'inquiry',
     move_in_date DATE NULL,
     intended_stay_months INT NULL,
@@ -239,7 +253,10 @@ CREATE TABLE IF NOT EXISTS market_benchmarks (
     unit_type VARCHAR(50) NOT NULL,
     avg_market_rate DECIMAL(10, 2) NOT NULL,
     source_url VARCHAR(500) NULL,
-    fetched_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    fetched_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    price_low DECIMAL(10, 2) NULL,
+    price_high DECIMAL(10, 2) NULL,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 19. Tenant Feedback Table
@@ -268,7 +285,8 @@ CREATE TABLE IF NOT EXISTS feedback_alerts (
     alert_severity VARCHAR(20) NOT NULL,
     recommended_action TEXT NULL,
     is_resolved BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    resolved_at TIMESTAMP WITH TIME ZONE NULL
 );
 
 -- 21. Site Visit Requests Table
