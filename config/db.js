@@ -83,9 +83,49 @@ class PostgresRequest {
             queryStr = queryStr.replace(/;?\s*$/, ` LIMIT ${topMatch[1]}`);
         }
 
+        // ── Translate OUTPUT INSERTED.column to RETURNING column ──
+        // Removes trailing semicolon first to clean up placement
+        queryStr = queryStr.replace(/;\s*$/, '');
+        queryStr = queryStr.replace(/INSERT\s+INTO\s+([\s\S]+?)\s+OUTPUT\s+INSERTED\.([a-zA-Z0-9_]+)\s+VALUES\s+([\s\S]+)$/gi, 'INSERT INTO $1 VALUES $3 RETURNING $2');
+
+        // ── Translate Boolean columns (BIT in MSSQL → BOOLEAN in PostgreSQL) ──
+        const booleanColumns = [
+            'is_resolved',
+            'ai_needs_attention',
+            'used',
+            'is_read',
+            'ai_is_emergency',
+            'has_balcony',
+            'is_fully_furnished',
+            'has_ac',
+            'has_wifi'
+        ];
+        booleanColumns.forEach(col => {
+            // Replace = 1 and = 0
+            const reTrue = new RegExp(`\\b([a-zA-Z0-9_]+\\.)?${col}\\s*=\\s*1\\b`, 'gi');
+            queryStr = queryStr.replace(reTrue, `$1${col} = TRUE`);
+            const reFalse = new RegExp(`\\b([a-zA-Z0-9_]+\\.)?${col}\\s*=\\s*0\\b`, 'gi');
+            queryStr = queryStr.replace(reFalse, `$1${col} = FALSE`);
+            // Replace <> 1 and <> 0
+            const reNotTrue = new RegExp(`\\b([a-zA-Z0-9_]+\\.)?${col}\\s*<>\\s*1\\b`, 'gi');
+            queryStr = queryStr.replace(reNotTrue, `$1${col} = FALSE`);
+            const reNotFalse = new RegExp(`\\b([a-zA-Z0-9_]+\\.)?${col}\\s*<>\\s*0\\b`, 'gi');
+            queryStr = queryStr.replace(reNotFalse, `$1${col} = TRUE`);
+            // Replace COALESCE(col, 0) and COALESCE(col, 1)
+            const reCoalesceZero = new RegExp(`COALESCE\\s*\\(\\s*([a-zA-Z0-9_]+\\.)?${col}\\s*,\\s*0\\s*\\)`, 'gi');
+            queryStr = queryStr.replace(reCoalesceZero, `COALESCE($1${col}, FALSE)`);
+            const reCoalesceOne = new RegExp(`COALESCE\\s*\\(\\s*([a-zA-Z0-9_]+\\.)?${col}\\s*,\\s*1\\s*\\)`, 'gi');
+            queryStr = queryStr.replace(reCoalesceOne, `COALESCE($1${col}, TRUE)`);
+        });
+
         // ── DATEDIFF(day, date1, date2) → EXTRACT(EPOCH FROM (date2 - date1)) / 86400 ──
         queryStr = queryStr.replace(/DATEDIFF\s*\(\s*day\s*,\s*([^,]+)\s*,\s*([^)]+)\s*\)/gi,
             (match, date1, date2) => `EXTRACT(EPOCH FROM (${date2.trim()} - ${date1.trim()})) / 86400`
+        );
+
+        // ── DATEADD(unit, amount, date) → date + (amount * INTERVAL '1 unit') ──
+        queryStr = queryStr.replace(/DATEADD\s*\(\s*(day|hour|minute|month|year|day|HOUR|MINUTE|MONTH|YEAR)\s*,\s*([^,]+)\s*,\s*([^)]+)\s*\)/gi,
+            (match, unit, amount, dateExpr) => `(${dateExpr.trim()}) + (${amount.trim()} * INTERVAL '1 ${unit.trim().toLowerCase()}')`
         );
 
         // ── CAST(x AS FLOAT) → CAST(x AS DOUBLE PRECISION) ──
