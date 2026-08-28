@@ -137,19 +137,19 @@ router.get('/', requireAdmin, async (req, res) => {
                 pr.ocr_amount,
                 pr.ocr_timestamp,
                 pr.file_path            AS receipt_path,
-                STUFF((SELECT ', ' + ff.flag_code FROM fraud_flags ff WHERE ff.payment_id = p.id FOR XML PATH('')), 1, 2, '') AS flags
+                (SELECT STRING_AGG(ff.flag_code, ', ') FROM fraud_flags ff WHERE ff.payment_id = p.id) AS flags
             FROM payments p
             LEFT JOIN tenants t ON p.tenant_id = t.id
             LEFT JOIN users u ON t.user_id = u.id
             LEFT JOIN rooms r ON t.room_id = r.id
             LEFT JOIN fraud_scores fs ON p.id = fs.payment_id
-            OUTER APPLY (
-                SELECT TOP 1 sha256_hash, phash_value, ocr_raw_text, ocr_ref_number, ocr_amount, ocr_timestamp, file_path
-                FROM payment_receipts WHERE payment_id = p.id ORDER BY uploaded_at DESC
-            ) pr
+            LEFT JOIN LATERAL (
+                SELECT sha256_hash, phash_value, ocr_raw_text, ocr_ref_number, ocr_amount, ocr_timestamp, file_path
+                FROM payment_receipts WHERE payment_id = p.id ORDER BY uploaded_at DESC LIMIT 1
+            ) pr ON TRUE
             ${where}
             ORDER BY p.created_at DESC
-            OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY
+            LIMIT ${limit} OFFSET ${offset}
         `;
 
         const countQuery = `
@@ -264,11 +264,10 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
             .input('note', sql.NVarChar, note || null)
             .input('admin', sql.NVarChar, adminName)
             .query(`
-                IF EXISTS (SELECT 1 FROM fraud_scores WHERE payment_id = @pid)
-                    UPDATE fraud_scores SET decision = @dec, admin_note = @note, reviewed_by = @admin WHERE payment_id = @pid
-                ELSE
-                    INSERT INTO fraud_scores (payment_id, risk_score, risk_level, decision, admin_note, reviewed_by)
-                    VALUES (@pid, 0, 'SAFE', @dec, @note, @admin)
+                INSERT INTO fraud_scores (payment_id, risk_score, risk_level, decision, admin_note, reviewed_by)
+                VALUES (@pid, 0, 'SAFE', @dec, @note, @admin)
+                ON CONFLICT (payment_id) DO UPDATE 
+                SET decision = @dec, admin_note = @note, reviewed_by = @admin
             `);
 
         // Sync payment status
