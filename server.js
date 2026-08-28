@@ -2,7 +2,7 @@ const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const SqlServerStore = require('./config/sessionStore');
+const sessionStore = require('./config/sessionStore');
 const bodyParser = require('body-parser');
 const path = require('path');
 const session = require('express-session');
@@ -112,7 +112,7 @@ app.use('/uploads', (req, res) => res.status(403).json({ error: 'Direct file acc
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    store: new SqlServerStore({ clearExpired: true, checkExpirationInterval: 900000 }),
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'change-this-session-secret',
     resave: false,
     saveUninitialized: false,
@@ -410,7 +410,7 @@ function startServer(port, attempt = 1) {
 
     // FIX 1 — Share Express session with Socket.io so we can authenticate socket connections
     const sessionMiddlewareForSocket = session({
-        store: new SqlServerStore({ clearExpired: true, checkExpirationInterval: 900000 }),
+        store: sessionStore,
         secret: process.env.SESSION_SECRET || 'change-this-session-secret',
         resave: false,
         saveUninitialized: false,
