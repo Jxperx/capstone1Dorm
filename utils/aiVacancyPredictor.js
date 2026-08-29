@@ -1,4 +1,4 @@
-﻿const fetch = require('node-fetch');
+const fetch = require('node-fetch');
 
 async function predictVacancyTrends(data) {
     if (!process.env.GEMINI_API_KEY) {

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 const { analyzeFeedback } = require('./aiFeedbackSentimentAnalyzer');
 const { classifyMaintenance } = require('./aiMaintenanceClassifier');
 

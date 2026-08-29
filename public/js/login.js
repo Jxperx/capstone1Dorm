@@ -5,7 +5,7 @@
  */
 
 // ── State ────────────────────────────────────────────────────────────────────
-let resetEmail = '';        // Email used in forgot-password flow
+let resetEmail = sessionStorage.getItem('resetEmail') || '';        // Email used in forgot-password flow
 let resendTimerInterval = null;
 
 // ── Panel Manager ─────────────────────────────────────────────────────────────
@@ -253,6 +253,7 @@ if (forgotForm) {
 
             if (res.ok && result.success) {
                 resetEmail = email;
+                sessionStorage.setItem('resetEmail', email);
                 // Update hint text with masked email
                 const hint = document.getElementById('reset-otp-hint');
                 if (hint) {
@@ -344,6 +345,7 @@ if (newPasswordForm) {
             if (res.ok && result.success) {
                 // Clear state
                 resetEmail = '';
+                sessionStorage.removeItem('resetEmail');
                 // Show success then redirect to login
                 alert('✅ Password updated successfully! Please log in with your new password.');
                 showPanel('login');

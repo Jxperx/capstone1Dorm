@@ -388,10 +388,12 @@ router.post('/verify-reset-otp', resetOtpLimiter, async (req, res) => {
         };
 
         req.session.save((err) => {
-            if (err) logger.error('[Auth] Session save error (reset-otp):', err);
+            if (err) {
+                logger.error('[Auth] Session save error (reset-otp):', err);
+                return res.status(500).json({ error: 'Failed to establish secure reset session.' });
+            }
+            return res.json({ success: true });
         });
-
-        return res.json({ success: true });
     } catch (err) {
         logger.error('[Auth] Verify-reset-otp error:', err.message);
         return res.status(500).json({ error: 'Server error.' });
@@ -436,10 +438,12 @@ router.post('/reset-password', async (req, res) => {
         // Clear reset session flag
         delete req.session.passwordReset;
         req.session.save((err) => {
-            if (err) logger.error('[Auth] Session save error (reset-password):', err);
+            if (err) {
+                logger.error('[Auth] Session save error (reset-password):', err);
+                return res.status(500).json({ error: 'Failed to complete reset session.' });
+            }
+            return res.json({ success: true, message: 'Password updated successfully.' });
         });
-
-        return res.json({ success: true, message: 'Password updated successfully.' });
     } catch (err) {
         logger.error('[Auth] Reset-password error:', err.message);
         return res.status(500).json({ error: 'Server error.' });
