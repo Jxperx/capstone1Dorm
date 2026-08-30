@@ -14,9 +14,9 @@ if (hasResend) {
 
 // ── Resend HTTP API sender ───────────────────────────────────────────────────
 async function sendViaResend(mailOptions) {
-    const fromEmail = typeof mailOptions.from === 'string'
-        ? mailOptions.from.replace(/.*<(.+)>.*/, '$1')
-        : mailOptions.from;
+    // Resend requires domain verification to send from custom domains (like gmail.com).
+    // If they haven't verified a domain, we default to onboarding@resend.dev so it works out of the box.
+    const fromEmail = process.env.RESEND_FROM || 'onboarding@resend.dev';
     const fromName = typeof mailOptions.from === 'string' && mailOptions.from.includes('<')
         ? mailOptions.from.replace(/<.*>/, '').replace(/"/g, '').trim()
         : 'EliteStay Manager';
