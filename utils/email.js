@@ -37,21 +37,23 @@ async function sendViaEmailJS(mailOptions) {
             to_email: mailOptions.to,
             to_name: userName,
 
-            // OTP Code mappings (matches {{code}}, {{otp}}, {{otp_code}})
+            // OTP Code mappings (matches {{code}}, {{otp}}, {{otp_code}}, {{passcode}})
             otp_code: otpCode,
             otp: otpCode,
             code: otpCode,
             verification_code: otpCode,
+            passcode: otpCode,
 
             // User name mappings (matches {{user_name}}, {{name}})
             user_name: userName,
             name: userName,
 
-            // Expiry mappings (matches {{expiry}}, {{expires}}, {{valid_till}})
+            // Expiry mappings (matches {{expiry}}, {{expires}}, {{valid_till}}, {{time}})
             expiry: expiryTime,
             expires: expiryTime,
             valid_till: expiryTime,
             expiration_time: '5 minutes',
+            time: expiryTime,
 
             // General fallbacks
             message: mailOptions.text || mailOptions.html || '',
