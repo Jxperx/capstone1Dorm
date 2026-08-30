@@ -32,6 +32,38 @@ const registerLimiter = rateLimit({
     legacyHeaders: false
 });
 
+// API: Email Diagnostics (Temporary for troubleshooting)
+router.get('/email-diag', async (req, res) => {
+    const diag = {
+        hasResend: !!process.env.RESEND_API_KEY,
+        resendKeyLength: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.length : 0,
+        resendKeyPrefix: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 5) : 'none',
+        hasSmtpUser: !!process.env.EMAIL_USER,
+        hasSmtpPass: !!process.env.EMAIL_PASS,
+        nodeEnv: process.env.NODE_ENV
+    };
+
+    if (!process.env.RESEND_API_KEY) {
+        return res.json({ success: false, message: 'RESEND_API_KEY is not defined in environment variables.', diag });
+    }
+
+    try {
+        console.log('[Diag] Attempting Resend test send...');
+        const mailOptions = {
+            from: '"EliteStay Diag" <onboarding@resend.dev>',
+            to: process.env.EMAIL_USER || 'jxperx@gmail.com', // Try sending to owner
+            subject: 'EliteStay Resend Diagnostic Test',
+            html: '<p>If you see this, Resend HTTP sending works perfectly!</p>'
+        };
+
+        const result = await sendMailWithFallback(mailOptions);
+        return res.json({ success: true, message: 'Email sent successfully via Resend!', result, diag });
+    } catch (err) {
+        console.error('[Diag] Test failed:', err.message);
+        return res.json({ success: false, error: err.message, stack: err.stack, diag });
+    }
+});
+
 // API: Register
 router.post('/register', registerLimiter, async (req, res) => {
     const { fullName, email, password, phone } = req.body;
