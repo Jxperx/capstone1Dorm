@@ -19,16 +19,41 @@ async function sendViaEmailJS(mailOptions) {
     const otpMatch = searchString.match(/\b\d{6}\b/);
     const otpCode = otpMatch ? otpMatch[0] : '';
 
+    // Extract user's name if present (e.g. Hello Jaxper,)
+    const nameMatch = searchString.match(/Hello\s+([^,]+)/i);
+    const userName = nameMatch ? nameMatch[1].trim() : 'Valued Tenant';
+
+    // Generate formatted expiry time (5 mins from now)
+    const expiryTime = new Date(Date.now() + 5 * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const payload = {
         service_id: process.env.EMAILJS_SERVICE_ID,
         template_id: process.env.EMAILJS_TEMPLATE_ID,
         user_id: process.env.EMAILJS_PUBLIC_KEY,
         accessToken: process.env.EMAILJS_PRIVATE_KEY,
         template_params: {
+            // Recipient mappings
             email: mailOptions.to,
             to_email: mailOptions.to,
+            to_name: userName,
+
+            // OTP Code mappings (matches {{code}}, {{otp}}, {{otp_code}})
             otp_code: otpCode,
             otp: otpCode,
+            code: otpCode,
+            verification_code: otpCode,
+
+            // User name mappings (matches {{user_name}}, {{name}})
+            user_name: userName,
+            name: userName,
+
+            // Expiry mappings (matches {{expiry}}, {{expires}}, {{valid_till}})
+            expiry: expiryTime,
+            expires: expiryTime,
+            valid_till: expiryTime,
+            expiration_time: '5 minutes',
+
+            // General fallbacks
             message: mailOptions.text || mailOptions.html || '',
             subject: mailOptions.subject || ''
         }
