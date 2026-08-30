@@ -76,6 +76,10 @@ async function sendMailWithFallback(mailOptions) {
             return await sendViaResend(mailOptions);
         } catch (resendErr) {
             console.warn('[Email] Resend failed:', resendErr.message);
+            // On production (Render), SMTP is blocked, so throw the Resend error immediately to avoid timeout
+            if (process.env.NODE_ENV === 'production') {
+                throw resendErr;
+            }
             if (!hasSmtp) throw resendErr;
             console.warn('[Email] Falling back to SMTP...');
         }
