@@ -3,6 +3,7 @@ const router = express.Router();
 const { poolPromise, sql } = require('../config/db');
 const bcrypt = require('bcrypt');
 const transporter = require('../utils/email');
+const { sendMailWithFallback } = require('../utils/email');
 const rateLimit = require('express-rate-limit');
 const logger = require('../utils/logger');
 
@@ -118,7 +119,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                 };
 
                 try {
-                    await transporter.sendMail(mailOptions);
+                    await sendMailWithFallback(mailOptions);
                     logger.debug(`[Auth] OTP sent successfully to ${user.email}`);
                 } catch (mailError) {
                     logger.error('[Auth] Nodemailer Error:', mailError.message);
@@ -335,7 +336,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
         };
 
         try {
-            await transporter.sendMail(mailOptions);
+            await sendMailWithFallback(mailOptions);
         } catch (mailErr) {
             logger.error('[Auth] Forgot-password email error:', mailErr.message);
             return res.status(500).json({ error: 'Failed to send reset email. Please try again.' });

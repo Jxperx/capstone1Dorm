@@ -177,7 +177,8 @@ if (loginForm) {
                     window.location.href = result.role === 'admin' ? '/admin' : '/tenant';
                 }
             } else {
-                showError(result.error || result.message || 'Login failed.');
+                const detail = result.details ? `\n\nDetails: ${result.details}` : '';
+                showError((result.error || result.message || 'Login failed.') + detail);
             }
         } catch (err) {
             console.error('[Login Error]', err);
