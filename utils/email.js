@@ -1,74 +1,90 @@
 const nodemailer = require('nodemailer');
 
-// Log credential presence at startup (never log actual values)
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('[Email] ❌ EMAIL_USER or EMAIL_PASS is NOT set. OTP emails will fail.');
-    console.error('[Email] Set these in your Render dashboard under Environment variables.');
+// ── Startup diagnostics ──────────────────────────────────────────────────────
+const hasResend = !!process.env.RESEND_API_KEY;
+const hasSmtp   = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+
+if (hasResend) {
+    console.log('[Email] ✅ Resend API key detected — will send via HTTP API.');
+} else if (hasSmtp) {
+    console.log(`[Email] ✅ SMTP credentials detected for: ${process.env.EMAIL_USER}`);
 } else {
-    console.log(`[Email] Credentials detected for: ${process.env.EMAIL_USER}`);
+    console.error('[Email] ❌ No email provider configured. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASS.');
 }
 
-// Primary: port 465 (SSL) — fastest when supported
+// ── Resend HTTP API sender ───────────────────────────────────────────────────
+async function sendViaResend(mailOptions) {
+    const fromEmail = typeof mailOptions.from === 'string'
+        ? mailOptions.from.replace(/.*<(.+)>.*/, '$1')
+        : mailOptions.from;
+    const fromName = typeof mailOptions.from === 'string' && mailOptions.from.includes('<')
+        ? mailOptions.from.replace(/<.*>/, '').replace(/"/g, '').trim()
+        : 'EliteStay Manager';
+
+    const body = {
+        from: `${fromName} <${fromEmail}>`,
+        to: [mailOptions.to],
+        subject: mailOptions.subject
+    };
+
+    if (mailOptions.html) body.html = mailOptions.html;
+    if (mailOptions.text) body.text = mailOptions.text;
+    if (!body.html && !body.text) body.text = ' ';
+
+    const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errData = await response.text();
+        throw new Error(`Resend HTTP ${response.status}: ${errData}`);
+    }
+
+    const result = await response.json();
+    console.log('[Email] ✅ Sent via Resend API. ID:', result.id);
+    return { messageId: result.id };
+}
+
+// ── Nodemailer SMTP sender (local dev fallback) ──────────────────────────────
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 10000,  // 10s connection timeout
-    socketTimeout: 15000       // 15s socket timeout
-});
-
-// Fallback: port 587 (STARTTLS) — more compatible with some cloud hosts
-const fallbackTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    tls: { rejectUnauthorized: false },
     connectionTimeout: 10000,
     socketTimeout: 15000
 });
 
-// Verify primary on startup
-transporter.verify((error) => {
-    if (error) {
-        console.warn('[Email] ⚠️  Primary SMTP (port 465) verify failed:', error.message);
-        // Try fallback
-        fallbackTransporter.verify((err2) => {
-            if (err2) {
-                console.error('[Email] ❌ Fallback SMTP (port 587) also failed:', err2.message);
-            } else {
-                console.log('[Email] ✅ Fallback SMTP (port 587) is ready.');
-            }
-        });
-    } else {
-        console.log('[Email] ✅ Primary SMTP (port 465) is ready to send OTPs.');
-    }
-});
+if (hasSmtp && !hasResend) {
+    transporter.verify((err) => {
+        if (err) console.warn('[Email] ⚠️  SMTP verify failed:', err.message);
+        else     console.log('[Email] ✅ SMTP (port 465) is ready.');
+    });
+}
 
-/**
- * Send an email with automatic fallback.
- * Tries port 465 first, falls back to port 587 if it fails.
- */
+// ── Unified sender: Resend first → SMTP fallback ────────────────────────────
 async function sendMailWithFallback(mailOptions) {
-    try {
-        return await transporter.sendMail(mailOptions);
-    } catch (primaryErr) {
-        console.warn('[Email] Primary send failed:', primaryErr.message, '— trying fallback...');
-        return await fallbackTransporter.sendMail(mailOptions);
+    // 1) Try Resend if configured
+    if (hasResend) {
+        try {
+            return await sendViaResend(mailOptions);
+        } catch (resendErr) {
+            console.warn('[Email] Resend failed:', resendErr.message);
+            if (!hasSmtp) throw resendErr;
+            console.warn('[Email] Falling back to SMTP...');
+        }
     }
+
+    // 2) SMTP fallback (works locally, blocked on Render)
+    return await transporter.sendMail(mailOptions);
 }
 
 module.exports = transporter;
 module.exports.sendMailWithFallback = sendMailWithFallback;
+
