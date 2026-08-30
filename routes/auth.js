@@ -35,29 +35,33 @@ const registerLimiter = rateLimit({
 // API: Email Diagnostics (Temporary for troubleshooting)
 router.get('/email-diag', async (req, res) => {
     const diag = {
+        hasEmailJS: !!process.env.EMAILJS_PUBLIC_KEY,
+        emailjsServiceId: process.env.EMAILJS_SERVICE_ID,
+        emailjsTemplateId: process.env.EMAILJS_TEMPLATE_ID,
+        emailjsPublicKeyLength: process.env.EMAILJS_PUBLIC_KEY ? process.env.EMAILJS_PUBLIC_KEY.length : 0,
+        emailjsPrivateKeyLength: process.env.EMAILJS_PRIVATE_KEY ? process.env.EMAILJS_PRIVATE_KEY.length : 0,
         hasResend: !!process.env.RESEND_API_KEY,
         resendKeyLength: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.length : 0,
-        resendKeyPrefix: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 5) : 'none',
         hasSmtpUser: !!process.env.EMAIL_USER,
         hasSmtpPass: !!process.env.EMAIL_PASS,
         nodeEnv: process.env.NODE_ENV
     };
 
-    if (!process.env.RESEND_API_KEY) {
-        return res.json({ success: false, message: 'RESEND_API_KEY is not defined in environment variables.', diag });
+    if (!process.env.EMAILJS_PUBLIC_KEY && !process.env.RESEND_API_KEY) {
+        return res.json({ success: false, message: 'Neither EMAILJS_PUBLIC_KEY nor RESEND_API_KEY is configured.', diag });
     }
 
     try {
-        console.log('[Diag] Attempting Resend test send...');
+        console.log('[Diag] Attempting test send via fallback pipeline...');
         const mailOptions = {
             from: '"EliteStay Diag" <onboarding@resend.dev>',
             to: process.env.EMAIL_USER || 'jxperx@gmail.com', // Try sending to owner
-            subject: 'EliteStay Resend Diagnostic Test',
-            html: '<p>If you see this, Resend HTTP sending works perfectly!</p>'
+            subject: 'EliteStay 123456 Diagnostic Test',
+            text: 'Hello, if you see this, your EmailJS/Resend setup is working! Your diagnostic code is 123456.'
         };
 
         const result = await sendMailWithFallback(mailOptions);
-        return res.json({ success: true, message: 'Email sent successfully via Resend!', result, diag });
+        return res.json({ success: true, message: 'Email sent successfully!', result, diag });
     } catch (err) {
         console.error('[Diag] Test failed:', err.message);
         return res.json({ success: false, error: err.message, stack: err.stack, diag });
