@@ -232,6 +232,26 @@ function buildFraudDrawerContent(d) {
     const circumference = 2 * Math.PI * 30;
     const fillOffset = (receipt || rawImgUrl) ? (circumference - (score / 100) * circumference) : circumference;
 
+    // Check flags for parameter status
+    const flagCodes = flags.map(f => f.flag_code || '');
+    const hasAmountMismatch = flagCodes.includes('OCR_AMOUNT_MISMATCH');
+    const hasDupRef = flagCodes.includes('DUPLICATE_REFERENCE_NUMBER');
+    const hasOcrRefMismatch = flagCodes.includes('OCR_REFERENCE_MISMATCH');
+    const hasUnreadable = flagCodes.includes('UNREADABLE_RECEIPT');
+    const hasDupHash = flagCodes.includes('DUPLICATE_RECEIPT_HASH') || flagCodes.includes('SIMILAR_PHASH');
+
+    const expectedAmt = p.expected_amount || receipt?.ocr_amount;
+    const isAmountValid = !hasAmountMismatch && (expectedAmt ? Math.abs(parseFloat(p.amount) - parseFloat(expectedAmt)) <= 1.0 : true);
+
+    let refBadge = `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
+    if (hasDupRef) {
+        refBadge = `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Duplicate Ref #</span>`;
+    } else if (hasOcrRefMismatch) {
+        refBadge = `<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>OCR Mismatch (${receipt?.ocr_ref_number || 'Differs'})</span>`;
+    } else if (!p.reference_number) {
+        refBadge = `<span class="badge bg-secondary">No Ref #</span>`;
+    }
+
     return `
     <!-- Score Ring -->
     <div class="score-ring-container">
@@ -249,6 +269,43 @@ function buildFraudDrawerContent(d) {
             <div class="risk-label" style="color:${color}">${level}</div>
             <div style="font-size:0.85rem;color:#666;margin-top:3px">${DECISION_LABELS[p.decision] || '—'}</div>
             <div style="font-size:0.75rem;color:#999;margin-top:2px">Analyzed: ${fmtDate(p.analyzed_at)}</div>
+        </div>
+    </div>
+
+    <!-- AI Parameter Verification Checklist -->
+    <div class="drawer-section" style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+        <div class="drawer-section-title" style="color: #c5a059; margin-bottom: 12px; font-weight: 600;">
+            <i class="fas fa-robot me-2"></i>AI Verification Checklist
+        </div>
+        
+        <!-- 1. Amount Verification -->
+        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
+            <span class="text-light"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Payment Amount:</span>
+            ${isAmountValid 
+                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Match (${fmtMoney(p.amount)})</span>` 
+                : `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Mismatch (Paid ${fmtMoney(p.amount)} vs Exp ${fmtMoney(expectedAmt)})</span>`}
+        </div>
+
+        <!-- 2. Reference Number Verification -->
+        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
+            <span class="text-light"><i class="fas fa-hashtag me-2 text-info"></i>Reference Number:</span>
+            ${refBadge}
+        </div>
+
+        <!-- 3. Time / Submission Verification -->
+        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
+            <span class="text-light"><i class="fas fa-clock me-2 text-primary"></i>Submission Date/Time:</span>
+            <span class="badge bg-info text-dark"><i class="fas fa-calendar-alt me-1"></i>${fmtDate(p.created_at)}</span>
+        </div>
+
+        <!-- 4. Receipt Image Integrity -->
+        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.82rem;">
+            <span class="text-light"><i class="fas fa-file-image me-2 text-secondary"></i>Receipt Image Check:</span>
+            ${imgUrl && !hasUnreadable && !hasDupHash
+                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Valid & Unique Receipt</span>`
+                : hasDupHash 
+                    ? `<span class="badge bg-danger"><i class="fas fa-copy me-1"></i>Duplicate Image Hash</span>`
+                    : `<span class="badge bg-warning text-dark"><i class="fas fa-eye-slash me-1"></i>Unreadable / Missing</span>`}
         </div>
     </div>
 
