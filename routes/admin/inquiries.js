@@ -10,6 +10,7 @@ const express = require('express');
 const router  = express.Router();
 const { poolPromise, sql } = require('../../config/db');
 const { runOsintCheck }   = require('../../utils/osintSearch');
+const { getAccessibleImageUrl } = require('../../config/cloudinary');
 
 // ─── Auth guard ─────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
@@ -187,7 +188,10 @@ router.get('/:id(\\d+)', async (req, res) => {
                 FROM inquiries WHERE id = @id
             `);
         if (!result.recordset.length) return res.status(404).json({ error: 'Inquiry not found.' });
-        res.json(result.recordset[0]);
+        const row = result.recordset[0];
+        row.school_id_path = getAccessibleImageUrl(row.school_id_path);
+        row.govt_id_path   = getAccessibleImageUrl(row.govt_id_path);
+        res.json(row);
     } catch (err) {
         console.error('[Admin Inquiries] Single fetch error:', err);
         res.status(500).json({ error: 'Failed to load inquiry.' });

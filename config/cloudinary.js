@@ -89,6 +89,26 @@ async function deleteFromCloudinary(url, isPrivate = false) {
     }
 }
 
+/**
+ * Ensures any Cloudinary image URL (including legacy authenticated URLs)
+ * returns a valid, accessible URL.
+ */
+function getAccessibleImageUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    if (url.includes('/image/authenticated/')) {
+        const match = url.match(/elitestay\/[^\s\?]+/);
+        if (match) {
+            const publicId = match[0].replace(/\.[^/.]+$/, '');
+            try {
+                return cloudinary.url(publicId, { type: 'authenticated', sign_url: true, secure: true });
+            } catch (e) {
+                return url.replace('/image/authenticated/', '/image/upload/').replace(/\/s--[^\/]+--\//g, '/');
+            }
+        }
+    }
+    return url;
+}
+
 module.exports = {
     cloudinary,
     roomStorage: createCloudinaryStorage('rooms'),
@@ -97,7 +117,8 @@ module.exports = {
     maintenanceStorage: createCloudinaryStorage('maintenance'),
     paymentStorage: createCloudinaryStorage('payments'),
     receiptStorage: createCloudinaryStorage('receipts'),
-    privateDocumentStorage: createCloudinaryStorage('documents', ['jpg', 'jpeg', 'png'], true),
+    privateDocumentStorage: createCloudinaryStorage('documents', ['jpg', 'jpeg', 'png'], false),
     getPublicIdFromUrl,
+    getAccessibleImageUrl,
     deleteFromCloudinary
 };
