@@ -205,6 +205,7 @@ async function openFraudDetail(paymentId) {
         const res = await fetch(`/api/admin/fraud/${paymentId}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load payment detail');
         const data = await res.json();
+        FraudDashboard.currentPayment = data.payment || {};
         body.innerHTML = buildFraudDrawerContent(data);
     } catch (err) {
         body.innerHTML = `<div class="alert alert-danger m-3">${err.message}</div>`;
@@ -215,6 +216,7 @@ function closeFraudDrawer() {
     document.getElementById('fraud-drawer')?.classList.remove('open');
     document.getElementById('fraud-drawer-overlay')?.classList.remove('show');
     FraudDashboard.drawerPaymentId = null;
+    FraudDashboard.currentPayment = null;
 }
 
 function buildFraudDrawerContent(d) {
@@ -404,13 +406,23 @@ async function submitFraudDecision(decision) {
     };
     const label = labelMap[decision] || decision;
 
-    if (!confirm(`${label} for payment #${pid}?`)) return;
+    let expectedAmount = null;
+    if (decision === 'MANUAL_PARTIAL') {
+        const currP = FraudDashboard.currentPayment || {};
+        const defaultExpected = currP.expected_amount || currP.monthly_rate || currP.amount || '';
+        const input = prompt(`Enter TOTAL expected rent/bill amount for Payment #${pid} (₱):`, defaultExpected);
+        if (input === null) return; // User cancelled prompt
+        const parsed = parseFloat(input);
+        if (!isNaN(parsed) && parsed > 0) expectedAmount = parsed;
+    } else {
+        if (!confirm(`${label} for payment #${pid}?`)) return;
+    }
 
     try {
         const res = await fetch(`/api/admin/fraud/${pid}/decision`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ decision, note }),
+            body: JSON.stringify({ decision, note, expected_amount: expectedAmount }),
             credentials: 'include'
         });
         const data = await res.json();

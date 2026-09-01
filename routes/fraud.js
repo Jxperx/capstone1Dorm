@@ -247,7 +247,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 // ─── POST /api/admin/fraud/:id/decision ──────────────────────
 router.post('/:id/decision', requireAdmin, async (req, res) => {
     const paymentId = parseInt(req.params.id);
-    const { decision, note } = req.body;
+    const { decision, note, expected_amount } = req.body;
     const allowed = ['MANUAL_APPROVED', 'MANUAL_BLOCKED', 'MANUAL_PARTIAL'];
 
     if (!allowed.includes(decision)) {
@@ -258,14 +258,15 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
         const pool = await poolPromise;
         const adminName = req.session.user.email || 'Admin';
 
-        // Load payment details to get tenant user_id, amounts for balance calculation & notification
+        // Load payment details including room monthly_rate as fallback for expected_amount
         const payRes = await pool.request()
             .input('pid', sql.Int, paymentId)
             .query(`
-                SELECT p.*, t.user_id AS tenant_user_id, u.full_name AS tenant_name
+                SELECT p.*, t.user_id AS tenant_user_id, u.full_name AS tenant_name, r.monthly_rate
                 FROM payments p
                 LEFT JOIN tenants t ON p.tenant_id = t.id
                 LEFT JOIN users u ON t.user_id = u.id
+                LEFT JOIN rooms r ON t.room_id = r.id
                 WHERE p.id = @pid
             `);
         
@@ -302,16 +303,38 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
             .input('st', sql.NVarChar, payStatus)
             .query('UPDATE payments SET status = @st WHERE id = @pid');
 
-        // If Partial Payment accepted, send automated Live Chat notification to tenant
+        // If Partial Payment accepted, compute exact remaining balance & send transparent Live Chat notification
         if (decision === 'MANUAL_PARTIAL' && tenantUserId) {
             const paid = parseFloat(payment.amount || 0);
-            const expected = parseFloat(payment.expected_amount || paid);
+
+            let expected = parseFloat(expected_amount);
+            if (isNaN(expected) || expected <= 0) {
+                expected = parseFloat(payment.expected_amount || payment.monthly_rate || paid);
+            }
+
             const remaining = Math.max(0, expected - paid);
 
-            const paidStr = paid.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            const remStr = remaining.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            // Persist expected_amount to payments table if greater than 0
+            if (expected > 0) {
+                await pool.request()
+                    .input('pid', sql.Int, paymentId)
+                    .input('exp', sql.Decimal(10, 2), expected)
+                    .query('UPDATE payments SET expected_amount = @exp WHERE id = @pid');
+            }
 
-            const chatMsg = `🤖 System Notification: Your payment of ₱${paidStr} has been accepted as a Partial Payment. Remaining Balance: ₱${remStr}. Please log in to settle your remaining balance.`;
+            const paidStr = paid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const expStr  = expected.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const remStr  = remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const chatMsg = `📌 System Notification — Partial Payment Accepted\n\n` +
+                `Your payment of ₱${paidStr} for Payment #${paymentId} has been accepted as a Partial Payment.\n\n` +
+                `Financial Breakdown:\n` +
+                `• Total Expected Amount: ₱${expStr}\n` +
+                `• Amount Received: ₱${paidStr}\n` +
+                `-----------------------------------\n` +
+                `• Remaining Balance Due: ₱${remStr}\n\n` +
+                `Please log in to your tenant portal to settle your remaining balance of ₱${remStr}. Thank you!`;
+
             const sessionId = `tenant_${tenantUserId}`;
 
             await pool.request()
