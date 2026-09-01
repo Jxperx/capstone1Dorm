@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_date DATE NOT NULL,
     payment_method VARCHAR(50),
     proof_image_url VARCHAR(255),
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'partially_paid')),
     gateway_transaction_id VARCHAR(100),
     gateway_status VARCHAR(50),
     expected_amount DECIMAL(10,2),
