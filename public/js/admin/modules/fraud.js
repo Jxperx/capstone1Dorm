@@ -205,7 +205,7 @@ async function openFraudDetail(paymentId) {
         const res = await fetch(`/api/admin/fraud/${paymentId}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load payment detail');
         const data = await res.json();
-        body.innerHTML = buildDrawerContent(data);
+        body.innerHTML = buildFraudDrawerContent(data);
     } catch (err) {
         body.innerHTML = `<div class="alert alert-danger m-3">${err.message}</div>`;
     }
@@ -217,7 +217,7 @@ function closeFraudDrawer() {
     FraudDashboard.drawerPaymentId = null;
 }
 
-function buildDrawerContent(d) {
+function buildFraudDrawerContent(d) {
     const p = d.payment || {};
     const receipt = d.receipts?.[0] || null;
     const flags = d.flags || [];
@@ -226,8 +226,11 @@ function buildDrawerContent(d) {
     const level = p.risk_level || 'SAFE';
     const color = RISK_COLORS[level] || '#6366f1';
 
+    const rawImgUrl = receipt?.file_path || receipt?.receipt_path || p.proof_image_url || '';
+    const imgUrl = rawImgUrl ? (rawImgUrl.startsWith('http') || rawImgUrl.startsWith('/') ? rawImgUrl : '/' + rawImgUrl) : '';
+
     const circumference = 2 * Math.PI * 30;
-    const fillOffset = receipt ? (circumference - (score / 100) * circumference) : circumference;
+    const fillOffset = (receipt || rawImgUrl) ? (circumference - (score / 100) * circumference) : circumference;
 
     return `
     <!-- Score Ring -->
@@ -271,12 +274,12 @@ function buildDrawerContent(d) {
     <!-- Receipt -->
     <div class="drawer-section">
         <div class="drawer-section-title">Receipt & Hashes</div>
-        ${receipt ? `
-        <img src="${receipt.file_path || receipt.receipt_path || ''}" class="receipt-preview-thumb mb-3" 
-             onclick="openReceiptPreview('${receipt.file_path || ''}')" 
-             onerror="this.style.display='none'">
-        ${drawerRow('SHA-256', `<span style="font-family:monospace;font-size:0.7rem;word-break:break-all">${receipt.sha256_hash || '—'}</span>`)}
-        ${drawerRow('pHash', `<span style="font-family:monospace;font-size:0.7rem">${receipt.phash_value || '—'}</span>`)}
+        ${imgUrl ? `
+        <img src="${imgUrl}" class="receipt-preview-thumb mb-3" 
+             onclick="openReceiptPreview('${imgUrl}')" 
+             style="max-width:180px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);cursor:zoom-in;display:block;">
+        ${drawerRow('SHA-256', `<span style="font-family:monospace;font-size:0.7rem;word-break:break-all">${receipt?.sha256_hash || '—'}</span>`)}
+        ${drawerRow('pHash', `<span style="font-family:monospace;font-size:0.7rem">${receipt?.phash_value || '—'}</span>`)}
         ` : '<p style="color:#64748b;font-size:0.82rem">No receipt uploaded.</p>'}
     </div>
 
@@ -380,10 +383,15 @@ async function reRunAnalysis() {
 
 // ─── Receipt Preview Modal ──────────────────────────────────────
 function openReceiptPreview(url) {
+    if (!url) return;
+    const formattedUrl = url.startsWith('http') || url.startsWith('/') ? url : '/' + url;
     const img = document.getElementById('fraud-receipt-preview-img');
-    if (img) img.src = url;
-    const modal = bootstrap.Modal.getOrCreate(document.getElementById('receiptPreviewModal'));
-    modal.show();
+    if (img) img.src = formattedUrl;
+    const modalEl = document.getElementById('receiptPreviewModal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 }
 
 // ─── Toast Notification ─────────────────────────────────────────

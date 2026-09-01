@@ -514,7 +514,7 @@ async function openInquiryDetail(id) {
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.json().catch(()=>({})))?.error || 'Failed'}`);
         const record = await res.json();
 
-        body.innerHTML = buildDrawerContent(record);
+        body.innerHTML = buildInquiryDrawerContent(record);
 
         // Auto OSINT: run immediately if no cached result exists
         if (!record.osint_result) {
@@ -532,7 +532,7 @@ function closeInquiryDrawer() {
     InquiryDashboard.drawerInquiryId = null;
 }
 
-function buildDrawerContent(r) {
+function buildInquiryDrawerContent(r) {
     const statusColors = {
         approved: '#27ae60', flagged: '#e74c3c',
         duplicate: '#3498db', suspicious: '#f39c12'
