@@ -272,6 +272,14 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
         const payment = payRes.recordset[0] || {};
         const tenantUserId = payment.tenant_user_id || payment.tenant_id;
 
+        // Ensure database check constraints permit 'MANUAL_PARTIAL' and 'partially_paid'
+        await pool.request().query(`
+            ALTER TABLE fraud_scores DROP CONSTRAINT IF EXISTS fraud_scores_decision_check;
+            ALTER TABLE fraud_scores ADD CONSTRAINT fraud_scores_decision_check CHECK (decision IN ('AUTO_APPROVED', 'AUTO_BLOCKED', 'FLAGGED', 'MANUAL_APPROVED', 'MANUAL_BLOCKED', 'MANUAL_PARTIAL'));
+            ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
+            ALTER TABLE payments ADD CONSTRAINT payments_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'partially_paid'));
+        `).catch(() => {});
+
         await pool.request()
             .input('pid', sql.Int, paymentId)
             .input('dec', sql.NVarChar, decision)
@@ -288,12 +296,6 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
         let payStatus = 'approved';
         if (decision === 'MANUAL_BLOCKED') payStatus = 'rejected';
         if (decision === 'MANUAL_PARTIAL') payStatus = 'partially_paid';
-
-        // Ensure database check constraint permits 'partially_paid'
-        await pool.request().query(`
-            ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
-            ALTER TABLE payments ADD CONSTRAINT payments_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'partially_paid'));
-        `).catch(() => {});
 
         await pool.request()
             .input('pid', sql.Int, paymentId)
