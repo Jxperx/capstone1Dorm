@@ -107,8 +107,9 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
-// Block direct access to any /uploads path — all files are served through Cloudinary
-app.use('/uploads', (req, res) => res.status(403).json({ error: 'Direct file access is not allowed.' }));
+// Serve uploaded images (e.g. payment receipts, room photos)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({

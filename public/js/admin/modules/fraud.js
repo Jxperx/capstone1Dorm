@@ -397,8 +397,14 @@ async function submitFraudDecision(decision) {
     const pid = FraudDashboard.drawerPaymentId;
     if (!pid) return;
     const note = document.getElementById('fraud-admin-note')?.value || '';
-    const label = decision === 'MANUAL_APPROVED' ? 'Approve' : 'Block';
-    if (!confirm(`${label} payment #${pid}?`)) return;
+    const labelMap = {
+        MANUAL_APPROVED: 'Approve',
+        MANUAL_BLOCKED: 'Block',
+        MANUAL_PARTIAL: 'Accept Partial Payment'
+    };
+    const label = labelMap[decision] || decision;
+
+    if (!confirm(`${label} for payment #${pid}?`)) return;
 
     try {
         const res = await fetch(`/api/admin/fraud/${pid}/decision`, {
@@ -409,7 +415,7 @@ async function submitFraudDecision(decision) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to update decision');
-        showToast(`Payment #${pid} ${label.toLowerCase()}d successfully.`, decision === 'MANUAL_APPROVED' ? 'success' : 'danger');
+        showToast(`Payment #${pid} set to ${label} successfully.`, decision === 'MANUAL_BLOCKED' ? 'danger' : 'success');
         closeFraudDrawer();
         loadFraudDashboard(FraudDashboard.currentPage);
         loadFraudAnalytics();

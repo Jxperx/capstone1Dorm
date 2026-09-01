@@ -126,6 +126,17 @@ async function analyzePayment(paymentId) {
         }
     }
 
+    // ── 4.1. Partial Payment Check (Amount < Expected Amount) ──
+    const expectedAmt = parseFloat(payment.expected_amount) || (receipt ? parseFloat(receipt.ocr_amount) : 0);
+    const paidAmt = parseFloat(payment.amount) || 0;
+    if (expectedAmt > 0 && paidAmt > 0 && (expectedAmt - paidAmt) > 1.0) {
+        const remaining = (expectedAmt - paidAmt).toFixed(2);
+        flags.push({ 
+            code: 'PARTIAL_PAYMENT', 
+            desc: `Partial payment detected: Paid ₱${paidAmt.toFixed(2)} out of expected ₱${expectedAmt.toFixed(2)}. Remaining balance: ₱${remaining}.` 
+        });
+    }
+
     // ── 5. OCR vs Reference Number mismatch ────────────────────
     if (receipt && receipt.ocr_ref_number && payment.reference_number) {
         if (receipt.ocr_ref_number.trim() !== payment.reference_number.trim()) {

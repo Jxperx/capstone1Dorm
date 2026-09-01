@@ -248,7 +248,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 router.post('/:id/decision', requireAdmin, async (req, res) => {
     const paymentId = parseInt(req.params.id);
     const { decision, note } = req.body;
-    const allowed = ['MANUAL_APPROVED', 'MANUAL_BLOCKED'];
+    const allowed = ['MANUAL_APPROVED', 'MANUAL_BLOCKED', 'MANUAL_PARTIAL'];
 
     if (!allowed.includes(decision)) {
         return res.status(400).json({ error: `Decision must be one of: ${allowed.join(', ')}` });
@@ -257,6 +257,20 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
     try {
         const pool = await poolPromise;
         const adminName = req.session.user.email || 'Admin';
+
+        // Load payment details to get tenant user_id, amounts for balance calculation & notification
+        const payRes = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query(`
+                SELECT p.*, t.user_id AS tenant_user_id, u.full_name AS tenant_name
+                FROM payments p
+                LEFT JOIN tenants t ON p.tenant_id = t.id
+                LEFT JOIN users u ON t.user_id = u.id
+                WHERE p.id = @pid
+            `);
+        
+        const payment = payRes.recordset[0] || {};
+        const tenantUserId = payment.tenant_user_id || payment.tenant_id;
 
         await pool.request()
             .input('pid', sql.Int, paymentId)
@@ -271,11 +285,37 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
             `);
 
         // Sync payment status
-        const payStatus = decision === 'MANUAL_APPROVED' ? 'approved' : 'rejected';
+        let payStatus = 'approved';
+        if (decision === 'MANUAL_BLOCKED') payStatus = 'rejected';
+        if (decision === 'MANUAL_PARTIAL') payStatus = 'partially_paid';
+
         await pool.request()
             .input('pid', sql.Int, paymentId)
             .input('st', sql.NVarChar, payStatus)
             .query('UPDATE payments SET status = @st WHERE id = @pid');
+
+        // If Partial Payment accepted, send automated Live Chat notification to tenant
+        if (decision === 'MANUAL_PARTIAL' && tenantUserId) {
+            const paid = parseFloat(payment.amount || 0);
+            const expected = parseFloat(payment.expected_amount || paid);
+            const remaining = Math.max(0, expected - paid);
+
+            const paidStr = paid.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            const remStr = remaining.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+            const chatMsg = `🤖 System Notification: Your payment of ₱${paidStr} has been accepted as a Partial Payment. Remaining Balance: ₱${remStr}. Please log in to settle your remaining balance.`;
+            const sessionId = `tenant_${tenantUserId}`;
+
+            await pool.request()
+                .input('sid', sql.NVarChar, sessionId)
+                .input('tid', sql.Int, tenantUserId)
+                .input('sender', sql.NVarChar, 'system')
+                .input('msg', sql.NVarChar, chatMsg)
+                .query(`
+                    INSERT INTO live_chat_messages (session_id, tenant_id, sender, message)
+                    VALUES (@sid, @tid, @sender, @msg)
+                `).catch(err => console.warn('[Auto Live Chat Notice Error]', err.message));
+        }
 
         res.json({ success: true, decision, paymentStatus: payStatus });
     } catch (err) {
