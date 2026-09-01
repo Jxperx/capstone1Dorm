@@ -40,12 +40,12 @@ router.get('/', async (req, res) => {
     try {
         const pool = await poolPromise;
 
-        const buildWhere = (req) => {
+        const buildWhere = (reqObj) => {
             const clauses = ['1=1'];
-            if (status !== 'ALL') { clauses.push('i.status = @status'); req.input('status', sql.NVarChar(20), status); }
-            if (search)           { clauses.push('(i.first_name LIKE @s OR i.last_name LIKE @s OR i.email LIKE @s OR i.message LIKE @s OR i.phone LIKE @s)'); req.input('s', sql.NVarChar(255), `%${search}%`); }
-            if (dateFrom)         { clauses.push('i.created_at >= @df'); req.input('df', sql.DateTime2, new Date(dateFrom)); }
-            if (dateTo)           { clauses.push('i.created_at <= DATEADD(day,1,@dt)'); req.input('dt', sql.DateTime2, new Date(dateTo)); }
+            if (status !== 'ALL') { clauses.push('i.status = @status'); reqObj.input('status', sql.NVarChar(20), status); }
+            if (search)           { clauses.push('(i.first_name LIKE @s OR i.last_name LIKE @s OR i.email LIKE @s OR i.message LIKE @s OR i.phone LIKE @s)'); reqObj.input('s', sql.NVarChar(255), `%${search}%`); }
+            if (dateFrom)         { clauses.push('i.created_at >= @df'); reqObj.input('df', sql.DateTime2, new Date(dateFrom)); }
+            if (dateTo)           { clauses.push('i.created_at <= @dt'); reqObj.input('dt', sql.DateTime2, new Date(dateTo + 'T23:59:59.999Z')); }
             return clauses.join(' AND ');
         };
 
@@ -72,18 +72,18 @@ router.get('/', async (req, res) => {
                 CASE WHEN i.school_id_path IS NOT NULL THEN 1 ELSE 0 END AS has_school_id,
                 CASE WHEN i.govt_id_path   IS NOT NULL THEN 1 ELSE 0 END AS has_govt_id,
                 CASE WHEN i.osint_result IS NOT NULL THEN 1 ELSE 0 END AS has_osint,
-                JSON_VALUE(i.osint_result, '$.trustScore')     AS trust_score,
-                JSON_VALUE(i.osint_result, '$.trustLevel')     AS trust_level,
-                JSON_VALUE(i.osint_result, '$.recommendation') AS recommendation
+                i.osint_result::json->>'trustScore'     AS trust_score,
+                i.osint_result::json->>'trustLevel'     AS trust_level,
+                i.osint_result::json->>'recommendation' AS recommendation
             FROM inquiries i
             WHERE ${whereClause}
             ORDER BY i.created_at ${orderDir}
-            OFFSET @offset ROWS FETCH NEXT @lim ROWS ONLY
+            LIMIT @lim OFFSET @offset
         `);
 
         res.json({
-            data:  dataRes.recordset,
-            total: cntRes.recordset[0]?.total || 0,
+            data:  dataRes.recordset || [],
+            total: parseInt(cntRes.recordset[0]?.total || 0),
             page:  parseInt(page),
             limit: parseInt(limit)
         });
@@ -108,34 +108,37 @@ router.get('/analytics', async (req, res) => {
         // Daily counts (last 30 days)
         const dailyRes = await pool.request().query(`
             SELECT
-                CONVERT(DATE, created_at) AS day,
+                CAST(created_at AS DATE) AS day,
                 COUNT(*) AS total,
                 SUM(CASE WHEN ai_result = 'REAL' THEN 1 ELSE 0 END) AS real_count,
                 SUM(CASE WHEN ai_result = 'SPAM' THEN 1 ELSE 0 END) AS spam_count
             FROM inquiries
-            WHERE created_at >= DATEADD(day, -30, SYSDATETIME())
-            GROUP BY CONVERT(DATE, created_at)
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY CAST(created_at AS DATE)
             ORDER BY day ASC
         `);
 
         // Top IPs
         const topIpRes = await pool.request().query(`
-            SELECT TOP 10 ip_address, COUNT(*) AS cnt,
+            SELECT ip_address, COUNT(*) AS cnt,
                 MAX(created_at) AS last_seen,
                 SUM(CASE WHEN status = 'flagged' OR status = 'suspicious' THEN 1 ELSE 0 END) AS bad_count
             FROM inquiries
+            WHERE ip_address IS NOT NULL AND ip_address != ''
             GROUP BY ip_address
             ORDER BY cnt DESC
+            LIMIT 10
         `);
 
         // Device activity
         const deviceRes = await pool.request().query(`
-            SELECT TOP 10 device_id, COUNT(*) AS cnt,
+            SELECT device_id, COUNT(*) AS cnt,
                 MAX(created_at) AS last_seen
             FROM inquiries
-            WHERE device_id IS NOT NULL
+            WHERE device_id IS NOT NULL AND device_id != ''
             GROUP BY device_id
             ORDER BY cnt DESC
+            LIMIT 10
         `);
 
         // Summary totals
@@ -155,12 +158,12 @@ router.get('/analytics', async (req, res) => {
         const blockedRes = await pool.request().query(`SELECT COUNT(*) AS cnt FROM inquiry_blocked_ips`);
 
         res.json({
-            summary:   totalRes.recordset[0],
-            byStatus:  statusRes.recordset,
-            daily:     dailyRes.recordset,
-            topIps:    topIpRes.recordset,
-            devices:   deviceRes.recordset,
-            blockedIps: blockedRes.recordset[0]?.cnt || 0
+            summary:   totalRes.recordset[0] || {},
+            byStatus:  statusRes.recordset || [],
+            daily:     dailyRes.recordset || [],
+            topIps:    topIpRes.recordset || [],
+            devices:   deviceRes.recordset || [],
+            blockedIps: parseInt(blockedRes.recordset[0]?.cnt || 0)
         });
     } catch (err) {
         console.error('[Admin Inquiries] Analytics error:', err);
@@ -222,10 +225,11 @@ router.post('/osint-bulk', async (req, res) => {
 
         // Fetch all unscanned inquiries (cap at 50 to avoid abuse)
         const fetchRes = await pool.request().query(`
-            SELECT TOP 50 id, first_name, last_name, email, phone, message, status
+            SELECT id, first_name, last_name, email, phone, message, status
             FROM inquiries
             WHERE osint_result IS NULL
             ORDER BY created_at DESC
+            LIMIT 50
         `);
 
         const items = fetchRes.recordset;
@@ -405,11 +409,9 @@ router.post('/block-ip', async (req, res) => {
             .input('ip',     sql.NVarChar(45),  ip_address)
             .input('reason', sql.NVarChar(255), reason || 'Blocked by admin')
             .query(`
-                IF NOT EXISTS (SELECT 1 FROM inquiry_blocked_ips WHERE ip_address = @ip)
-                    INSERT INTO inquiry_blocked_ips (ip_address, reason, blocked_by)
-                    VALUES (@ip, @reason, 'admin')
-                ELSE
-                    UPDATE inquiry_blocked_ips SET reason = @reason WHERE ip_address = @ip
+                INSERT INTO inquiry_blocked_ips (ip_address, reason, blocked_by)
+                VALUES (@ip, @reason, 'admin')
+                ON CONFLICT (ip_address) DO UPDATE SET reason = @reason
             `);
         res.json({ success: true, message: `IP ${ip_address} has been blocked.` });
     } catch (err) {

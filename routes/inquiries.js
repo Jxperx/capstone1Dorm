@@ -227,7 +227,7 @@ router.post('/submit', (req, res, next) => {
                     SELECT COUNT(*) AS cnt
                     FROM inquiries
                     WHERE device_id = @did
-                      AND created_at >= DATEADD(hour, -1, SYSDATETIME())
+                      AND created_at >= NOW() - INTERVAL '1 hour'
                 `);
             const recentCount = deviceRes.recordset[0]?.cnt || 0;
             if (recentCount >= 3) {
@@ -243,7 +243,7 @@ router.post('/submit', (req, res, next) => {
                 SELECT COUNT(*) AS cnt
                 FROM inquiries
                 WHERE ip_address = @ip
-                  AND created_at >= DATEADD(hour, -1, SYSDATETIME())
+                  AND created_at >= NOW() - INTERVAL '1 hour'
             `);
         const ipCount = ipRes.recordset[0]?.cnt || 0;
         if (ipCount >= 5) {
@@ -254,9 +254,9 @@ router.post('/submit', (req, res, next) => {
                     .input('ip', sql.NVarChar(45), ip)
                     .input('reason', sql.NVarChar(255), `Auto-blocked: ${ipCount} submissions in 1 hour`)
                     .query(`
-                        IF NOT EXISTS (SELECT 1 FROM inquiry_blocked_ips WHERE ip_address = @ip)
-                            INSERT INTO inquiry_blocked_ips (ip_address, reason, blocked_by)
-                            VALUES (@ip, @reason, 'system')
+                        INSERT INTO inquiry_blocked_ips (ip_address, reason, blocked_by)
+                        VALUES (@ip, @reason, 'system')
+                        ON CONFLICT (ip_address) DO UPDATE SET reason = @reason
                     `);
                 console.warn(`[Inquiry] Auto-blocked IP: ${ip} (${ipCount} submissions)`);
             }

@@ -457,7 +457,9 @@ RULES:
 
             const data    = await response.json();
             const raw     = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const cleaned = raw.replace(/```json|```/g, '').trim();
+            let cleaned   = raw.replace(/```json|```/g, '').trim();
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+            if (jsonMatch) cleaned = jsonMatch[0];
             const parsed  = JSON.parse(cleaned);
 
             const score  = Math.min(95, Math.max(0, parseInt(parsed.trustScore) || 50));
