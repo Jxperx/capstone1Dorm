@@ -156,6 +156,9 @@ function renderAdminAlerts(data) {
         const safeTopic = escAttr(alert.issue_topic);
         const safeAction = escAttr(alert.recommended_action);
 
+        const rawScore = parseFloat(alert.avg_sentiment_score);
+        const scoreFormatted = isNaN(rawScore) ? 'N/A' : (rawScore > 0 ? '+' + rawScore.toFixed(2) : rawScore.toFixed(2));
+
         html += `
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm rounded-4 h-100 bg-${severityClass} bg-opacity-10" style="border-left: 5px solid var(--bs-${severityClass}) !important;">
@@ -165,7 +168,7 @@ function renderAdminAlerts(data) {
                             <small class="text-muted"><i class="fas fa-clock me-1"></i> Active Trend</small>
                         </div>
                         <h5 class="fw-bold mb-2"><i class="fas fa-${icon} me-2 text-${severityClass}"></i> Trend: ${alert.issue_topic}</h5>
-                        <p class="small text-muted mb-3">Detected <strong>${alert.negative_count} complaints</strong> with an average sentiment score of <strong>${alert.avg_sentiment_score}</strong>.</p>
+                        <p class="small text-muted mb-3">Detected <strong>${alert.negative_count} complaints</strong> with an average sentiment score of <strong>${scoreFormatted}</strong>.</p>
                         
                         <!-- AI Proactive Action Plan Box -->
                         <div class="bg-white p-3 rounded-3 border mb-3">
@@ -198,35 +201,33 @@ function renderAdminAlerts(data) {
 }
 
 async function loadResolvedAlerts() {
-    const tbody = document.getElementById('resolvedAlertsTableBody');
-    const badge = document.getElementById('resolvedAlertsBadge');
-    if (!tbody) return;
+    const container = document.getElementById('resolvedAlertsContainer');
+    if (!container) return;
 
     try {
         const res = await fetch('/api/admin/feedback/resolved-alerts', { credentials: 'include' });
-        if (!res.ok) return;
         const data = await res.json();
 
-        if (badge) badge.textContent = `${data.length} Resolved`;
-
-        if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-muted">No resolved interventions logged yet.</td></tr>`;
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div class="text-muted small">No resolved trend alerts recorded yet.</div>`;
             return;
         }
 
-        tbody.innerHTML = data.map(item => {
-            const date = item.resolved_at ? new Date(item.resolved_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently';
-            return `
-                <tr>
-                    <td><strong>${item.issue_topic}</strong></td>
-                    <td><span class="badge bg-secondary">${item.alert_severity}</span></td>
-                    <td><span class="badge bg-success">${item.negative_count} complaints fixed</span></td>
-                    <td><div class="small text-truncate" style="max-width:250px;" title="${item.recommended_action}">${item.recommended_action}</div></td>
-                    <td class="small text-muted">${date}</td>
-                    <td><span class="badge bg-success"><i class="fas fa-check me-1"></i>Resolved</span></td>
-                </tr>
+        let html = '<div class="list-group list-group-flush">';
+        data.forEach(item => {
+            const resolvedDate = item.resolved_at ? new Date(item.resolved_at).toLocaleDateString() : 'Recently';
+            html += `
+                <div class="list-group-item bg-transparent px-0 py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-success"><i class="fas fa-check-circle me-1"></i> ${escAttr(item.issue_topic)}</strong>
+                        <div class="small text-muted">${escAttr(item.recommended_action || 'Resolved')}</div>
+                    </div>
+                    <span class="badge bg-secondary rounded-pill">${resolvedDate}</span>
+                </div>
             `;
-        }).join('');
+        });
+        html += '</div>';
+        container.innerHTML = html;
     } catch (err) {
         console.error('Error loading resolved alerts:', err);
     }

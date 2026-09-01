@@ -356,23 +356,32 @@ router.post('/create-work-order', async (req, res) => {
     try {
         const pool = await poolPromise;
 
-        // Try to find the tenant that reported this issue topic, or use an active tenant cleanly
-        const tenantRes = await pool.request()
+        // Fetch recent feedback snippets for this topic to build AI Root Cause Context
+        const feedbackSnippetRes = await pool.request()
             .input('topicKey', sql.NVarChar, `%${issue_topic}%`)
             .query(`
-                SELECT TOP 1 tenant_id FROM tenant_feedback 
-                WHERE ai_topics LIKE @topicKey OR feedback_text LIKE @topicKey
+                SELECT TOP 3 tenant_id, feedback_text, ai_summary, created_at 
+                FROM tenant_feedback 
+                WHERE (ai_topics LIKE @topicKey OR feedback_text LIKE @topicKey)
+                  AND (ai_sentiment = 'Negative' OR ai_needs_attention = 1)
                 ORDER BY created_at DESC
             `);
         
-        let tenantId = tenantRes.recordset.length > 0 ? tenantRes.recordset[0].tenant_id : null;
+        const snippets = feedbackSnippetRes.recordset;
+        let tenantId = snippets.length > 0 ? snippets[0].tenant_id : null;
         if (!tenantId) {
             const activeRes = await pool.request().query("SELECT TOP 1 id FROM tenants WHERE status = 'active'");
             tenantId = activeRes.recordset.length > 0 ? activeRes.recordset[0].id : 1;
         }
 
+        let complaintContext = '';
+        if (snippets.length > 0) {
+            complaintContext = '\n\n🔍 AI Root Cause Evidence (Recent Tenant Reports):\n' + 
+                snippets.map((s, idx) => `${idx + 1}. "${s.ai_summary || s.feedback_text}"`).join('\n');
+        }
+
         const title = `[Facility / Common Area] ${issue_topic} Maintenance`;
-        const description = `[AI Trend Resolution Task] Topic: ${issue_topic}.\nRecommended Strategy: ${recommended_action || 'Inspect and resolve recurring complaints.'}`;
+        const description = `[AI Trend Resolution Task] Topic: ${issue_topic}.\nRecommended Strategy: ${recommended_action || 'Inspect and resolve recurring complaints.'}${complaintContext}`;
 
         await pool.request()
             .input('tenant_id', sql.Int, tenantId)
