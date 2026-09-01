@@ -51,19 +51,10 @@ router.get('/:inquiryId/:fileType', requireAdmin, async (req, res) => {
             return res.status(404).json({ error: 'No document uploaded for this field.' });
         }
 
-        // If it's a Cloudinary URL, generate a temporary signed URL and redirect
+        // If it's a Cloudinary URL or remote link, use getAccessibleImageUrl helper to redirect safely
         if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-            const { cloudinary, getPublicIdFromUrl } = require('../../config/cloudinary');
-            const publicId = getPublicIdFromUrl(filePath);
-            if (!publicId) {
-                return res.redirect(filePath);
-            }
-            const signedUrl = cloudinary.url(publicId, {
-                type: 'authenticated',
-                sign_url: true,
-                expires_at: Math.floor(Date.now() / 1000) + 600 // 10 minutes expiry
-            });
-            return res.redirect(signedUrl);
+            const { getAccessibleImageUrl } = require('../../config/cloudinary');
+            return res.redirect(getAccessibleImageUrl(filePath));
         }
 
         // Resolve absolute path — paths in DB are relative to project root

@@ -636,6 +636,14 @@ function buildIdDocSection(r) {
     const vc = verdictConfig[verdictKey] || verdictConfig['FLAG'];
     const conf = analysis?.confidence ?? 0;
 
+    const schoolImgSrc = (r.school_id_path && (r.school_id_path.startsWith('http://') || r.school_id_path.startsWith('https://')))
+        ? r.school_id_path
+        : `/api/admin/inquiry-docs/${r.id}/school_id`;
+
+    const govtImgSrc = (r.govt_id_path && (r.govt_id_path.startsWith('http://') || r.govt_id_path.startsWith('https://')))
+        ? r.govt_id_path
+        : `/api/admin/inquiry-docs/${r.id}/govt_id`;
+
     return `
     <div class="inq-drawer-section">
         <div class="inq-drawer-section-title">
@@ -657,11 +665,11 @@ function buildIdDocSection(r) {
             ${hasSchool ? `
             <div style="flex:1;min-width:120px">
                 <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600">🎓 SCHOOL ID</div>
-                <a href="/api/admin/inquiry-docs/${r.id}/school_id" target="_blank" rel="noopener"
+                <a href="${schoolImgSrc}" target="_blank" rel="noopener"
                    style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
                           transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
                    onmouseout="this.style.borderColor='rgba(197,160,89,0.3)'">
-                    <img src="/api/admin/inquiry-docs/${r.id}/school_id" alt="School ID"
+                    <img src="${schoolImgSrc}" alt="School ID"
                          style="width:100%;height:80px;object-fit:cover;display:block"
                          onerror="this.parentElement.innerHTML='<div style=\\'padding:16px;text-align:center;color:#aaa;font-size:0.75rem\\'>Image unavailable</div>'">
                 </a>
@@ -675,11 +683,11 @@ function buildIdDocSection(r) {
             ${hasGovt ? `
             <div style="flex:1;min-width:120px">
                 <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600">🪪 GOVERNMENT ID</div>
-                <a href="/api/admin/inquiry-docs/${r.id}/govt_id" target="_blank" rel="noopener"
+                <a href="${govtImgSrc}" target="_blank" rel="noopener"
                    style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
                           transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
                    onmouseout="this.style.borderColor='rgba(197,160,89,0.3)'">
-                    <img src="/api/admin/inquiry-docs/${r.id}/govt_id" alt="Government ID"
+                    <img src="${govtImgSrc}" alt="Government ID"
                          style="width:100%;height:80px;object-fit:cover;display:block"
                          onerror="this.parentElement.innerHTML='<div style=\\'padding:16px;text-align:center;color:#aaa;font-size:0.75rem\\'>Image unavailable</div>'">
                 </a>
