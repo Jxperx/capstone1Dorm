@@ -335,17 +335,30 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
                 `• Remaining Balance Due: ₱${remStr}\n\n` +
                 `Please log in to your tenant portal to settle your remaining balance of ₱${remStr}. Thank you!`;
 
-            const sessionId = `tenant_${tenantUserId}`;
+            const sHyphen = `tenant-${tenantUserId}`;
+            const sUnderscore = `tenant_${tenantUserId}`;
 
             await pool.request()
-                .input('sid', sql.NVarChar, sessionId)
+                .input('s1', sql.NVarChar, sHyphen)
                 .input('tid', sql.Int, tenantUserId)
                 .input('sender', sql.NVarChar, 'system')
                 .input('msg', sql.NVarChar, chatMsg)
                 .query(`
                     INSERT INTO live_chat_messages (session_id, tenant_id, sender, message)
-                    VALUES (@sid, @tid, @sender, @msg)
+                    VALUES (@s1, @tid, @sender, @msg)
                 `).catch(err => console.warn('[Auto Live Chat Notice Error]', err.message));
+
+            const io = req.app.get('io');
+            if (io) {
+                io.to(sHyphen).emit('tenant:new-message', {
+                    message: chatMsg,
+                    timestamp: new Date().toISOString()
+                });
+                io.to(sUnderscore).emit('tenant:new-message', {
+                    message: chatMsg,
+                    timestamp: new Date().toISOString()
+                });
+            }
         }
 
         res.json({ success: true, decision, paymentStatus: payStatus });

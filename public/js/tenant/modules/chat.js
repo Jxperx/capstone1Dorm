@@ -333,7 +333,7 @@ async function loadLiveChatHistory() {
         // Always clear and re-render the full history to avoid duplicates
         inner.innerHTML = '';
         if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(m => appendBubble(m.message, m.sender === 'admin' ? 'admin' : 'user', m.created_at));
+            data.messages.forEach(m => appendBubble(m.message, (m.sender === 'admin' || m.sender === 'system') ? 'admin' : 'user', m.created_at));
         } else {
             inner.innerHTML = `<div class="chat-bubble bot">No messages yet. Type your first message to start!</div>`;
         }
