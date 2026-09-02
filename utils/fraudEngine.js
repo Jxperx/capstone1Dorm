@@ -59,10 +59,12 @@ async function analyzePayment(paymentId) {
         .input('id', sql.Int, paymentId)
         .query(`
             SELECT p.*, t.id as tenant_id_val,
-                   u.full_name as tenant_name, u.email as tenant_email
+                   u.full_name as tenant_name, u.email as tenant_email,
+                   r.monthly_rate as room_monthly_rate
             FROM payments p
             JOIN tenants t ON p.tenant_id = t.id
             JOIN users u ON t.user_id = u.id
+            LEFT JOIN rooms r ON t.room_id = r.id
             WHERE p.id = @id
         `);
 
@@ -117,23 +119,30 @@ async function analyzePayment(paymentId) {
         }
     }
 
-    // ── 4. OCR vs Expected Amount mismatch ─────────────────────
-    if (receipt && receipt.ocr_amount !== null && payment.expected_amount !== null) {
-        const diff = Math.abs(parseFloat(receipt.ocr_amount) - parseFloat(payment.expected_amount));
+    // ── 4. OCR vs Expected Amount / Our Price Mismatch ─────────
+    const ourPrice = parseFloat(payment.expected_amount) || parseFloat(payment.room_monthly_rate) || parseFloat(payment.amount) || 0;
+    const actualPaid = (receipt && receipt.ocr_amount !== null && receipt.ocr_amount !== undefined && parseFloat(receipt.ocr_amount) > 0)
+        ? parseFloat(receipt.ocr_amount)
+        : parseFloat(payment.amount || 0);
+
+    if (receipt && receipt.ocr_amount !== null && ourPrice > 0) {
+        const ocrAmt = parseFloat(receipt.ocr_amount);
+        const diff = Math.abs(ocrAmt - ourPrice);
         if (diff > 1.0) { // Allow PHP 1 tolerance for rounding
             score += WEIGHTS.OCR_AMOUNT_MISMATCH;
-            flags.push({ code: 'OCR_AMOUNT_MISMATCH', desc: `OCR detected amount ₱${receipt.ocr_amount} does not match expected ₱${payment.expected_amount}.` });
+            flags.push({
+                code: 'OCR_AMOUNT_MISMATCH',
+                desc: `OCR detected amount ₱${ocrAmt.toFixed(2)} does not match room rent / expected price ₱${ourPrice.toFixed(2)}.`
+            });
         }
     }
 
-    // ── 4.1. Partial Payment Check (Amount < Expected Amount) ──
-    const expectedAmt = parseFloat(payment.expected_amount) || (receipt ? parseFloat(receipt.ocr_amount) : 0);
-    const paidAmt = parseFloat(payment.amount) || 0;
-    if (expectedAmt > 0 && paidAmt > 0 && (expectedAmt - paidAmt) > 1.0) {
-        const remaining = (expectedAmt - paidAmt).toFixed(2);
+    // ── 4.1. Partial Payment Check (Actual Paid < Our Price) ───
+    if (ourPrice > 0 && actualPaid < ourPrice) {
+        const remaining = (ourPrice - actualPaid).toFixed(2);
         flags.push({ 
             code: 'PARTIAL_PAYMENT', 
-            desc: `Partial payment detected: Paid ₱${paidAmt.toFixed(2)} out of expected ₱${expectedAmt.toFixed(2)}. Remaining balance: ₱${remaining}.` 
+            desc: `Partial payment detected: Actual paid ₱${actualPaid.toFixed(2)} out of expected price ₱${ourPrice.toFixed(2)}. Remaining balance: ₱${remaining}.` 
         });
     }
 

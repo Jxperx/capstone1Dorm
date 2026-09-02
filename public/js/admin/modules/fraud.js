@@ -242,8 +242,13 @@ function buildFraudDrawerContent(d) {
     const hasUnreadable = flagCodes.includes('UNREADABLE_RECEIPT');
     const hasDupHash = flagCodes.includes('DUPLICATE_RECEIPT_HASH') || flagCodes.includes('SIMILAR_PHASH');
 
-    const expectedAmt = p.expected_amount || receipt?.ocr_amount;
-    const isAmountValid = !hasAmountMismatch && (expectedAmt ? Math.abs(parseFloat(p.amount) - parseFloat(expectedAmt)) <= 1.0 : true);
+    const ourPrice = parseFloat(p.expected_amount) || parseFloat(p.room_monthly_rate) || parseFloat(p.amount) || 0;
+    const claimedAmt = parseFloat(p.amount) || 0;
+    const ocrPaid = (receipt && receipt.ocr_amount !== null && receipt.ocr_amount !== undefined) ? parseFloat(receipt.ocr_amount) : null;
+    const actualPaid = ocrPaid !== null ? ocrPaid : claimedAmt;
+    const remainingBalance = Math.max(0, ourPrice - actualPaid);
+
+    const isAmountValid = !hasAmountMismatch && (ourPrice > 0 ? Math.abs(claimedAmt - ourPrice) <= 1.0 && (ocrPaid === null || Math.abs(ocrPaid - ourPrice) <= 1.0) : true);
 
     let refBadge = `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
     if (hasDupRef) {
@@ -284,8 +289,8 @@ function buildFraudDrawerContent(d) {
         <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
             <span class="text-light"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Payment Amount:</span>
             ${isAmountValid 
-                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Match (${fmtMoney(p.amount)})</span>` 
-                : `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Mismatch (Paid ${fmtMoney(p.amount)} vs Exp ${fmtMoney(expectedAmt)})</span>`}
+                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Match (${fmtMoney(claimedAmt)})</span>` 
+                : `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Mismatch (OCR: ${ocrPaid !== null ? fmtMoney(ocrPaid) : 'N/A'} vs Price: ${fmtMoney(ourPrice)})</span>`}
         </div>
 
         <!-- 2. Reference Number Verification -->
@@ -321,8 +326,10 @@ function buildFraudDrawerContent(d) {
         ${drawerRow('Payment ID', `#${p.id}`)}
         ${drawerRow('Booking/Bill ID', p.booking_id || '—')}
         ${drawerRow('Payment Method', p.payment_method || 'Manual Upload')}
-        ${drawerRow('Amount Paid', `<strong>${fmtMoney(p.amount)}</strong>`)}
-        ${drawerRow('Expected Amount', fmtMoney(p.expected_amount))}
+        ${drawerRow('Our Price (Expected Rent)', `<strong>${fmtMoney(ourPrice)}</strong>`)}
+        ${drawerRow('Claimed Amount Submitted', fmtMoney(claimedAmt))}
+        ${drawerRow('OCR Verified Paid', ocrPaid !== null ? `<span class="${ocrPaid < ourPrice ? 'text-danger font-weight-bold' : 'text-success'}">${fmtMoney(ocrPaid)}</span>` : '—')}
+        ${drawerRow('Calculated Remaining Balance', `<span class="text-warning font-weight-bold">${fmtMoney(remainingBalance)}</span>`)}
         ${drawerRow('Reference #', p.reference_number || '—')}
         ${drawerRow('Gateway TX ID', p.gateway_transaction_id || '—')}
         ${drawerRow('Gateway Status', p.gateway_status || '—')}
@@ -409,8 +416,8 @@ async function submitFraudDecision(decision) {
     let expectedAmount = null;
     if (decision === 'MANUAL_PARTIAL') {
         const currP = FraudDashboard.currentPayment || {};
-        const defaultExpected = currP.expected_amount || currP.monthly_rate || currP.amount || '';
-        const input = prompt(`Enter TOTAL expected rent/bill amount for Payment #${pid} (₱):`, defaultExpected);
+        const defaultExpected = currP.expected_amount || currP.room_monthly_rate || currP.monthly_rate || currP.amount || '';
+        const input = prompt(`Enter TOTAL expected room rent/bill amount ("Our Price") for Payment #${pid} (₱):`, defaultExpected);
         if (input === null) return; // User cancelled prompt
         const parsed = parseFloat(input);
         if (!isNaN(parsed) && parsed > 0) expectedAmount = parsed;

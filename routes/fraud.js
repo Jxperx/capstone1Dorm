@@ -125,6 +125,7 @@ router.get('/', requireAdmin, async (req, res) => {
                 u.email                 AS tenant_email,
                 t.id                    AS tenant_id,
                 r.room_number,
+                r.monthly_rate          AS room_monthly_rate,
                 fs.risk_score,
                 fs.risk_level,
                 fs.decision,
@@ -196,7 +197,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
                 SELECT
                     p.*,
                     u.full_name AS tenant_name, u.email AS tenant_email, u.phone_number,
-                    t.id AS tenant_id, r.room_number,
+                    t.id AS tenant_id, r.room_number, r.monthly_rate AS room_monthly_rate,
                     fs.risk_score, fs.risk_level, fs.decision, fs.analyzed_at, fs.admin_note
                 FROM payments p
                 LEFT JOIN tenants t ON p.tenant_id = t.id
@@ -258,15 +259,18 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
         const pool = await poolPromise;
         const adminName = req.session.user.email || 'Admin';
 
-        // Load payment details including room monthly_rate as fallback for expected_amount
+        // Load payment details including room monthly_rate & receipt OCR amount
         const payRes = await pool.request()
             .input('pid', sql.Int, paymentId)
             .query(`
-                SELECT p.*, t.user_id AS tenant_user_id, u.full_name AS tenant_name, r.monthly_rate
+                SELECT p.*, t.user_id AS tenant_user_id, u.full_name AS tenant_name, r.monthly_rate AS room_monthly_rate, pr.ocr_amount
                 FROM payments p
                 LEFT JOIN tenants t ON p.tenant_id = t.id
                 LEFT JOIN users u ON t.user_id = u.id
                 LEFT JOIN rooms r ON t.room_id = r.id
+                LEFT JOIN LATERAL (
+                    SELECT ocr_amount FROM payment_receipts WHERE payment_id = p.id ORDER BY uploaded_at DESC LIMIT 1
+                ) pr ON TRUE
                 WHERE p.id = @pid
             `);
         
@@ -305,32 +309,44 @@ router.post('/:id/decision', requireAdmin, async (req, res) => {
 
         // If Partial Payment accepted, compute exact remaining balance & send transparent Live Chat notification
         if (decision === 'MANUAL_PARTIAL' && tenantUserId) {
-            const paid = parseFloat(payment.amount || 0);
-
-            let expected = parseFloat(expected_amount);
-            if (isNaN(expected) || expected <= 0) {
-                expected = parseFloat(payment.expected_amount || payment.monthly_rate || paid);
+            // 1. Determine "Our Price" (Total Expected Rent/Bill Amount)
+            let ourPrice = parseFloat(expected_amount);
+            if (isNaN(ourPrice) || ourPrice <= 0) {
+                ourPrice = parseFloat(payment.expected_amount || payment.room_monthly_rate || payment.amount || 0);
             }
 
-            const remaining = Math.max(0, expected - paid);
+            // 2. Determine Actual Paid Amount (OCR verified from receipt image, or payment amount)
+            const claimedPaid = parseFloat(payment.amount || 0);
+            const ocrPaid = (payment.ocr_amount !== null && payment.ocr_amount !== undefined && parseFloat(payment.ocr_amount) > 0)
+                ? parseFloat(payment.ocr_amount)
+                : null;
+            const actualPaid = ocrPaid !== null ? ocrPaid : claimedPaid;
+
+            // 3. Subtract actual paid from Our Price to calculate true remaining balance
+            const remaining = Math.max(0, ourPrice - actualPaid);
 
             // Persist expected_amount to payments table if greater than 0
-            if (expected > 0) {
+            if (ourPrice > 0) {
                 await pool.request()
                     .input('pid', sql.Int, paymentId)
-                    .input('exp', sql.Decimal(10, 2), expected)
+                    .input('exp', sql.Decimal(10, 2), ourPrice)
                     .query('UPDATE payments SET expected_amount = @exp WHERE id = @pid');
             }
 
-            const paidStr = paid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const expStr  = expected.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const remStr  = remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const claimedStr = claimedPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const ocrStr     = ocrPaid !== null ? ocrPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null;
+            const priceStr   = ourPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const remStr     = remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const paidDetail = ocrStr !== null && Math.abs(ocrPaid - claimedPaid) > 1.0
+                ? `• Verified Amount Paid (Receipt OCR): ₱${ocrStr}\n• Claimed Amount Submitted: ₱${claimedStr}`
+                : `• Amount Received: ₱${claimedStr}`;
 
             const chatMsg = `📌 System Notification — Partial Payment Accepted\n\n` +
-                `Your payment of ₱${paidStr} for Payment #${paymentId} has been accepted as a Partial Payment.\n\n` +
+                `Your payment for Payment #${paymentId} has been accepted as a Partial Payment.\n\n` +
                 `Financial Breakdown:\n` +
-                `• Total Expected Amount: ₱${expStr}\n` +
-                `• Amount Received: ₱${paidStr}\n` +
+                `• Total Room Rent / Price ("Our Price"): ₱${priceStr}\n` +
+                `${paidDetail}\n` +
                 `-----------------------------------\n` +
                 `• Remaining Balance Due: ₱${remStr}\n\n` +
                 `Please log in to your tenant portal to settle your remaining balance of ₱${remStr}. Thank you!`;
