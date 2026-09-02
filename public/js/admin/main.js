@@ -10,18 +10,6 @@ function showSection(sectionId, linkElement) {
     if (!targetSection) return; // Guard: section doesn't exist (e.g. modal-only links)
     targetSection.classList.add('active');
     
-    // Update top horizontal tabs active state
-    document.querySelectorAll('.top-tab-btn').forEach(btn => {
-        if (btn.getAttribute('data-section') === sectionId) {
-            btn.classList.add('active');
-            try {
-                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            } catch (_) {}
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-
     // Update sidebar active state
     document.querySelectorAll('.list-group-item-action').forEach(item => {
         const onclickAttr = item.getAttribute('onclick') || '';
@@ -31,6 +19,12 @@ function showSection(sectionId, linkElement) {
             item.classList.remove('active');
         }
     });
+
+    // Scroll main content container to top on section switch
+    const contentWrapper = document.getElementById('page-content-wrapper');
+    if (contentWrapper) {
+        contentWrapper.scrollTop = 0;
+    }
 
     // Update URL hash for deep linking
     if (window.location.hash !== '#' + sectionId) {

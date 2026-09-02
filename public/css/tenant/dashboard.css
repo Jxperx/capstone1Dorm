@@ -82,13 +82,37 @@ body {
     color: var(--accent);
 }
 
-/* Sidebar */
-.sidebar {
-    background: var(--primary);
-    min-height: 100vh;
-    color: var(--white);
-    border-right: 1px solid rgba(255,255,255,0.06);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+/* Sidebar Fixed Layout & Independent Content Scroll */
+@media (min-width: 768px) {
+    html, body {
+        height: 100vh;
+        overflow: hidden !important;
+    }
+
+    .container-fluid > .row {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100vh !important;
+        overflow-y: auto;
+        z-index: 1000;
+        background: var(--primary);
+        color: var(--white);
+        border-right: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+
+    .col-md-9.col-lg-10 {
+        margin-left: auto;
+        height: 100vh;
+        overflow-y: auto !important;
+    }
 }
 
 .sidebar-logo-brand {
