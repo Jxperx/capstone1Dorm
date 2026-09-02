@@ -270,3 +270,36 @@ function startQrStatusPolling(codeId) {
 window.startQrStatusPolling = startQrStatusPolling;
 window.renderPaymentCompletedUI = renderPaymentCompletedUI;
 
+function switchTenantTab(tabId, btnElement) {
+    document.querySelectorAll('.tenant-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+
+    if (tabId === 'history') {
+        const modalEl = document.getElementById('historyModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            new bootstrap.Modal(modalEl).show();
+        }
+    } else if (tabId === 'maintenance') {
+        const modalEl = document.getElementById('trackMaintenanceModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            new bootstrap.Modal(modalEl).show();
+        }
+    } else if (tabId === 'feedback') {
+        const modalEl = document.getElementById('feedbackModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            new bootstrap.Modal(modalEl).show();
+        }
+    } else if (tabId === 'profile') {
+        const modalEl = document.getElementById('profileModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            new bootstrap.Modal(modalEl).show();
+        }
+    }
+}
+
+window.switchTenantTab = switchTenantTab;
+

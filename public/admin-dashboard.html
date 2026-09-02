@@ -89,6 +89,45 @@
                 </div>
             </nav>
 
+            <!-- Top Horizontal Tab Bar Navigation -->
+            <div class="top-tab-wrapper">
+                <div class="top-tab-nav" id="adminTopTabs">
+                    <button class="top-tab-btn active" data-section="dashboard" onclick="showSection('dashboard', this)">
+                        <i class="fas fa-tachometer-alt"></i> Overview
+                    </button>
+                    <button class="top-tab-btn" data-section="rooms" onclick="showSection('rooms', this)">
+                        <i class="fas fa-door-open"></i> Rooms & Units
+                    </button>
+                    <button class="top-tab-btn" data-section="tenants" onclick="showSection('tenants', this)">
+                        <i class="fas fa-users"></i> Tenants
+                    </button>
+                    <button class="top-tab-btn" data-section="inquiries" onclick="showSection('inquiries', this); if(typeof initInquirySection==='function') initInquirySection();">
+                        <i class="fas fa-envelope-open-text"></i> Inquiries
+                    </button>
+                    <button class="top-tab-btn" data-section="fraud" onclick="showSection('fraud', this); if(typeof initFraudSection==='function') initFraudSection();">
+                        <i class="fas fa-shield-alt"></i> Fraud Detection
+                    </button>
+                    <button class="top-tab-btn" data-section="rent-optimization" onclick="showSection('rent-optimization', this); if(typeof RentPricingModule!=='undefined') RentPricingModule.init();">
+                        <i class="fas fa-coins"></i> Rent Optimization
+                    </button>
+                    <button class="top-tab-btn" data-section="maintenance" onclick="showSection('maintenance', this)">
+                        <i class="fas fa-tools"></i> Maintenance
+                    </button>
+                    <button class="top-tab-btn" data-section="reports" onclick="showSection('reports', this); if(typeof ReportModule!=='undefined') ReportModule.init();">
+                        <i class="fas fa-file-alt"></i> Reports
+                    </button>
+                    <button class="top-tab-btn" data-section="live-chat" onclick="showSection('live-chat', this); if(typeof LiveChatAdmin!=='undefined') LiveChatAdmin.init();">
+                        <i class="fas fa-comments"></i> Live Chat <span id="top-lc-badge" class="top-tab-badge" style="display:none;"></span>
+                    </button>
+                    <button class="top-tab-btn" data-section="media" onclick="showSection('media', this)">
+                        <i class="fas fa-images"></i> Media
+                    </button>
+                    <button class="top-tab-btn" data-section="feedback" onclick="showSection('feedback', this)">
+                        <i class="fas fa-comment-alt"></i> Feedback & AI
+                    </button>
+                </div>
+            </div>
+
             <div class="container-fluid mt-4">
                 
                 <!-- SECTION: Dashboard Overview -->

@@ -10,12 +10,31 @@ function showSection(sectionId, linkElement) {
     if (!targetSection) return; // Guard: section doesn't exist (e.g. modal-only links)
     targetSection.classList.add('active');
     
+    // Update top horizontal tabs active state
+    document.querySelectorAll('.top-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-section') === sectionId) {
+            btn.classList.add('active');
+            try {
+                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            } catch (_) {}
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
     // Update sidebar active state
     document.querySelectorAll('.list-group-item-action').forEach(item => {
-        item.classList.remove('active');
+        const onclickAttr = item.getAttribute('onclick') || '';
+        if (onclickAttr.includes(`'${sectionId}'`)) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
     });
-    if (linkElement) {
-        linkElement.classList.add('active');
+
+    // Update URL hash for deep linking
+    if (window.location.hash !== '#' + sectionId) {
+        history.replaceState(null, null, '#' + sectionId);
     }
 
     // Update Page Title
@@ -30,15 +49,32 @@ function showSection(sectionId, linkElement) {
         'fraud': 'Intelligent Fraud Detection',
         'inquiries': 'Inquiry Management',
         'rent-optimization': 'AI Rent Optimization',
-        'reports': 'Reports & Analytics'
+        'reports': 'Reports & Analytics',
+        'live-chat': 'Live Admin Chat'
     };
-    document.getElementById('pageTitle').innerText = titles[sectionId] || 'Dashboard';
+    const titleEl = document.getElementById('pageTitle');
+    if (titleEl) titleEl.innerText = titles[sectionId] || 'Dashboard';
 
     if (sectionId === 'media' && typeof loadPropertyMediaAdmin === 'function') {
         loadPropertyMediaAdmin();
     }
     if (sectionId === 'feedback' && typeof loadAdminFeedback === 'function') {
         loadAdminFeedback();
+    }
+    if (sectionId === 'fraud' && typeof initFraudSection === 'function') {
+        initFraudSection();
+    }
+    if (sectionId === 'inquiries' && typeof initInquirySection === 'function') {
+        initInquirySection();
+    }
+    if (sectionId === 'rent-optimization' && typeof RentPricingModule !== 'undefined' && typeof RentPricingModule.init === 'function') {
+        RentPricingModule.init();
+    }
+    if (sectionId === 'reports' && typeof ReportModule !== 'undefined' && typeof ReportModule.init === 'function') {
+        ReportModule.init();
+    }
+    if (sectionId === 'live-chat' && typeof LiveChatAdmin !== 'undefined' && typeof LiveChatAdmin.init === 'function') {
+        LiveChatAdmin.init();
     }
 
     // Auto-close sidebar on mobile/tablet devices after selecting a section
@@ -73,6 +109,19 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarOverlay.addEventListener('click', () => {
             document.body.classList.remove('sb-sidenav-toggled');
         });
+    }
+
+    // Deep link hash navigation support
+    const handleHashNav = () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            showSection(hash);
+        }
+    };
+
+    window.addEventListener('hashchange', handleHashNav);
+    if (window.location.hash) {
+        handleHashNav();
     }
 
     // Load all data

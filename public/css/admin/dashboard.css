@@ -113,6 +113,80 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     font-size: 1.5rem;
 }
 
+/* ── Top Horizontal Tab Bar ─────────────────────────────────────────────── */
+.top-tab-wrapper {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(197, 160, 89, 0.25);
+    padding: 0 1.25rem;
+    position: sticky;
+    top: 68px;
+    z-index: 998;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.top-tab-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 8px;
+    padding: 10px 0;
+    margin-bottom: -1px;
+}
+
+.top-tab-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.top-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #555555;
+    background: #f8f9fa;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.top-tab-btn:hover {
+    color: var(--accent);
+    background: rgba(197, 160, 89, 0.08);
+    border-color: rgba(197, 160, 89, 0.3);
+}
+
+.top-tab-btn.active {
+    color: var(--primary);
+    background: #ffffff;
+    border-color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(197, 160, 89, 0.2), inset 0 -2px 0 var(--accent);
+}
+
+.top-tab-btn i {
+    font-size: 0.95rem;
+    color: var(--accent);
+}
+
+.top-tab-badge {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+    font-weight: 700;
+}
+
 /* Modern Cards */
 .card {
     border: 1px solid rgba(0,0,0,0.04);
