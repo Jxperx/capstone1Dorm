@@ -43,9 +43,10 @@ router.get('/market-data', async (req, res) => {
         const pool = await poolPromise;
 
         const listingsRes = await pool.request().query(`
-            SELECT TOP 50 *
+            SELECT *
             FROM market_search_results
             ORDER BY created_at DESC, monthly_rate ASC
+            LIMIT 50
         `);
 
         const summaryRes = await pool.request().query(`
@@ -62,7 +63,7 @@ router.get('/market-data', async (req, res) => {
         `);
 
         const lastUpdRes = await pool.request().query(`
-            SELECT TOP 1 created_at FROM market_search_results ORDER BY created_at DESC
+            SELECT created_at FROM market_search_results ORDER BY created_at DESC LIMIT 1
         `);
 
         res.json({
@@ -103,11 +104,12 @@ router.get('/auto-log', async (req, res) => {
     try {
         const pool = await poolPromise;
         const result = await pool.request().query(`
-            SELECT TOP 50 h.*, r.room_number
+            SELECT h.*, r.room_number
             FROM room_pricing_history h
             JOIN rooms r ON h.room_id = r.id
             WHERE h.applied_by = 'AI Optimizer'
             ORDER BY h.created_at DESC
+            LIMIT 50
         `);
         res.json(result.recordset);
     } catch (err) {

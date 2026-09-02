@@ -32,6 +32,9 @@ const RentPricingModule = {
                 <button id="btnSearchMarketNow" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" style="border-radius:20px;">
                     <i class="fas fa-search-dollar me-1"></i>Search Market Now
                 </button>
+                <button class="btn btn-outline-info btn-sm rounded-pill px-3" onclick="RentPricingModule.openDeepSearchModal()">
+                    <i class="fas fa-globe me-1"></i>Deep Search Competitors
+                </button>
                 <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="RentPricingModule.loadHistory()">
                     <i class="fas fa-history me-1"></i>Pricing History
                 </button>
@@ -41,6 +44,179 @@ const RentPricingModule = {
         if (btnSearch) {
             btnSearch.onclick = () => this.triggerMarketSearch();
         }
+    },
+
+    // ── Open Multi-Portal Deep Search Modal ──────────────────────────────────
+    openDeepSearchModal: function () {
+        const modalHtml = `
+        <div class="modal fade" id="deepSearchModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+                    <div class="modal-header bg-dark text-white py-3">
+                        <h5 class="modal-title fw-bold"><i class="fas fa-globe text-info me-2"></i>Multi-Portal Deep Search & Competitor Evidence</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-4">
+                            Explore active real-time listings across all major Philippine property portals in <strong>Calamba & Nuvali/Santa Rosa</strong> to benchmark market rates.
+                        </p>
+                        
+                        <div class="row g-3">
+                            <!-- 1. Lamudi PH -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border border-primary-subtle shadow-sm p-3" style="border-radius:12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-building text-primary fs-4 me-3"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Lamudi Philippines</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Top PH Real Estate Portal</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.lamudi.com.ph/condominium/rent/laguna/calamba/" target="_blank" class="btn btn-sm btn-primary flex-fill">Calamba Condos</a>
+                                        <a href="https://www.lamudi.com.ph/condominium/rent/laguna/santa-rosa/nuvali/" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">Nuvali Condos</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Carousell PH -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border border-danger-subtle shadow-sm p-3" style="border-radius:12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-store text-danger fs-4 me-3"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Carousell Philippines</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Dorms & Student Bedspaces</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20dorm%20bedspace" target="_blank" class="btn btn-sm btn-danger flex-fill">Calamba Bedspaces</a>
+                                        <a href="https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20condo" target="_blank" class="btn btn-sm btn-outline-danger flex-fill">Calamba Condos</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Airbnb PH -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border shadow-sm p-3" style="border-radius:12px; border-color:#FF5A5F !important;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fab fa-airbnb fs-4 me-3" style="color:#FF5A5F;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Airbnb Philippines</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Short & Long Stays</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes" target="_blank" class="btn btn-sm text-white flex-fill" style="background:#FF5A5F;">Calamba Homes</a>
+                                        <a href="https://www.airbnb.com/s/Santa-Rosa--Laguna--Philippines/homes" target="_blank" class="btn btn-sm btn-outline-danger flex-fill">Nuvali Homes</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Booking.com -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border shadow-sm p-3" style="border-radius:12px; border-color:#003580 !important;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-hotel fs-4 me-3" style="color:#003580;"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Booking.com</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Hostels & Serviced Stays</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.booking.com/searchresults.html?ss=Calamba+Laguna" target="_blank" class="btn btn-sm text-white flex-fill" style="background:#003580;">Calamba Stays</a>
+                                        <a href="https://www.booking.com/searchresults.html?ss=Santa+Rosa+Laguna" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">Nuvali Stays</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. DotProperty PH -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border border-success-subtle shadow-sm p-3" style="border-radius:12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-city text-success fs-4 me-3"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">DotProperty Philippines</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Verified Property Listings</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba" target="_blank" class="btn btn-sm btn-success flex-fill">Calamba Listings</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Facebook Marketplace -->
+                            <div class="col-md-6">
+                                <div class="card h-100 border border-info-subtle shadow-sm p-3" style="border-radius:12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fab fa-facebook text-info fs-4 me-3"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Facebook Marketplace</h6>
+                                            <span class="text-muted" style="font-size:0.75rem;">Local Calamba Direct Rentals</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="https://www.facebook.com/marketplace/category/propertyrentals?query=calamba%20rent" target="_blank" class="btn btn-sm btn-info text-white flex-fill">Marketplace Calamba</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        let modalContainer = document.getElementById('deepSearchModalContainer');
+        if (!modalContainer) {
+            modalContainer = document.createElement('div');
+            modalContainer.id = 'deepSearchModalContainer';
+            document.body.appendChild(modalContainer);
+        }
+        modalContainer.innerHTML = modalHtml;
+        const modal = new bootstrap.Modal(document.getElementById('deepSearchModal'));
+        modal.show();
+    },
+
+    // ── Smart URL Cleaner & Fallback Resolver ────────────────────────────────
+    getValidPropertyUrl: function (rawUrl, propertyName, location) {
+        if (!rawUrl || typeof rawUrl !== 'string') rawUrl = '';
+        const urlLower = rawUrl.toLowerCase();
+        const propLower = (propertyName || '').toLowerCase();
+        const locLower = (location || '').toLowerCase();
+        const isNuvali = locLower.includes('nuvali') || locLower.includes('santa rosa') || propLower.includes('nuvali');
+
+        // Fix broken/404 RentPad URLs
+        if (urlLower.includes('rentpad.com.ph')) {
+            if (isNuvali) return 'https://www.lamudi.com.ph/condominium/rent/laguna/santa-rosa/nuvali/';
+            return 'https://www.lamudi.com.ph/condominium/rent/laguna/calamba/';
+        }
+
+        // Fix broken/404 Klook hotel search URLs
+        if (urlLower.includes('klook.com')) {
+            if (isNuvali) return 'https://www.booking.com/searchresults.html?ss=Santa+Rosa+Laguna';
+            return 'https://www.booking.com/searchresults.html?ss=Calamba+Laguna';
+        }
+
+        // Fix broken/404 Carousell search query URLs
+        if (urlLower.includes('carousell.ph/q/')) {
+            const query = propLower.includes('dorm') || propLower.includes('bedspace')
+                ? 'calamba%20dorm%20bedspace'
+                : 'calamba%20condo';
+            return `https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=${query}`;
+        }
+
+        // Fix broken fake Airbnb room IDs
+        if (urlLower.includes('airbnb.com/rooms/101010') || urlLower.includes('airbnb.com/rooms/12345678') || urlLower.includes('airbnb.com/rooms/000')) {
+            return isNuvali
+                ? 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes'
+                : 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes';
+        }
+
+        if (rawUrl.startsWith('http')) return rawUrl;
+
+        const searchQuery = encodeURIComponent(`${propertyName} ${location || 'Calamba Laguna'} rent lamudi carousell`);
+        return `https://www.google.com/search?q=${searchQuery}`;
     },
 
     // ── Trigger Manual On-Demand Market Search ────────────────────────────────
@@ -343,17 +519,7 @@ const RentPricingModule = {
                 siteName = 'Klook';
             }
 
-            let rawUrl = item.source_url && item.source_url.startsWith('http')
-                ? item.source_url
-                : `https://www.google.com/search?q=${encodeURIComponent(item.property_name + ' ' + (item.location || 'Calamba Laguna') + ' for rent')}`;
-
-            // Clean up old fake room IDs if present
-            if (rawUrl.includes('airbnb.com/rooms/101010') || rawUrl.includes('airbnb.com/rooms/12345678')) {
-                const isNuvali = (item.location || '').toLowerCase().includes('nuvali');
-                rawUrl = isNuvali
-                    ? 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes'
-                    : 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes';
-            }
+            const rawUrl = this.getValidPropertyUrl(item.source_url, item.property_name, item.location);
 
             const sourceDisplay = `<a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold ${linkClass} text-truncate d-inline-block" style="max-width:200px;" title="View '${this.escapeHtml(item.property_name)}' on ${siteName}">
                 ${badgeHtml}${this.escapeHtml(item.property_name)} <i class="fas fa-external-link-alt ms-1" style="font-size:0.7rem;"></i>

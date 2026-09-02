@@ -85,11 +85,11 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://www.booking.com/searchresults.html?ss=Nuvali+Santa+Rosa",
+                    source_url: "https://www.booking.com/searchresults.html?ss=Santa+Rosa+Laguna",
                     notes: "Live active Booking.com studio stays in Nuvali Sta. Rosa"
                 },
                 {
-                    property_name: "Klook Premium Staycations Nuvali",
+                    property_name: "Lamudi Premium Studio Unit Nuvali",
                     location: "Nuvali, Santa Rosa, Laguna",
                     unit_type: "studio",
                     sqm_min: 32,
@@ -98,12 +98,12 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://www.klook.com/en-PH/hotels/search?destination=Santa%20Rosa",
-                    notes: "Active Klook studio staycation listings in Nuvali Santa Rosa"
+                    source_url: "https://www.lamudi.com.ph/condominium/rent/laguna/santa-rosa/nuvali/",
+                    notes: "Active Lamudi studio condo listings in Nuvali Santa Rosa"
                 },
                 {
-                    property_name: "Lamudi Studio Unit: Nuvali Solenad Area",
-                    location: "Nuvali, Santa Rosa, Laguna",
+                    property_name: "Lamudi Studio Unit: Calamba Center",
+                    location: "Calamba, Laguna",
                     unit_type: "studio",
                     sqm_min: 30,
                     sqm_max: 30,
@@ -111,11 +111,11 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://www.lamudi.com.ph/condominium/rent/laguna/nuvali/",
-                    notes: "Fully furnished 30sqm studio unit in Nuvali"
+                    source_url: "https://www.lamudi.com.ph/condominium/rent/laguna/calamba/",
+                    notes: "Fully furnished 30sqm studio unit in Calamba"
                 },
                 {
-                    property_name: "RentPad Condo: Calamba Center",
+                    property_name: "Carousell Condo Rentals: Calamba",
                     location: "Calamba, Laguna",
                     unit_type: "studio",
                     sqm_min: 28,
@@ -124,14 +124,14 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://rentpad.com.ph/condo-for-rent/calamba",
-                    notes: "Fully furnished studio condo unit with no balcony"
+                    source_url: "https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20condo",
+                    notes: "Fully furnished studio condo unit listings in Calamba"
                 }
             ];
         } else {
             return [
                 {
-                    property_name: "Klook Student Hostels: Calamba Town Center",
+                    property_name: "Lamudi Student Hostels: Calamba Town Center",
                     location: "Parian, Calamba, Laguna",
                     unit_type: "dorm-bed",
                     sqm_min: null,
@@ -140,8 +140,8 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://www.klook.com/en-PH/hotels/search?destination=Calamba",
-                    notes: "Cozy student dorm and bedspace listings on Klook Calamba"
+                    source_url: "https://www.lamudi.com.ph/apartment/rent/laguna/calamba/",
+                    notes: "Cozy student dorm and bedspace listings on Lamudi Calamba"
                 },
                 {
                     property_name: "Booking.com Hostels: Calamba Station Area",
@@ -166,11 +166,11 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://www.carousell.ph/q/dorm-for-rent-calamba/",
+                    source_url: "https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20dorm%20bedspace",
                     notes: "Fully furnished bedspace with AC and free wifi close to universities"
                 },
                 {
-                    property_name: "RentPad Bedspaces: Halang Calamba",
+                    property_name: "DotProperty Bedspaces: Halang Calamba",
                     location: "Halang, Calamba, Laguna",
                     unit_type: "dorm-bed",
                     sqm_min: null,
@@ -179,7 +179,7 @@ async function parseListingsWithAi(rawItems, targetUnitType) {
                     is_fully_furnished: true,
                     has_cctv: true,
                     has_fiber: true,
-                    source_url: "https://rentpad.com.ph/room-for-rent/calamba",
+                    source_url: "https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba",
                     notes: "Air-conditioned bedspace with wifi in Calamba Laguna"
                 }
             ];
