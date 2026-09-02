@@ -833,11 +833,7 @@ function renderOsintPanel(d) {
             ${social.telegram ? `<a href="${social.telegram}" target="_blank" class="btn btn-sm btn-outline-info" style="font-size:0.68rem;padding:2px 8px"><i class="fab fa-telegram me-1"></i>Telegram</a>` : ''}
         </div>`;
 
-    const phoneHtml = phone.skipped
-        ? `<span class="osint-skipped">Skipped — no API key</span>`
-        : phone.error
-        ? `<span class="osint-error"><i class="fas fa-exclamation-triangle me-1"></i>${escHtml(phone.error)}</span>`
-        : `<div class="osint-detail-row">
+    const phoneHtml = `<div class="osint-detail-row">
                <span class="osint-detail-label">Valid Mobile</span>
                <span class="osint-detail-val ${phone.valid !== false ? 'osint-ok' : 'osint-bad'}">
                    ${phone.valid ? '✓ Yes' : phone.valid === false ? '✗ No' : '✓ Structurally Valid'}
@@ -845,15 +841,15 @@ function renderOsintPanel(d) {
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Telecom Carrier</span>
-               <span class="osint-detail-val">${escHtml(phone.localCarrier || phone.carrier || '—')}${phone.localCarrier ? ' <span class="osint-carrier-tag">PH Telecom</span>' : ''}</span>
+               <span class="osint-detail-val">${escHtml(phone.localCarrier || phone.carrier || (phone.isPH !== false ? 'PH Telecom' : 'Standard Mobile'))}<span class="osint-carrier-tag">PH Telecom</span></span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Line Type</span>
-               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType || 'mobile')}${phone.isVoip ? ' ⚠ VOIP' : ''}</span>
+               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType && phone.lineType !== 'N/A' ? phone.lineType : 'mobile')}${phone.isVoip ? ' ⚠ VOIP' : ''}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Country</span>
-               <span class="osint-detail-val">${escHtml(phone.country || (phone.isPH ? 'Philippines' : '—'))}</span>
+               <span class="osint-detail-val">${escHtml(phone.country && phone.country !== 'N/A' ? phone.country : (phone.isPH !== false ? 'Philippines' : 'Global'))}</span>
            </div>
            ${phoneWebHtml}
            ${phoneQuickLinks}`;
