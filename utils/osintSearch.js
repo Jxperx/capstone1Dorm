@@ -320,30 +320,109 @@ async function searchByName(firstName, lastName) {
     }
 }
 
-// â”€â”€â”€ Social Media Manual Search Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Google Search by Phone Number (Phone OSINT Deep Search) ───────────────────
+
+/**
+ * Deep search the internet specifically for the phone number.
+ * Checks if the number is posted online, used in classifieds/social posts, or flagged for scam/fraud.
+ */
+async function searchByPhone(phone, firstName, lastName) {
+    const apiKey   = process.env.GOOGLE_SEARCH_API_KEY;
+    const engineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+
+    const digits = (phone || '').replace(/\D/g, '');
+    let localFormat = digits;
+    if (localFormat.startsWith('63') && localFormat.length === 12) {
+        localFormat = '0' + localFormat.slice(2);
+    }
+    let intlFormat = digits;
+    if (intlFormat.startsWith('09') && intlFormat.length === 11) {
+        intlFormat = '+63' + intlFormat.slice(1);
+    } else if (!intlFormat.startsWith('+')) {
+        intlFormat = '+' + intlFormat;
+    }
+
+    const query = `"${localFormat}" OR "${intlFormat}"`;
+
+    const socialLinks = {
+        googlePhone:   `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        facebookPhone: `https://www.facebook.com/search/top?q=${encodeURIComponent(localFormat)}`,
+        whatsapp:      `https://wa.me/${intlFormat.replace(/\+/g, '')}`,
+        viber:         `viber://chat?number=%2B${intlFormat.replace(/\+/g, '')}`,
+        telegram:      `https://t.me/+${intlFormat.replace(/\+/g, '')}`
+    };
+
+    if (!apiKey || !engineId) {
+        return { results: [], query, socialLinks, skipped: true, hasMatches: false, nameMentioned: false, scamFlagged: false };
+    }
+
+    try {
+        const res = await axios.get('https://www.googleapis.com/customsearch/v1', {
+            params: { key: apiKey, cx: engineId, q: query, num: 5 },
+            timeout: 10000
+        });
+
+        const items = res.data.items || [];
+        const fn = (firstName || '').toLowerCase();
+        const ln = (lastName || '').toLowerCase();
+
+        let nameMentioned = false;
+        let scamFlagged = false;
+
+        const results = items.map(item => {
+            const title   = item.title   || '';
+            const snippet = item.snippet || '';
+            const text    = (title + ' ' + snippet).toLowerCase();
+
+            if ((fn && text.includes(fn)) || (ln && text.includes(ln))) {
+                nameMentioned = true;
+            }
+            if (/scam|fraud|bogus|warning|fake|buyer beware|scammer/i.test(text)) {
+                scamFlagged = true;
+            }
+
+            return {
+                title,
+                snippet,
+                url: item.link || ''
+            };
+        });
+
+        return {
+            results,
+            query,
+            socialLinks,
+            hasMatches: results.length > 0,
+            nameMentioned,
+            scamFlagged,
+            skipped: false
+        };
+    } catch (err) {
+        console.error('[OSINT] Phone deep search error:', err.message);
+        return { results: [], query, socialLinks, skipped: false, error: err.message, hasMatches: false, nameMentioned: false, scamFlagged: false };
+    }
+}
+
+// ─── Social Media Manual Search Links ────────────────────────────────────────
 
 function buildSocialLinks(firstName, lastName, phone) {
     const fullName    = `${firstName} ${lastName}`;
     const encodedName = encodeURIComponent(fullName);
-    const cleanPhone  = phone.replace(/[\s\-().+]/g, '');
-
-    // Build international format for WhatsApp/Viber
-    let intlPhone = cleanPhone;
-    if (intlPhone.startsWith('09') && intlPhone.length === 11) {
-        intlPhone = '63' + intlPhone.slice(1); // Convert 09xx to 639xx
-    } else if (intlPhone.startsWith('+')) {
-        intlPhone = intlPhone.slice(1);
-    }
+    const digits      = (phone || '').replace(/\D/g, '');
+    let localPhone    = digits;
+    if (localPhone.startsWith('63') && localPhone.length === 12) localPhone = '0' + localPhone.slice(2);
+    
+    let intlPhone = digits;
+    if (intlPhone.startsWith('09') && intlPhone.length === 11) intlPhone = '63' + intlPhone.slice(1);
 
     return {
-        // Social platforms
-        facebook:  `https://www.facebook.com/search/top?q=${encodedName}`,
-        // Search engines
-        google:    `https://www.google.com/search?q="${encodeURIComponent(fullName)}" Philippines`,
-        // Messaging
-        whatsapp:  `https://wa.me/${intlPhone}`,
-        viber:     `viber://chat?number=%2B${intlPhone}`,
-        messenger: `https://www.facebook.com/search/top?q=${encodedName}`,
+        facebook:      `https://www.facebook.com/search/top?q=${encodedName}`,
+        facebookPhone: `https://www.facebook.com/search/top?q=${encodeURIComponent(localPhone)}`,
+        google:        `https://www.google.com/search?q="${encodeURIComponent(fullName)}" Philippines`,
+        googlePhone:   `https://www.google.com/search?q="${encodeURIComponent(localPhone)}"+OR+"+${intlPhone}"`,
+        whatsapp:      `https://wa.me/${intlPhone}`,
+        viber:         `viber://chat?number=%2B${intlPhone}`,
+        telegram:      `https://t.me/+${intlPhone}`
     };
 }
 
@@ -369,7 +448,7 @@ function buildFlags(phoneData, emailData, webData) {
 
 // â”€â”€â”€ Gemini AI Trust Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-async function computeTrustScore({ firstName, lastName, email, phone, message, phoneData, emailData, webData }) {
+async function computeTrustScore({ firstName, lastName, email, phone, message, phoneData, emailData, webData, phoneWebData }) {
     const apiKey = process.env.GEMINI_API_KEY;
     const flags  = buildFlags(phoneData, emailData, webData);
 
@@ -484,6 +563,8 @@ RULES:
     if (phoneData.valid === false)               score -= 15;
     if (phoneData.isVoip)                        score -= 25;
     if (phoneData.localCarrier)                  score += 10;
+    if (phoneWebData?.nameMentioned)             score += 15;
+    if (phoneWebData?.scamFlagged)               score -= 35;
     if (emailData.suspicious === false)          score += 10;
     if (emailData.suspicious === true)           score -= 20;
     if (emailData.blacklisted === true)          score -= 25;
@@ -504,7 +585,7 @@ RULES:
     };
 }
 
-// â”€â”€â”€ Master OSINT Function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Master OSINT Function ───────────────────────────────────────────────────
 
 /**
  * Run a full OSINT background check on an inquiry.
@@ -514,20 +595,21 @@ RULES:
 async function runOsintCheck(inquiry) {
     const { first_name: firstName, last_name: lastName, email, phone, message } = inquiry;
 
-    console.log(`[OSINT] Running background check for: ${firstName} ${lastName} <${email}>`);
+    console.log(`[OSINT] Running background check for: ${firstName} ${lastName} <${email}> (${phone})`);
 
     // Run all data-gathering steps in parallel for speed
-    const [phoneData, emailData, webData, emailVerify] = await Promise.all([
+    const [phoneData, emailData, webData, emailVerify, phoneWebData] = await Promise.all([
         validatePhone(phone),
         checkEmailRep(email),
         searchByName(firstName, lastName),
-        verifyEmailDeliverability(email)
+        verifyEmailDeliverability(email),
+        searchByPhone(phone, firstName, lastName)
     ]);
 
     // Compute AI trust score using all gathered data
     const { trustScore, trustLevel, recommendation, aiSummary, flags } = await computeTrustScore({
         firstName, lastName, email, phone, message,
-        phoneData, emailData, webData
+        phoneData, emailData, webData, phoneWebData
     });
 
     const result = {
@@ -536,16 +618,23 @@ async function runOsintCheck(inquiry) {
         recommendation,
         aiSummary,
         flags,
-        phone:        phoneData,
-        email:        emailData,
+        phone:           phoneData,
+        email:           emailData,
         emailVerify,
-        webResults:   webData.results || [],
-        webQuery:     webData.query   || null,
-        socialLinks:  buildSocialLinks(firstName, lastName, phone),
-        checkedAt:    new Date().toISOString()
+        webResults:      webData.results || [],
+        webQuery:        webData.query   || null,
+        phoneWebResults: phoneWebData?.results || [],
+        phoneWebQuery:   phoneWebData?.query   || null,
+        phoneWebStatus: {
+            hasMatches:    phoneWebData?.hasMatches || false,
+            nameMentioned: phoneWebData?.nameMentioned || false,
+            scamFlagged:   phoneWebData?.scamFlagged || false
+        },
+        socialLinks:     phoneWebData?.socialLinks || buildSocialLinks(firstName, lastName, phone),
+        checkedAt:       new Date().toISOString()
     };
 
-    console.log(`[OSINT] Complete â€” Trust: ${trustScore}/100 (${trustLevel}) [${recommendation}] for ${firstName} ${lastName}`);
+    console.log(`[OSINT] Complete — Trust: ${trustScore}/100 (${trustLevel}) [${recommendation}] for ${firstName} ${lastName}`);
 
     return result;
 }

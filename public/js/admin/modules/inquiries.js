@@ -803,34 +803,60 @@ function renderOsintPanel(d) {
         }).join('')}
     </div>` : '';
 
-    // ── Phone section ────────────────────────────────────────────────────────
+    // ── Phone section & Internet Deep Search ──────────────────────────────────
     const phone = d.phone || {};
+    const phoneWeb = d.phoneWebResults || [];
+    const phoneWebStatus = d.phoneWebStatus || {};
+    const social = d.socialLinks || {};
+
+    const phoneWebHtml = phoneWeb.length > 0 ? `
+        <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.08)">
+            <div style="font-size:0.72rem;font-weight:700;color:#c5a059;margin-bottom:6px">
+                <i class="fas fa-search me-1"></i>Phone Web Deep Search Results:
+            </div>
+            ${phoneWebStatus.scamFlagged ? `<div class="badge bg-danger mb-2"><i class="fas fa-exclamation-triangle me-1"></i>Flagged in Online Scam Posts</div><br>` : ''}
+            ${phoneWebStatus.nameMentioned ? `<div class="badge bg-success mb-2"><i class="fas fa-check-circle me-1"></i>Applicant Name Matched in Phone Posts</div><br>` : ''}
+            ${phoneWeb.slice(0, 3).map(item => `
+                <div style="font-size:0.7rem;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:4px">
+                    <a href="${escHtml(item.url)}" target="_blank" rel="noopener" style="color:#60a5fa;font-weight:600;text-decoration:none">${escHtml(item.title)}</a>
+                    <div style="color:#aaa;font-size:0.68rem;margin-top:2px">${escHtml(item.snippet)}</div>
+                </div>
+            `).join('')}
+        </div>` : `<div style="font-size:0.7rem;color:#888;margin-top:6px;font-style:italic">No public web posts detected for this phone number.</div>`;
+
+    const phoneQuickLinks = `
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            ${social.googlePhone ? `<a href="${social.googlePhone}" target="_blank" class="btn btn-sm btn-outline-secondary" style="font-size:0.68rem;padding:2px 8px"><i class="fab fa-google me-1"></i>Google Phone</a>` : ''}
+            ${social.facebookPhone ? `<a href="${social.facebookPhone}" target="_blank" class="btn btn-sm btn-outline-primary" style="font-size:0.68rem;padding:2px 8px"><i class="fab fa-facebook me-1"></i>FB Phone Search</a>` : ''}
+            ${social.whatsapp ? `<a href="${social.whatsapp}" target="_blank" class="btn btn-sm btn-outline-success" style="font-size:0.68rem;padding:2px 8px"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>` : ''}
+            ${social.viber ? `<a href="${social.viber}" target="_blank" class="btn btn-sm btn-outline-purple" style="font-size:0.68rem;padding:2px 8px;border-color:#7360f2;color:#7360f2"><i class="fab fa-viber me-1"></i>Viber</a>` : ''}
+            ${social.telegram ? `<a href="${social.telegram}" target="_blank" class="btn btn-sm btn-outline-info" style="font-size:0.68rem;padding:2px 8px"><i class="fab fa-telegram me-1"></i>Telegram</a>` : ''}
+        </div>`;
+
     const phoneHtml = phone.skipped
         ? `<span class="osint-skipped">Skipped — no API key</span>`
         : phone.error
         ? `<span class="osint-error"><i class="fas fa-exclamation-triangle me-1"></i>${escHtml(phone.error)}</span>`
         : `<div class="osint-detail-row">
-               <span class="osint-detail-label">Valid</span>
-               <span class="osint-detail-val ${phone.valid ? 'osint-ok' : 'osint-bad'}">
-                   ${phone.valid ? '✓ Yes' : phone.valid === false ? '✗ No' : '? Unknown'}
+               <span class="osint-detail-label">Valid Mobile</span>
+               <span class="osint-detail-val ${phone.valid !== false ? 'osint-ok' : 'osint-bad'}">
+                   ${phone.valid ? '✓ Yes' : phone.valid === false ? '✗ No' : '✓ Structurally Valid'}
                </span>
            </div>
            <div class="osint-detail-row">
-               <span class="osint-detail-label">Carrier</span>
-               <span class="osint-detail-val">${escHtml(phone.localCarrier || phone.carrier || '—')}${phone.localCarrier ? ' <span class="osint-carrier-tag">PH Detected</span>' : ''}</span>
+               <span class="osint-detail-label">Telecom Carrier</span>
+               <span class="osint-detail-val">${escHtml(phone.localCarrier || phone.carrier || '—')}${phone.localCarrier ? ' <span class="osint-carrier-tag">PH Telecom</span>' : ''}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Line Type</span>
-               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType || '—')}${phone.isVoip ? ' ⚠ VOIP' : ''}</span>
+               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType || 'mobile')}${phone.isVoip ? ' ⚠ VOIP' : ''}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Country</span>
-               <span class="osint-detail-val">${escHtml(phone.country || '—')}</span>
+               <span class="osint-detail-val">${escHtml(phone.country || (phone.isPH ? 'Philippines' : '—'))}</span>
            </div>
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">PH Number</span>
-               <span class="osint-detail-val ${phone.isPH ? 'osint-ok' : 'osint-bad'}">${phone.isPH ? '✓ Yes' : '✗ No'}</span>
-           </div>`;
+           ${phoneWebHtml}
+           ${phoneQuickLinks}`;
 
     // ── Email section ────────────────────────────────────────────────────────
     const email = d.email || {};
