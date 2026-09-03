@@ -487,4 +487,108 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// GET /api/auth/verify-setup-token?token=...
+router.get('/verify-setup-token', async (req, res) => {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ error: 'Token is required' });
+
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('token', sql.NVarChar, token)
+            .query(`
+                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, u.email, u.full_name
+                FROM password_reset_tokens t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.token = @token AND (t.used IS NULL OR t.used = 0 OR t.used = false)
+            `);
+
+        if (result.recordset.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired setup token link.' });
+        }
+
+        const record = result.recordset[0];
+        if (new Date(record.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'This setup link has expired. Please ask your administrator for a new setup link.' });
+        }
+
+        res.json({
+            valid: true,
+            email: record.email,
+            fullName: record.full_name,
+            userId: record.user_id
+        });
+    } catch (err) {
+        logger.error('[Auth] verify-setup-token error:', err.message);
+        res.status(500).json({ error: 'Server error verifying token.' });
+    }
+});
+
+// POST /api/auth/set-tenant-password
+router.post('/set-tenant-password', async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password || password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    try {
+        const pool = await poolPromise;
+
+        // Verify Token
+        const tokenRes = await pool.request()
+            .input('token', sql.NVarChar, token)
+            .query(`
+                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, u.email, u.full_name, u.role
+                FROM password_reset_tokens t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.token = @token AND (t.used IS NULL OR t.used = 0 OR t.used = false)
+            `);
+
+        if (tokenRes.recordset.length === 0) {
+            return res.status(400).json({ error: 'Invalid or already used setup token link.' });
+        }
+
+        const record = tokenRes.recordset[0];
+        if (new Date(record.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Setup link has expired. Please ask your administrator to resend an invite.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Update User password and set status to active
+        await pool.request()
+            .input('password_hash', sql.NVarChar, hashedPassword)
+            .input('user_id', sql.Int, record.user_id)
+            .query(`UPDATE users SET password_hash = @password_hash, status = 'active' WHERE id = @user_id`);
+
+        // Mark token as used
+        await pool.request()
+            .input('token_id', sql.Int, record.token_id)
+            .query(`UPDATE password_reset_tokens SET used = true WHERE id = @token_id`);
+
+        // Create Tenant Auth Session
+        req.session.user = {
+            id: record.user_id,
+            email: record.email,
+            full_name: record.full_name,
+            role: record.role || 'tenant'
+        };
+
+        req.session.save((err) => {
+            if (err) {
+                logger.error('[Auth] Session save error on set-tenant-password:', err);
+            }
+            res.json({
+                success: true,
+                message: 'Password created successfully! Welcome to your Tenant Portal.',
+                redirectUrl: '/tenant-dashboard.html'
+            });
+        });
+
+    } catch (err) {
+        logger.error('[Auth] set-tenant-password error:', err.message);
+        res.status(500).json({ error: 'Server error setting password.' });
+    }
+});
+
 module.exports = router;

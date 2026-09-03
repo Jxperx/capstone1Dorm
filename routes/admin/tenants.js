@@ -43,65 +43,149 @@ router.get('/', async (req, res) => {
 router.post('/create-account', async (req, res) => {
     const { full_name, email, password, phone, room_id, lease_start, lease_end } = req.body;
 
-    if (!full_name || !email || !password) {
-        return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!full_name || !email) {
+        return res.status(400).json({ error: 'Name and email are required' });
     }
 
+    const crypto = require('crypto');
+    const pool = await poolPromise;
+    const isSelfService = !password || password.trim() === '';
+
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const pool = await poolPromise;
-        const transaction = new sql.Transaction(pool);
-        
-        await transaction.begin();
+        const initialPassword = isSelfService
+            ? 'LOCKED_' + crypto.randomBytes(16).toString('hex')
+            : password;
 
-        try {
-            // 1. Create User
-            const userResult = await transaction.request()
-                .input('full_name', sql.NVarChar, full_name)
-                .input('email', sql.NVarChar, email)
-                .input('phone', sql.NVarChar, phone || null)
-                .input('password_hash', sql.NVarChar, hashedPassword)
-                .input('role', sql.NVarChar, 'tenant')
-                .query(`
-                    INSERT INTO users (full_name, email, phone_number, password_hash, role)
-                    OUTPUT INSERTED.id
-                    VALUES (@full_name, @email, @phone, @password_hash, @role)
-                `);
-            
-            const userId = userResult.recordset[0].id;
+        const hashedPassword = await bcrypt.hash(initialPassword, 10);
+        const userStatus = isSelfService ? 'pending' : 'active';
 
-            const tenantReq = transaction.request()
-                .input('user_id', sql.Int, userId)
-                .input('lease_start', sql.Date, lease_start || new Date())
-                .input('lease_end', sql.Date, lease_end || null);
+        // 1. Insert User record in PostgreSQL
+        const userRes = await pool.request()
+            .input('full_name', sql.NVarChar, full_name)
+            .input('email', sql.NVarChar, email)
+            .input('phone', sql.NVarChar, phone || null)
+            .input('password_hash', sql.NVarChar, hashedPassword)
+            .input('status', sql.NVarChar, userStatus)
+            .input('role', sql.NVarChar, 'tenant')
+            .query(`
+                INSERT INTO users (full_name, email, phone_number, password_hash, status, role)
+                VALUES (@full_name, @email, @phone, @password_hash, @status, @role)
+                RETURNING id
+            `);
 
-            let tenantQuery = `INSERT INTO tenants (user_id, status, lease_start_date, lease_end_date`;
-            let tenantValues = `VALUES (@user_id, 'active', @lease_start, @lease_end`;
+        const userId = userRes.recordset[0].id;
 
-            if (room_id) {
-                tenantReq.input('room_id', sql.Int, room_id);
-                tenantQuery += `, room_id`;
-                tenantValues += `, @room_id`;
-            }
+        // 2. Insert Tenant record linked to room & lease dates
+        const tenantReq = pool.request()
+            .input('user_id', sql.Int, userId)
+            .input('lease_start', sql.Date, lease_start || new Date())
+            .input('lease_end', sql.Date, lease_end || null);
 
-            tenantQuery += `) ${tenantValues})`;
+        let tenantQuery = `INSERT INTO tenants (user_id, status, lease_start_date, lease_end_date`;
+        let tenantValues = `VALUES (@user_id, 'active', @lease_start, @lease_end`;
 
-            await tenantReq.query(tenantQuery);
-            await transaction.commit();
-            res.status(201).json({ message: 'Tenant added successfully' });
-
-        } catch (err) {
-            console.error('Transaction failed, rolling back:', err);
-            await transaction.rollback();
-            throw err;
+        if (room_id && room_id !== '' && room_id !== 'null') {
+            tenantReq.input('room_id', sql.Int, parseInt(room_id, 10));
+            tenantQuery += `, room_id`;
+            tenantValues += `, @room_id`;
         }
+
+        tenantQuery += `) ${tenantValues})`;
+        await tenantReq.query(tenantQuery);
+
+        let setupUrl = null;
+        let setupToken = null;
+
+        // 3. Generate Password Setup Link for Self-Service Onboarding
+        if (isSelfService) {
+            setupToken = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+            await pool.request()
+                .input('user_id', sql.Int, userId)
+                .input('token', sql.NVarChar, setupToken)
+                .input('otp_code', sql.NVarChar, setupToken.substring(0, 6))
+                .input('token_type', sql.NVarChar, 'tenant_onboarding')
+                .input('expires_at', sql.DateTime, expiresAt)
+                .query(`
+                    INSERT INTO password_reset_tokens (user_id, token, otp_code, token_type, expires_at)
+                    VALUES (@user_id, @token, @otp_code, @token_type, @expires_at)
+                `);
+
+            const protocol = req.protocol;
+            const host = req.get('host');
+            setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(email)}`;
+
+            console.log(`[Tenant Onboarding] Created pending tenant for ${email}. Setup link: ${setupUrl}`);
+        }
+
+        res.status(201).json({
+            message: isSelfService ? 'Tenant added! Password setup link generated.' : 'Tenant added successfully.',
+            isPending: isSelfService,
+            setupUrl: setupUrl,
+            userId: userId
+        });
 
     } catch (err) {
         console.error('Error creating tenant:', err);
-        if (err.number === 2627) { // Unique constraint violation
-            return res.status(400).json({ error: 'Email already exists' });
+        const errCode = err.code || err.number;
+        if (errCode === '23505' || errCode === 2627 || (err.message && err.message.includes('unique constraint'))) {
+            return res.status(400).json({ error: 'Email address is already registered to another account.' });
         }
-        res.status(500).json({ error: 'Server error. Please try again.' });
+        res.status(500).json({ error: 'Failed to create tenant account: ' + (err.message || 'Database error') });
+    }
+});
+
+// Admin - Resend Onboarding Invite Link
+router.post('/:id/resend-invite', async (req, res) => {
+    const inputId = parseInt(req.params.id, 10);
+    if (Number.isNaN(inputId)) return res.status(400).json({ error: 'Invalid tenant id' });
+
+    try {
+        const pool = await poolPromise;
+        const crypto = require('crypto');
+
+        // Fetch Tenant User Info
+        const tenantRes = await pool.request()
+            .input('id', sql.Int, inputId)
+            .query(`
+                SELECT t.id, t.user_id, u.email, u.full_name
+                FROM tenants t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.id = @id OR t.user_id = @id
+            `);
+
+        if (tenantRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Tenant not found' });
+        }
+
+        const tenant = tenantRes.recordset[0];
+        const setupToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+        await pool.request()
+            .input('user_id', sql.Int, tenant.user_id)
+            .input('token', sql.NVarChar, setupToken)
+            .input('otp_code', sql.NVarChar, setupToken.substring(0, 6))
+            .input('token_type', sql.NVarChar, 'tenant_onboarding')
+            .input('expires_at', sql.DateTime, expiresAt)
+            .query(`
+                INSERT INTO password_reset_tokens (user_id, token, otp_code, token_type, expires_at)
+                VALUES (@user_id, @token, @otp_code, @token_type, @expires_at)
+            `);
+
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(tenant.email)}`;
+
+        res.json({
+            success: true,
+            message: 'New password setup link generated!',
+            setupUrl: setupUrl
+        });
+    } catch (err) {
+        console.error('Error resending invite:', err);
+        res.status(500).json({ error: 'Failed to generate setup link.' });
     }
 });
 

@@ -19,20 +19,19 @@ async function loadTenants() {
             
             const profileImg = t.profile_image_url || 'https://via.placeholder.com/40';
 
-            // Only show End Lease if status is active
+            // Status badge logic
+            const statusBadgeHtml = t.status === 'pending'
+                ? '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending Setup</span>'
+                : t.status === 'active'
+                ? '<span class="badge bg-success">Active</span>'
+                : '<span class="badge bg-secondary">Archived</span>';
+
             const endLeaseBtn = t.status === 'active' ? 
                 `<button class="btn btn-sm btn-outline-danger" onclick="endLease(${t.id})"><i class="fas fa-sign-out-alt"></i> End Lease</button>` :
                 '<span class="badge bg-secondary">Archived</span>';
 
-            // IMPORTANT: passing 't' (object) directly works because of JSON.stringify in template literal
-            // However, to be safe with quotes, we'll store it or just pass ID if possible. 
-            // The original code did: onclick='openEditTenantModal(${JSON.stringify(t)})'
-            // We'll stick to that but we need to escape quotes if any.
-            // A safer way is to use a global map or just fetch details. 
-            // For now, let's just use the ID and refetch or find in memory if we had a global tenants list.
-            // But since I don't want to break existing logic too much, I'll use the original approach but be careful.
-            
-            // To make it cleaner/safer, let's attach the data to the button using dataset
+            const resendInviteBtn = `<button class="btn btn-sm btn-outline-warning text-dark me-1" title="Resend Password Setup Link" onclick="resendTenantInvite(${t.id})"><i class="fas fa-link me-1"></i>Link</button>`;
+
             const tData = JSON.stringify(t).replace(/'/g, "&apos;");
 
             tbody.innerHTML += `
@@ -49,8 +48,9 @@ async function loadTenants() {
                     <td>${t.phone_number || 'N/A'}</td>
                     <td>${room}</td>
                     <td>${guardian}</td>
-                    <td><span class="badge ${t.status === 'active' ? 'bg-success' : 'bg-secondary'}">${t.status}</span></td>
+                    <td>${statusBadgeHtml}</td>
                     <td>
+                        ${resendInviteBtn}
                         <button class="btn btn-sm btn-outline-primary me-1" data-tenant='${tData}' onclick='openEditTenantModalFromBtn(this)'>
                             <i class="fas fa-edit"></i> Edit
                         </button>
@@ -235,17 +235,42 @@ async function submitAddTenant() {
         const result = await res.json();
         
         if (res.ok) {
-            alert('Tenant added successfully!');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addTenantModal'));
-            modal.hide();
+            if (modal) modal.hide();
             form.reset();
-            if(typeof loadTenants === 'function') loadTenants(); 
-            if(typeof loadRooms === 'function') loadRooms(); 
+
+            if (result.setupUrl) {
+                prompt('✅ Tenant Account Created!\n\nCopy & send this Password Setup Link to the tenant:', result.setupUrl);
+            } else {
+                alert('✅ ' + (result.message || 'Tenant added successfully!'));
+            }
+
+            if (typeof loadTenants === 'function') loadTenants(); 
+            if (typeof loadRooms === 'function') loadRooms(); 
         } else {
-            alert(result.error || 'Failed to add tenant');
+            alert('❌ ' + (result.error || 'Failed to add tenant'));
         }
     } catch (err) {
         console.error('Error adding tenant:', err);
-        alert('An error occurred');
+        alert('An error occurred while adding tenant.');
+    }
+}
+
+async function resendTenantInvite(tenantId) {
+    try {
+        const res = await fetch(`/api/admin/tenants/${tenantId}/resend-invite`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        const result = await res.json();
+
+        if (res.ok && result.setupUrl) {
+            prompt('📧 New Password Setup Link Generated!\n\nCopy & send this link to the tenant:', result.setupUrl);
+        } else {
+            alert('❌ ' + (result.error || 'Failed to generate setup link.'));
+        }
+    } catch (err) {
+        console.error('Error resending invite:', err);
+        alert('Network error generating setup link.');
     }
 }

@@ -1386,8 +1386,8 @@
                             <input type="tel" class="form-control" name="phone" placeholder="09123456789">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                            <label class="form-label">Password <span class="text-muted fw-normal small">(Optional — leave blank for auto password setup link)</span></label>
+                            <input type="password" class="form-control" name="password" placeholder="Leave blank to email setup link">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Room Assignment</label>
@@ -1464,6 +1464,9 @@
             <!-- Populated by inquiries.js -->
         </div>
         <div class="inq-drawer-footer">
+            <button class="btn btn-sm btn-primary" onclick="convertCurrentInquiryToTenant()">
+                <i class="fas fa-user-plus me-1"></i>Convert to Tenant
+            </button>
             <button class="btn btn-sm btn-success" onclick="updateInquiryStatus(InquiryDashboard.drawerInquiryId,'approved')">
                 <i class="fas fa-check me-1"></i>Approve
             </button>

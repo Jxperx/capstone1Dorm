@@ -275,23 +275,61 @@ function renderInquiryTable(rows) {
             <td style="font-size:0.75rem;color:#888;white-space:nowrap">${fmtDate(r.created_at)}</td>
             <td onclick="event.stopPropagation()">
                 <div class="inq-actions d-flex gap-1 flex-wrap">
+                    <button class="btn btn-sm btn-primary" title="Convert Applicant to Tenant" onclick="convertInquiryToTenant('${escHtml(r.first_name)} ${escHtml(r.last_name)}', '${escHtml(r.email)}', '${escHtml(r.phone)}')">
+                        <i class="fas fa-user-plus me-1"></i>Convert
+                    </button>
                     ${r.status !== 'approved'
-                        ? `<button class="btn btn-sm btn-outline-success" onclick="updateInquiryStatus(${r.id},'approved')">
+                        ? `<button class="btn btn-sm btn-outline-success" title="Approve Inquiry" onclick="updateInquiryStatus(${r.id},'approved')">
                                <i class="fas fa-check"></i>
                            </button>`
                         : ''}
                     ${r.status !== 'flagged'
-                        ? `<button class="btn btn-sm btn-outline-danger" onclick="updateInquiryStatus(${r.id},'flagged')">
+                        ? `<button class="btn btn-sm btn-outline-danger" title="Flag as Spam" onclick="updateInquiryStatus(${r.id},'flagged')">
                                <i class="fas fa-flag"></i>
                            </button>`
                         : ''}
-                    <button class="btn btn-sm btn-outline-secondary" onclick="deleteInquiry(${r.id})">
+                    <button class="btn btn-sm btn-outline-secondary" title="Delete" onclick="deleteInquiry(${r.id})">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </td>
         </tr>
     `).join('');
+}
+
+function convertInquiryToTenant(name, email, phone) {
+    const nameInput = document.querySelector('#addTenantForm input[name="full_name"]');
+    const emailInput = document.querySelector('#addTenantForm input[name="email"]');
+    const phoneInput = document.querySelector('#addTenantForm input[name="phone"]');
+    const passInput = document.querySelector('#addTenantForm input[name="password"]');
+
+    if (nameInput) nameInput.value = name || '';
+    if (emailInput) emailInput.value = email || '';
+    if (phoneInput) phoneInput.value = phone || '';
+    if (passInput) passInput.value = ''; // Optional for password setup link
+
+    if (typeof prepareAddTenant === 'function') {
+        prepareAddTenant();
+    } else {
+        const modalEl = document.getElementById('addTenantModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            new bootstrap.Modal(modalEl).show();
+        }
+    }
+}
+
+function convertCurrentInquiryToTenant() {
+    const inqId = InquiryDashboard.drawerInquiryId;
+    if (!inqId) return;
+
+    fetch(`/api/admin/inquiries/${inqId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(record => {
+            const fullName = `${record.first_name || ''} ${record.last_name || ''}`.trim();
+            closeInquiryDrawer();
+            convertInquiryToTenant(fullName, record.email, record.phone);
+        })
+        .catch(err => console.error('Error fetching inquiry details:', err));
 }
 
 function renderInquiryPagination(total, page, limit) {
