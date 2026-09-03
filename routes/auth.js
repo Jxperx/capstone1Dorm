@@ -487,8 +487,8 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// GET /api/auth/verify-setup-token?token=...
-router.get('/verify-setup-token', async (req, res) => {
+// GET /api/auth/verify-setup-token?token=... and /api/verify-setup-token
+router.get(['/verify-setup-token', '/auth/verify-setup-token'], async (req, res) => {
     const { token } = req.query;
     if (!token) return res.status(400).json({ error: 'Token is required' });
 
@@ -524,8 +524,8 @@ router.get('/verify-setup-token', async (req, res) => {
     }
 });
 
-// POST /api/auth/set-tenant-password
-router.post('/set-tenant-password', async (req, res) => {
+// POST /api/auth/set-tenant-password and /api/set-tenant-password
+router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password || password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters.' });
