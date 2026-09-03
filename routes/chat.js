@@ -16,19 +16,19 @@ const router  = express.Router();
 const axios   = require('axios');
 const { getRuleBasedReply } = require('../utils/ruleBasedChat');
 
-// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const TIMEOUT_MS    = 20000;
-const GROQ_BASE     = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODELS   = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-const GEMINI_BASE   = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL  = 'gemini-3.6-flash';
+// ─── Config ──────────────────────────────────────────────────────────────────
+const TIMEOUT_MS     = 20000;
+const GROQ_BASE      = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODELS    = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'allam-2-7b', 'qwen/qwen3.6-27b'];
+const GEMINI_BASE    = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_MODELS  = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash'];
 
-// â”€â”€â”€ System Prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——————————————————————————————————————————————————————————————————————————————————————————————————
 const SYSTEM_PROMPT = `You are a smart, friendly AI assistant named "Dorm AI" built into the EliteStay student boarding house management system in the Philippines.
 
 You have TWO roles:
-1. **General AI Assistant** â€” You can answer ANY question a student might have: homework help, science, math, news, technology, general knowledge, language questions, advice, etc. Be helpful, accurate, and conversational.
-2. **Boarding House Expert** â€” You have detailed knowledge about this boarding house:
+1. **General AI Assistant** — You can answer ANY question a student might have: homework help, science, math, news, technology, general knowledge, language questions, advice, etc. Be helpful, accurate, and conversational.
+2. **Boarding House Expert** — You have detailed knowledge about this boarding house:
 
    HOUSE RULES:
    - Quiet hours: 10:00 PM â€“ 6:00 AM (no loud music, parties, or noise)
@@ -141,44 +141,55 @@ router.post('/chat', chatLimiter, async (req, res) => {
                     }
                 );
 
-                const reply = response.data?.choices?.[0]?.message?.content;
+                let reply = response.data?.choices?.[0]?.message?.content;
                 if (!reply) throw new Error(`Empty response from Groq ${model}`);
+                reply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
-                console.log(`[Chatbot] âœ“ Groq ${model} replied`);
+                console.log(`[Chatbot] ✓ Groq ${model} replied`);
                 return res.json({ reply, model, provider: 'groq' });
 
             } catch (err) {
                 const status = err.response?.status;
                 if (status === 429) {
-                    console.warn(`[Chatbot] Groq ${model} rate limited â€” trying next`);
+                    console.warn(`[Chatbot] Groq ${model} rate limited — trying next`);
                     continue;
                 }
                 if (status === 401) {
-                    console.error('[Chatbot] Groq invalid API key â€” skipping Groq');
+                    console.error('[Chatbot] Groq invalid API key — skipping Groq');
                     break;
                 }
                 console.warn(`[Chatbot] Groq ${model} failed (${status}): ${err.message}`);
             }
         }
     } else {
-        console.warn('[Chatbot] GROQ_API_KEY not set â€” skipping Groq');
+        console.warn('[Chatbot] GROQ_API_KEY not set — skipping Groq');
     }
 
-    // â”€â”€ 2. Fallback: Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 2. Fallback: Gemini (Multi-model chain) ──────────────────────────────────
     if (GEMINI_API_KEY) {
-        try {
-            const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-            const response = await axios.post(url, buildGeminiBody(history, message), {
-                headers: { 'Content-Type': 'application/json' },
-                timeout: TIMEOUT_MS
-            });
-            const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!reply) throw new Error('Empty Gemini response');
-            console.log('[Chatbot] âœ“ Gemini (backup) replied');
-            return res.json({ reply, model: GEMINI_MODEL, provider: 'gemini' });
-        } catch (err) {
-            console.warn(`[Chatbot] Gemini backup failed: ${err.response?.status} ${err.message}`);
+        for (const model of GEMINI_MODELS) {
+            try {
+                const url = `${GEMINI_BASE}/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await axios.post(url, buildGeminiBody(history, message), {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: TIMEOUT_MS
+                });
+                let reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!reply) throw new Error(`Empty Gemini response from ${model}`);
+                reply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                console.log(`[Chatbot] ✓ Gemini (${model}) replied`);
+                return res.json({ reply, model, provider: 'gemini' });
+            } catch (err) {
+                const status = err.response?.status;
+                if (status === 429) {
+                    console.warn(`[Chatbot] Gemini ${model} rate limited (429) — trying next model`);
+                    continue;
+                }
+                console.warn(`[Chatbot] Gemini ${model} failed (${status}): ${err.message}`);
+            }
         }
+    } else {
+        console.warn('[Chatbot] GEMINI_API_KEY not set — skipping Gemini');
     }
 
     // â”€â”€ 3. Last resort: rule-based offline fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
