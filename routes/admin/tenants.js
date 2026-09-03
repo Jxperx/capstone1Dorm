@@ -117,10 +117,58 @@ router.post('/create-account', async (req, res) => {
             setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(email)}`;
 
             console.log(`[Tenant Onboarding] Created pending tenant for ${email}. Setup link: ${setupUrl}`);
+
+            // Dispatch Onboarding Welcome Email
+            try {
+                const { sendMailWithFallback } = require('../../utils/email');
+                const mailOptions = {
+                    from: `"EliteStay Management" <${process.env.EMAIL_USER || 'no-reply@elitestay.com'}>`,
+                    to: email,
+                    subject: 'Welcome to EliteStay! Set up your tenant portal password',
+                    html: `
+                        <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e8e8e8;border-radius:10px;background-color:#ffffff;">
+                            <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #c5a059;">
+                                <h2 style="color:#121212;margin:0;font-size:24px;letter-spacing:1px;">ELITESTAY DORM & CONDO</h2>
+                                <span style="font-size:12px;color:#c5a059;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Tenant Self-Service Onboarding</span>
+                            </div>
+                            <div style="padding:30px 20px;">
+                                <p style="font-size:16px;color:#333333;margin-bottom:15px;">Hello <strong>${full_name}</strong>,</p>
+                                <p style="font-size:14px;color:#555555;line-height:1.6;">
+                                    Welcome to EliteStay! Your room reservation has been approved by the management.
+                                </p>
+                                <p style="font-size:14px;color:#555555;line-height:1.6;">
+                                    Please click the button below to create your password and access your Tenant Portal:
+                                </p>
+                                <div style="text-align:center;margin:30px 0;">
+                                    <a href="${setupUrl}" style="background-color:#c5a059;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:30px;font-weight:bold;font-size:15px;display:inline-block;box-shadow:0 4px 12px rgba(197,160,89,0.3);">
+                                        🔑 Set Up My Password & Access Portal
+                                    </a>
+                                </div>
+                                <p style="font-size:12px;color:#888888;line-height:1.5;">
+                                    Or copy and paste this link into your browser:<br>
+                                    <a href="${setupUrl}" style="color:#c5a059;word-break:break-all;">${setupUrl}</a>
+                                </p>
+                                <div style="background-color:#f8f9fa;padding:12px 16px;border-radius:8px;margin-top:25px;border-left:4px solid #c5a059;">
+                                    <p style="font-size:12px;color:#666666;margin:0;">
+                                        ⏰ <strong>Security Notice:</strong> This link is valid for 48 hours. If you did not apply for tenancy, please contact management immediately.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="text-align:center;padding-top:20px;border-top:1px solid #eeeeee;font-size:12px;color:#999999;">
+                                © ${new Date().getFullYear()} EliteStay Management. All rights reserved.
+                            </div>
+                        </div>
+                    `
+                };
+                await sendMailWithFallback(mailOptions);
+                console.log(`[Tenant Onboarding] ✅ Welcome email sent successfully to ${email}`);
+            } catch (mailErr) {
+                console.error(`[Tenant Onboarding] ⚠️ Could not send welcome email to ${email}:`, mailErr.message);
+            }
         }
 
         res.status(201).json({
-            message: isSelfService ? 'Tenant added! Password setup link generated.' : 'Tenant added successfully.',
+            message: isSelfService ? `Tenant added! Password setup email sent to ${email}.` : 'Tenant added successfully.',
             isPending: isSelfService,
             setupUrl: setupUrl,
             userId: userId
@@ -178,9 +226,54 @@ router.post('/:id/resend-invite', async (req, res) => {
         const host = req.get('host');
         const setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(tenant.email)}`;
 
+        // Dispatch Email with Setup Link
+        try {
+            const { sendMailWithFallback } = require('../../utils/email');
+            const mailOptions = {
+                from: `"EliteStay Management" <${process.env.EMAIL_USER || 'no-reply@elitestay.com'}>`,
+                to: tenant.email,
+                subject: 'EliteStay - Password Setup Link',
+                html: `
+                    <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e8e8e8;border-radius:10px;background-color:#ffffff;">
+                        <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #c5a059;">
+                            <h2 style="color:#121212;margin:0;font-size:24px;letter-spacing:1px;">ELITESTAY DORM & CONDO</h2>
+                            <span style="font-size:12px;color:#c5a059;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Password Setup Link</span>
+                        </div>
+                        <div style="padding:30px 20px;">
+                            <p style="font-size:16px;color:#333333;margin-bottom:15px;">Hello <strong>${tenant.full_name}</strong>,</p>
+                            <p style="font-size:14px;color:#555555;line-height:1.6;">
+                                Here is your link to set up your password and access your EliteStay Tenant Portal:
+                            </p>
+                            <div style="text-align:center;margin:30px 0;">
+                                <a href="${setupUrl}" style="background-color:#c5a059;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:30px;font-weight:bold;font-size:15px;display:inline-block;box-shadow:0 4px 12px rgba(197,160,89,0.3);">
+                                    🔑 Set Up My Password
+                                </a>
+                            </div>
+                            <p style="font-size:12px;color:#888888;line-height:1.5;">
+                                Or copy and paste this link into your browser:<br>
+                                <a href="${setupUrl}" style="color:#c5a059;word-break:break-all;">${setupUrl}</a>
+                            </p>
+                            <div style="background-color:#f8f9fa;padding:12px 16px;border-radius:8px;margin-top:25px;border-left:4px solid #c5a059;">
+                                <p style="font-size:12px;color:#666666;margin:0;">
+                                    ⏰ <strong>Security Notice:</strong> This link is valid for 48 hours.
+                                </p>
+                            </div>
+                        </div>
+                        <div style="text-align:center;padding-top:20px;border-top:1px solid #eeeeee;font-size:12px;color:#999999;">
+                            © ${new Date().getFullYear()} EliteStay Management. All rights reserved.
+                        </div>
+                    </div>
+                `
+            };
+            await sendMailWithFallback(mailOptions);
+            console.log(`[Tenant Onboarding] ✅ Resent welcome email successfully to ${tenant.email}`);
+        } catch (mailErr) {
+            console.error(`[Tenant Onboarding] ⚠️ Could not resend email to ${tenant.email}:`, mailErr.message);
+        }
+
         res.json({
             success: true,
-            message: 'New password setup link generated!',
+            message: `New password setup link generated and emailed to ${tenant.email}!`,
             setupUrl: setupUrl
         });
     } catch (err) {
