@@ -31,12 +31,14 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
 /* Wrapper & Sidebar */
 #wrapper {
     overflow-x: hidden;
+    width: 100%;
 }
 
 #sidebar-wrapper {
     min-height: 100vh;
-    margin-left: -16rem;
-    transition: margin .3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 16rem !important;
+    max-width: 16rem !important;
+    box-sizing: border-box !important;
     background-color: var(--primary) !important;
     color: var(--white);
     border-right: 1px solid rgba(255,255,255,0.06) !important;
@@ -55,6 +57,7 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     display: flex;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box !important;
 }
 #sidebar-wrapper .sidebar-heading::before {
     content: '◆';
@@ -63,7 +66,8 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
 }
 
 #sidebar-wrapper .list-group {
-    width: 16rem;
+    width: 100% !important;
+    box-sizing: border-box !important;
     padding: 0.8rem;
 }
 
@@ -399,10 +403,12 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
         bottom: 0;
         width: 16rem !important;
         height: 100vh !important;
+        transform: none !important;
         margin-left: 0 !important;
         z-index: 1000;
         overflow-y: auto;
         border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
     }
 
     #page-content-wrapper {
@@ -427,46 +433,50 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
 
 /* Responsive Mobile & Tablet Drawer Layout */
 @media (max-width: 767.98px) {
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+
+    #wrapper {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+
     #sidebar-wrapper {
         position: fixed !important;
         top: 0;
         bottom: 0;
         left: 0;
-        margin-left: -16rem !important;
-        z-index: 1050;
+        width: 16rem !important;
+        max-width: 80vw !important;
         height: 100vh !important;
+        margin-left: 0 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        z-index: 1050;
         overflow-y: auto;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box !important;
+        box-shadow: none !important;
     }
 
     body.sb-sidenav-toggled #sidebar-wrapper {
-        margin-left: 0 !important;
-        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.4);
+        transform: translateX(0) !important;
+        box-shadow: 8px 0 30px rgba(0, 0, 0, 0.6) !important;
     }
 
     #page-content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
+        max-width: 100vw !important;
         height: 100vh;
-        overflow-y: auto;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
     }
 
     .navbar {
         padding: 0.75rem 0.9rem;
-    }
-}
-    
-    #sidebar-wrapper {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 1050;
-        height: 100vh;
-    }
-    
-    body:not(.sb-sidenav-toggled) #sidebar-wrapper {
-        margin-left: -16rem;
     }
 
     /* Modal responsiveness on small phones */
@@ -477,23 +487,6 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     
     .modal-header, .modal-footer {
         padding: 1rem;
-    }
-}
-
-@media (min-width: 768px) {
-    .navbar {
-        padding: 1rem 1.8rem;
-    }
-    #sidebar-wrapper {
-        margin-left: 0;
-        position: relative;
-    }
-    #page-content-wrapper {
-        min-width: 0;
-        width: 100%;
-    }
-    body.sb-sidenav-toggled #sidebar-wrapper {
-        margin-left: -16rem;
     }
 }
 
