@@ -133,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         submitBtn.textContent = 'Generate QRPH Code';
                     }
                 } else {
-                    alert(result.message || result.error || 'Failed to initiate QRPH payment.');
+                    const errDetail = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || result.message || 'Failed to initiate GCash/QRPH payment.');
+                    alert('❌ Payment Error: ' + errDetail);
                     if (submitBtn) {
                         submitBtn.disabled    = false;
                         submitBtn.textContent = 'Generate QRPH Code';

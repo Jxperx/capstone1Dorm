@@ -119,53 +119,113 @@ router.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-// 1. Generate QRPH Code Route
+// 1. Generate QRPH Code Route (with GCash Checkout Fallback)
 router.post('/qrph', async (req, res) => {
-  try {
-    const { amount, description, name, bill_id } = req.body;
+  const secretKey = process.env.PAYMONGO_SECRET_KEY;
+  if (!secretKey || !secretKey.startsWith('sk_')) {
+    console.error('[PayMongo Error]: Secret key is missing or invalid.');
+    return res.status(500).json({ error: 'Payment gateway is not configured correctly. Secret key is missing.' });
+  }
 
-    if (!amount) {
-      return res.status(400).json({ message: 'Amount is required.' });
+  try {
+    const { amount, description, name, email, phone, bill_id } = req.body;
+
+    const parsedAmount = parseFloat(amount);
+    if (!parsedAmount || parsedAmount <= 0) {
+      return res.status(400).json({ error: 'Amount is required and must be greater than zero.' });
     }
 
-    const response = await axios.post(
-      'https://api.paymongo.com/v1/qrph/generate',
-      {
-        data: {
-          attributes: {
-            amount: Math.round(amount * 100), // pesos to centavos
-            name: name || 'Tenant',           // Pass tenant name
-            kind: 'instore', // Required by PayMongo
-            description: description || 'Tenant bill payment',
-            metadata: { bill_id: String(bill_id) } // CRITICAL for webhook verification
+    const amountCentavos = Math.round(parsedAmount * 100);
+    const authHeader = `Basic ${Buffer.from(secretKey + ':').toString('base64')}`;
+
+    // Attempt Direct QRPH Code Generation first
+    try {
+      const response = await axios.post(
+        'https://api.paymongo.com/v1/qrph/generate',
+        {
+          data: {
+            attributes: {
+              amount: amountCentavos,
+              name: name || 'Tenant',
+              kind: 'instore',
+              description: description || 'Tenant bill payment',
+              metadata: { bill_id: String(bill_id || '') }
+            }
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+            'authorization': authHeader
           }
         }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': 'application/json',
-          'authorization': `Basic ${Buffer.from(process.env.PAYMONGO_SECRET_KEY + ':').toString('base64')}`
-        }
+      );
+
+      const qrData = response.data.data;
+      return res.status(200).json({
+        success: true,
+        code_id: qrData.id,
+        reference_id: qrData.attributes.reference_id,
+        status: qrData.attributes.status,
+        qr_image: qrData.attributes.qr_image
+      });
+
+    } catch (qrError) {
+      console.warn('[PayMongo QRPH Direct API warning, falling back to GCash Source Checkout]:', qrError.response?.data || qrError.message);
+
+      // Fallback: Create PayMongo GCash Source Checkout URL
+      let normalizedPhone = (phone || '').toString().trim().replace(/\s+/g, '');
+      if (normalizedPhone.startsWith('09') && normalizedPhone.length === 11) {
+        normalizedPhone = '+63' + normalizedPhone.slice(1);
+      } else if (!normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+639567125849';
       }
-    );
 
-    const qrData = response.data.data;
+      const sourceRes = await axios.post(
+        'https://api.paymongo.com/v1/sources',
+        {
+          data: {
+            attributes: {
+              amount: amountCentavos,
+              redirect: {
+                success: `${req.protocol}://${req.get('host')}/tenant-dashboard.html?payment_success=true`,
+                failed: `${req.protocol}://${req.get('host')}/tenant-dashboard.html?payment_failed=true`
+              },
+              billing: {
+                name: name || 'EliteStay Tenant',
+                email: email || 'tenant@elitestay.com',
+                phone: normalizedPhone
+              },
+              type: 'gcash',
+              currency: 'PHP',
+              metadata: { bill_id: String(bill_id || '') }
+            }
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+            'authorization': authHeader
+          }
+        }
+      );
 
-    return res.status(200).json({
-      success: true,
-      code_id: qrData.id,
-      reference_id: qrData.attributes.reference_id,
-      status: qrData.attributes.status,
-      qr_image: qrData.attributes.qr_image
-    });
+      const sourceData = sourceRes.data.data;
+      return res.status(200).json({
+        success: true,
+        redirect_url: sourceData.attributes.redirect.checkout_url
+      });
+    }
 
   } catch (error) {
-    console.error('PayMongo QRPH Error:', error.response?.data || error.message);
+    const errorDetails = error.response?.data?.errors?.[0]?.detail || error.response?.data || error.message;
+    console.error('PayMongo QRPH Payment Error:', errorDetails);
 
     return res.status(500).json({
-      message: 'Failed to generate QRPH code.',
-      error: error.response?.data || error.message
+      message: 'Failed to initiate GCash/QRPH payment.',
+      error: errorDetails
     });
   }
 });
@@ -266,7 +326,7 @@ router.post('/webhook', async (req, res) => {
                     .query(`
                         UPDATE payments 
                         SET status = 'approved', 
-                            resolved_at = GETDATE(),
+                            resolved_at = NOW(),
                             reference_number = COALESCE(reference_number, @ref)
                         WHERE id = @billId
                     `);
@@ -320,7 +380,7 @@ router.get('/status/:code_id', async (req, res) => {
         // Check DB as well (e.g. if webhook already processed it or admin approved it)
         const dbCheck = await pool.request()
             .input('codeId', sql.NVarChar, code_id)
-            .query("SELECT TOP 1 id, amount, status FROM payments WHERE (reference_number = @codeId OR proof_image_url LIKE '%' + @codeId + '%') AND status = 'approved'");
+            .query("SELECT id, amount, status FROM payments WHERE (reference_number = @codeId OR proof_image_url LIKE '%' || @codeId || '%') AND status = 'approved' LIMIT 1");
         
         if (dbCheck.recordset.length > 0) {
             isPaid = true;
@@ -345,7 +405,7 @@ router.get('/status/:code_id', async (req, res) => {
                 if (existing.recordset[0].status !== 'approved') {
                     await pool.request()
                         .input('codeId', sql.NVarChar, code_id)
-                        .query("UPDATE payments SET status = 'approved', resolved_at = GETDATE() WHERE reference_number = @codeId");
+                        .query("UPDATE payments SET status = 'approved', resolved_at = NOW() WHERE reference_number = @codeId");
                 }
             } else if (tenantId) {
                 await pool.request()
@@ -354,7 +414,7 @@ router.get('/status/:code_id', async (req, res) => {
                     .input('ref', sql.NVarChar, code_id)
                     .query(`
                         INSERT INTO payments (tenant_id, amount, payment_date, proof_image_url, reference_number, status)
-                        VALUES (@tenantId, @amount, CAST(GETDATE() AS DATE), 'PayMongo QRPH Online Payment', @ref, 'approved')
+                        VALUES (@tenantId, @amount, CURRENT_DATE, 'PayMongo QRPH Online Payment', @ref, 'approved')
                     `);
             }
         }
