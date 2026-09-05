@@ -190,163 +190,76 @@
 
                 <!-- SECTION: Room Management -->
                 <div id="section-rooms" class="content-section">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Room & Unit Management</h3>
-                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="openRoomModal()">
-                            <i class="fas fa-plus me-2"></i>Add New Room
-                        </button>
-                    </div>
-
-                    <!-- Inventory Metric Ribbon -->
-                    <div class="row g-3 mb-4" id="roomInventoryMetrics">
-                        <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.8;">Total Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.1);">
-                                        <i class="fas fa-cubes text-info fs-5"></i>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricUnitsSub">Dorms & Condos</div>
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        <div>
+                            <h2 style="font-family: 'Playfair Display', Georgia, serif; font-weight: 700; color: #1a1a2e; margin: 0; font-size: 1.75rem;">Room &amp; Unit Management</h2>
+                            <p class="text-muted mb-0" style="font-size: 0.88rem; margin-top: 4px;">Select any room or unit to inspect occupants, assign vacant beds, or manage leasing records.</p>
                         </div>
-                        <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #065f46, #047857); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Available Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricAvailableUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-door-open text-white fs-5"></i>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricAvailableSub">With open capacity</div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="input-group input-group-sm" style="width: 220px;">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted ps-3"><i class="fas fa-search"></i></span>
+                                <input type="text" id="roomSearchInput" class="form-control bg-white border-start-0 rounded-end-pill shadow-none" placeholder="Search unit..." oninput="filterRoomTables()" style="font-size: 0.85rem;">
                             </div>
-                        </div>
-                        <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #991b1b, #b91c1c); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupied Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupiedUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-door-closed text-white fs-5"></i>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricOccupiedSub">Full occupancy</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Total Residents</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalResidents">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-users text-white fs-5"></i>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricResidentsSub">Across all units</div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #854d0e, #ca8a04); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupancy Rate</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupancyRate">0%</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-chart-pie text-white fs-5"></i>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricRateSub">Capacity utilization</div>
-                            </div>
+                            <button class="btn rounded-pill px-4 py-2 text-white fw-semibold shadow-sm" style="background-color: #c5a059; border: none; font-size: 0.85rem; letter-spacing: 0.5px;" onclick="openRoomModal()">
+                                + ADD NEW ROOM
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Search & Filter Controls -->
-                    <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
-                        <div class="row align-items-center g-3">
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0 ps-3">
-                                        <i class="fas fa-search text-muted"></i>
-                                    </span>
-                                    <input type="text" id="roomSearchInput" class="form-control bg-light border-0" placeholder="Search room or unit number..." oninput="filterRoomTables()">
-                                </div>
-                            </div>
-                            <div class="col-md-7 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
-                                <span class="small text-muted me-2 fw-semibold">Availability:</span>
-                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 room-filter-btn active" id="btnFilterAll" onclick="setRoomFilter('all')">
-                                    All Units
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 room-filter-btn" id="btnFilterAvailable" onclick="setRoomFilter('available')">
-                                    Available Only
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 room-filter-btn" id="btnFilterOccupied" onclick="setRoomFilter('occupied')">
-                                    Occupied Only
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
+                    <div class="row g-4">
                         <!-- Dorm Management -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom-0">
-                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dormitories</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table align-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th>Room</th>
-                                                    <th>Capacity</th>
-                                                    <th>Rate</th>
-                                                    <th>Occupancy</th>
-                                                    <th>Status</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="dormsTableBody">
-                                                <!-- Dynamic Dorms -->
-                                            </tbody>
-                                        </table>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-bed me-2" style="color: #2563eb; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Dormitories</h5>
                                     </div>
+                                    <span class="badge rounded-pill" style="background: #f3f4f6; color: #6b7280; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Shared Rooms</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle" style="border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">ROOM</th>
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">CAPACITY</th>
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">RATE</th>
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">OCCUPANCY</th>
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">STATUS</th>
+                                                <th style="border-bottom: 2px solid #d4a373; width: 80px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dormsTableBody">
+                                            <!-- Dynamic Dorms -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Condo Management -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom-0">
-                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Units</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table align-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th>Unit</th>
-                                                    <th>Status</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="condosTableBody">
-                                                <!-- Dynamic Condos -->
-                                            </tbody>
-                                        </table>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-building me-2" style="color: #06b6d4; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Condo Units</h5>
                                     </div>
+                                    <span class="badge rounded-pill" style="background: #f3f4f6; color: #6b7280; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Private Unit</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle" style="border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 8px; border-bottom: 2px solid #d4a373;">STATUS</th>
+                                                <th style="border-bottom: 2px solid #d4a373; width: 80px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="condosTableBody">
+                                            <!-- Dynamic Condos -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1797,22 +1710,22 @@
 
     <!-- Admin Modules -->
     <script src="js/admin/modules/stats.js"></script>
-    <script src="js/admin/modules/rooms.js?v=2.7"></script>
-    <script src="js/admin/modules/tenants.js?v=2.7"></script>
+    <script src="js/admin/modules/rooms.js?v=3.0"></script>
+    <script src="js/admin/modules/tenants.js?v=3.0"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=1.1"></script>
     <script src="js/admin/modules/feedback.js"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>
-    <script src="js/admin/modules/vacancyAnalytics.js?v=2.7"></script>
+    <script src="js/admin/modules/vacancyAnalytics.js?v=3.0"></script>
     <script src="js/admin/modules/reports.js"></script>
     <script src="js/admin/modules/rentPricing.js?v=1.1"></script>
     <script src="js/admin/modules/liveChat.js"></script>
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=2.7"></script>
+    <script src="js/admin/main.js?v=3.0"></script>
 </body>
 </html>
 
