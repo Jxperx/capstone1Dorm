@@ -190,44 +190,30 @@
 
                 <!-- SECTION: Room Management -->
                 <div id="section-rooms" class="content-section">
-                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                        <div>
-                            <h3 class="mb-1 fw-bold text-dark">Room & Occupancy Management</h3>
-                            <p class="text-muted small mb-0">Select any room or unit to inspect occupants, assign vacant beds, or manage leasing records.</p>
-                        </div>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm"
-                                    data-bs-toggle="modal" data-bs-target="#addReadingModal"
-                                    onclick="if(typeof loadTenantsForCalc==='function') loadTenantsForCalc();">
-                                <i class="fas fa-bolt me-1"></i>Log Meter Reading
-                            </button>
-                            <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="prepareAddTenant()">
-                                <i class="fas fa-user-plus me-1"></i>Add New Tenant
-                            </button>
-                            <button class="btn btn-dark btn-sm rounded-pill px-3 shadow-sm" onclick="openRoomModal()">
-                                <i class="fas fa-plus me-1"></i>Add New Room
-                            </button>
-                        </div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Room & Unit Management</h3>
+                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="openRoomModal()">
+                            <i class="fas fa-plus me-2"></i>Add New Room
+                        </button>
                     </div>
                     <div class="row">
                         <!-- Dorm Management -->
                         <div class="col-md-6 mb-4">
                             <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0 fw-bold text-dark">Dormitories</h5>
-                                    <span class="badge bg-light text-secondary border">Shared Rooms</span>
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dormitories</h5>
                                 </div>
-                                <div class="card-body p-0">
+                                <div class="card-body">
                                     <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
-                                            <thead class="table-light">
+                                        <table class="table align-middle">
+                                            <thead>
                                                 <tr>
                                                     <th>Room</th>
                                                     <th>Capacity</th>
                                                     <th>Rate</th>
                                                     <th>Occupancy</th>
                                                     <th>Status</th>
-                                                    <th class="text-end">Actions</th>
+                                                    <th></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="dormsTableBody">
@@ -242,20 +228,17 @@
                         <!-- Condo Management -->
                         <div class="col-md-6 mb-4">
                             <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0 fw-bold text-dark">Condo Units</h5>
-                                    <span class="badge bg-light text-secondary border">Private Units</span>
+                                <div class="card-header bg-white border-bottom-0">
+                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Units</h5>
                                 </div>
-                                <div class="card-body p-0">
+                                <div class="card-body">
                                     <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
-                                            <thead class="table-light">
+                                        <table class="table align-middle">
+                                            <thead>
                                                 <tr>
                                                     <th>Unit</th>
-                                                    <th>Rate</th>
-                                                    <th>Occupancy</th>
                                                     <th>Status</th>
-                                                    <th class="text-end">Actions</th>
+                                                    <th></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="condosTableBody">
@@ -1638,8 +1621,8 @@
 
     <!-- Admin Modules -->
     <script src="js/admin/modules/stats.js"></script>
-    <script src="js/admin/modules/rooms.js"></script>
-    <script src="js/admin/modules/tenants.js"></script>
+    <script src="js/admin/modules/rooms.js?v=2.2"></script>
+    <script src="js/admin/modules/tenants.js?v=2.2"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=1.1"></script>
     <script src="js/admin/modules/feedback.js"></script>
@@ -1653,7 +1636,7 @@
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=1.1"></script>
+    <script src="js/admin/main.js?v=2.2"></script>
 </body>
 </html>
 

@@ -39,8 +39,8 @@ function showSection(sectionId, linkElement) {
     // Update Page Title
     const titles = {
         'dashboard': 'Dashboard Overview',
-        'rooms': 'Room & Occupancy Management',
-        'tenants': 'Room & Occupancy Management',
+        'rooms': 'Room & Unit Management',
+        'tenants': 'Room & Unit Management',
         'payments': 'Payment Management',
         'maintenance': 'Maintenance Requests',
         'media': 'Condo and Dorm Media',
@@ -54,6 +54,9 @@ function showSection(sectionId, linkElement) {
     const titleEl = document.getElementById('pageTitle');
     if (titleEl) titleEl.innerText = titles[sectionId] || 'Dashboard';
 
+    if (sectionId === 'rooms' && typeof loadRooms === 'function') {
+        loadRooms();
+    }
     if (sectionId === 'media' && typeof loadPropertyMediaAdmin === 'function') {
         loadPropertyMediaAdmin();
     }

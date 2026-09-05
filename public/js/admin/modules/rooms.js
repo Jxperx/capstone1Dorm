@@ -5,8 +5,11 @@ let currentOpenUnitModalRoomId = null;
 async function loadRooms() {
     try {
         const res = await fetch('/api/rooms', { credentials: 'include' });
+        if (!res.ok) {
+            console.error('Failed to fetch rooms:', res.status, res.statusText);
+            return;
+        }
         allRooms = await res.json(); // Update global cache
-        if (typeof loadPropertyMediaAdmin === 'function') loadPropertyMediaAdmin();
         
         const dormsBody = document.getElementById('dormsTableBody');
         const condosBody = document.getElementById('condosTableBody');
@@ -14,83 +17,76 @@ async function loadRooms() {
         if (dormsBody) dormsBody.innerHTML = '';
         if (condosBody) condosBody.innerHTML = '';
 
+        if (!Array.isArray(allRooms) || allRooms.length === 0) {
+            if (dormsBody) dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No dormitories found.</td></tr>';
+            if (condosBody) condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No condo units found.</td></tr>';
+            return;
+        }
+
         allRooms.forEach(room => {
-            const activeTenants = room.active_tenants || 0;
-            const capacity = room.capacity || 1;
+            const activeTenants = Number(room.active_tenants) || 0;
+            const capacity = Number(room.capacity) || 1;
             const fillPct = Math.round((activeTenants / capacity) * 100);
             const isFull = activeTenants >= capacity;
 
             // Occupancy bar color thresholds
-            let barColor = '#198754'; // enterprise green
-            if (fillPct >= 80) barColor = '#dc3545';      // red
-            else if (fillPct >= 50) barColor = '#fd7e14';  // amber
+            let barColor = '#f59e0b'; // amber/orange
+            if (fillPct >= 80) barColor = '#e74c3c'; // red
+            else if (fillPct === 0) barColor = '#e5e7eb'; // light gray for empty
 
             // Status badge: FULL or Active
             const statusBadge = isFull
-                ? '<span class="badge bg-danger text-uppercase fw-semibold" style="letter-spacing:0.5px;">FULL</span>'
-                : '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>';
-
-            const rateFormatted = Number(room.monthly_rate || 0).toLocaleString();
+                ? '<span class="badge bg-danger">FULL</span>'
+                : '<span class="badge bg-success">Active</span>';
 
             if (room.room_type === 'condo') {
+                // Condo row — matches picture 2: Unit + Status + actions
                 const isOccupied = activeTenants > 0;
                 const condoStatus = isOccupied
-                    ? '<span class="badge bg-danger text-uppercase fw-semibold" style="letter-spacing:0.5px;">OCCUPIED</span>'
-                    : '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">AVAILABLE</span>';
+                    ? '<span class="badge bg-danger">Occupied</span>'
+                    : '<span class="badge bg-success">Available</span>';
                 
                 const row = `
-                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})">
+                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})" title="Click to view occupants">
                         <td><strong>${room.room_number}</strong></td>
-                        <td>PHP ${rateFormatted}</td>
-                        <td>
-                            <span class="badge bg-light text-dark border">${activeTenants} / ${capacity}</span>
-                        </td>
                         <td>${condoStatus}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-primary me-1" onclick="openUnitOccupantsModal(${room.id})" title="Inspect occupants and capacity">
-                                Occupants
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openRoomModal(${room.id})" title="Edit unit specifications">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})" title="Delete unit">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openRoomModal(${room.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
                 if (condosBody) condosBody.innerHTML += row;
             } else {
+                // Dorm row — matches picture 2: Room + Capacity + Rate + Occupancy + Status + actions
                 const row = `
-                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})">
+                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})" title="Click to view occupants">
                         <td><strong>${room.room_number}</strong></td>
                         <td>${room.capacity} Beds</td>
-                        <td>PHP ${rateFormatted}</td>
+                        <td>₱${Number(room.monthly_rate).toFixed(2)}</td>
                         <td>
                             <div style="display:flex;align-items:center;gap:8px;width:130px;">
                                 <div style="width:80px;background:#e9ecef;border-radius:6px;height:8px;overflow:hidden;">
-                                    <div style="width:${fillPct}%;height:100%;background:${barColor};border-radius:6px;transition:width 0.4s ease;"></div>
+                                    <div style="width:${Math.max(fillPct, activeTenants > 0 ? 15 : 0)}%;height:100%;background:${barColor};border-radius:6px;transition:width 0.4s ease;"></div>
                                 </div>
                                 <span style="font-size:0.82rem;font-weight:600;color:${barColor};white-space:nowrap;width:36px;text-align:right;">${activeTenants}/${capacity}</span>
                             </div>
                         </td>
                         <td>${statusBadge}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-primary me-1" onclick="openUnitOccupantsModal(${room.id})" title="Inspect occupants and capacity">
-                                Occupants
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openRoomModal(${room.id})" title="Edit room specifications">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})" title="Delete room">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openRoomModal(${room.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
                 if (dormsBody) dormsBody.innerHTML += row;
             }
         });
+
+        // Run media dropdown loader safely
+        if (typeof loadPropertyMediaAdmin === 'function') {
+            loadPropertyMediaAdmin();
+        }
 
         // If the unit occupants modal is currently open, refresh its content silently
         const modalEl = document.getElementById('unitOccupantsModal');
