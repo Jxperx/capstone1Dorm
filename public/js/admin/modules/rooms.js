@@ -135,19 +135,31 @@ async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
         };
     }
 
-    // Fetch latest tenants data
-    let tenants = [];
+    // Fetch latest tenants for this specific room
+    let occupants = [];
     try {
-        const res = await fetch('/api/admin/tenants', { credentials: 'include' });
+        const res = await fetch(`/api/rooms/${room.id}/occupants`, { credentials: 'include' });
         if (res.ok) {
-            tenants = await res.json();
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                occupants = data;
+            }
+        }
+        
+        // Fallback to general admin tenants if dedicated endpoint was empty or unavailable
+        if (occupants.length === 0) {
+            const fallbackRes = await fetch('/api/admin/tenants', { credentials: 'include' });
+            if (fallbackRes.ok) {
+                const allTenants = await fallbackRes.json();
+                if (Array.isArray(allTenants)) {
+                    occupants = allTenants.filter(t => (t.room_id === room.id || String(t.room_number) === String(room.room_number)) && t.status !== 'archived');
+                }
+            }
         }
     } catch (e) {
-        console.error('Error fetching tenants for unit modal:', e);
+        console.error('Error fetching occupants for unit modal:', e);
     }
 
-    // Filter occupants assigned to this specific room (by room_id or room_number)
-    const occupants = tenants.filter(t => (t.room_id === room.id || String(t.room_number) === String(room.room_number)) && t.status !== 'archived');
     const activeCount = occupants.length;
     const vacantCount = Math.max(0, capacity - activeCount);
 

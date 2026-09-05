@@ -101,6 +101,34 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Admin/Public - Get occupants of a specific room
+router.get('/:id/occupants', async (req, res) => {
+    const roomId = parseInt(req.params.id, 10);
+    if (Number.isNaN(roomId)) return res.status(400).json({ error: 'Invalid room id' });
+    try {
+        const pool = await poolPromise;
+        const query = `
+            SELECT t.id, t.user_id, u.full_name, u.email, u.phone_number, u.profile_image_url,
+                   t.guardian_name, t.guardian_address, t.guardian_contact,
+                   r.room_number, r.id as room_id,
+                   t.lease_start_date, t.lease_end_date,
+                   t.status
+            FROM tenants t
+            JOIN users u ON t.user_id = u.id
+            JOIN rooms r ON t.room_id = r.id
+            WHERE t.room_id = @roomId AND t.status != 'archived'
+            ORDER BY t.id ASC
+        `;
+        const result = await pool.request()
+            .input('roomId', sql.Int, roomId)
+            .query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('[Rooms] Error fetching room occupants:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // Admin - Add Room
 router.post('/', async (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') return res.status(401).json({ error: 'Not authorized' });

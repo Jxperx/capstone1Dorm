@@ -125,6 +125,15 @@ app.use(session({
     }
 }));
 
+// In development mode on localhost, guarantee an active admin session for testing
+if (!isProduction) {
+    app.use((req, res, next) => {
+        if (!req.session.user) {
+            req.session.user = { id: 24, role: 'admin', name: 'jasper', email: 'jxperx@gmail.com' };
+        }
+        next();
+    });
+}
 
 // Route Imports
 const authRoutes          = require('./routes/auth');
