@@ -441,7 +441,7 @@
                             <h3 class="mb-1" style="font-family: 'Playfair Display', serif; font-weight: 700; color: #1a1a2e;">
                                 <i class="fas fa-tools me-2" style="color: #d4a373;"></i>Maintenance Requests
                             </h3>
-                            <p class="text-muted small mb-0">Prioritized triage workflow categorized by urgency and SLA response targets. Click any request row to inspect and take action.</p>
+                            <p class="text-muted small mb-0">Prioritized triage workflow categorized by urgency and response targets. Click any request row to inspect and take action.</p>
                         </div>
                     </div>
 
@@ -475,7 +475,7 @@
                             <div class="card border-0 shadow-sm rounded-3" style="background: #ffffff; border-left: 4px solid #8e44ad !important;">
                                 <div class="card-body py-3 px-3">
                                     <div style="font-size: 1.6rem; font-weight: 700; color: #8e44ad;" id="maint-stat-overdue">—</div>
-                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Overdue SLA</div>
+                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Overdue</div>
                                 </div>
                             </div>
                         </div>
@@ -491,7 +491,7 @@
                         <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 6px;"></div>
                         <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMaintenance('pending', this)" style="font-size: 0.78rem; padding: 5px 14px;">Pending</button>
                         <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="filterMaintenance('in_progress', this)" style="font-size: 0.78rem; padding: 5px 14px;">In Progress</button>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('overdue', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-clock me-1"></i>Overdue SLA</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('overdue', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-clock me-1"></i>Overdue</button>
                     </div>
 
                     <!-- Tri-Column Urgency Board -->
@@ -502,7 +502,7 @@
                                 <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge bg-danger px-2 py-1"><i class="fas fa-exclamation-circle me-1"></i>Emergency</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">SLA: Immediate (4h)</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Target: Immediate (4h)</small>
                                     </div>
                                     <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle" id="maint-count-emergency" style="font-size: 0.8rem;">0</span>
                                 </div>
@@ -532,7 +532,7 @@
                                 <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-arrow-up me-1"></i>High Priority</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">SLA: 24 Hours</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Target: 24 Hours</small>
                                     </div>
                                     <span class="badge rounded-pill bg-warning-subtle text-dark border border-warning-subtle" id="maint-count-high" style="font-size: 0.8rem;">0</span>
                                 </div>
@@ -562,7 +562,7 @@
                                 <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge bg-secondary px-2 py-1"><i class="fas fa-clipboard-check me-1"></i>Medium &amp; Routine</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">SLA: 2–3 Days</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Target: 2–3 Days</small>
                                     </div>
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle" id="maint-count-routine" style="font-size: 0.8rem;">0</span>
                                 </div>
@@ -1514,7 +1514,7 @@
                             </span>
                             <div class="d-flex gap-2">
                                 <span class="badge bg-light text-dark border" id="maintDetailAiCategory">Category</span>
-                                <span class="badge bg-light text-dark border" id="maintDetailAiUrgency">SLA Target</span>
+                                <span class="badge bg-light text-dark border" id="maintDetailAiUrgency">Target Time</span>
                             </div>
                         </div>
                         <div class="small text-dark fst-italic mb-2" id="maintDetailAiSummary">—</div>
@@ -1984,7 +1984,7 @@
     <script src="js/admin/modules/rooms.js?v=3.3"></script>
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
-    <script src="js/admin/modules/maintenance.js?v=2.1"></script>
+    <script src="js/admin/modules/maintenance.js?v=2.2"></script>
     <script src="js/admin/modules/feedback.js"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>

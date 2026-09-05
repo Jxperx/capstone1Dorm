@@ -321,14 +321,14 @@ function openMaintenanceDetailModal(id) {
     const roomEl = document.getElementById('maintDetailRoomNumber');
     if (roomEl) roomEl.textContent = req.room_number ? `Room ${req.room_number}` : 'Unassigned Unit';
 
-    // Elapsed / SLA Badge
+    // Elapsed / Deadline Badge
     const elapsedBadge = document.getElementById('maintDetailElapsedBadge');
     if (elapsedBadge) {
         const info = getElapsedInfo(req.reported_at, req.ai_urgency);
         if (info.isOverdue) {
-            elapsedBadge.innerHTML = `<span class="badge bg-danger">Overdue SLA</span> <span class="text-danger ms-1 fw-semibold">${info.elapsed}</span>`;
+            elapsedBadge.innerHTML = `<span class="badge bg-danger">Overdue</span> <span class="text-danger ms-1 fw-semibold">${info.elapsed}</span>`;
         } else {
-            elapsedBadge.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle">Within SLA</span> <span class="text-muted ms-1">${info.elapsed}</span>`;
+            elapsedBadge.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle">On Track</span> <span class="text-muted ms-1">${info.elapsed}</span>`;
         }
     }
 
@@ -348,7 +348,7 @@ function openMaintenanceDetailModal(id) {
             if (aiCategoryEl) aiCategoryEl.textContent = `Category: ${req.ai_category || 'General'}`;
 
             const aiUrgencyEl = document.getElementById('maintDetailAiUrgency');
-            if (aiUrgencyEl) aiUrgencyEl.textContent = `SLA: ${req.ai_urgency || 'Standard'}`;
+            if (aiUrgencyEl) aiUrgencyEl.textContent = `Target: ${req.ai_urgency || 'Standard'}`;
 
             const aiConfidenceEl = document.getElementById('maintDetailAiConfidence');
             if (aiConfidenceEl) {
