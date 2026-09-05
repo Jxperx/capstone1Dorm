@@ -89,7 +89,6 @@ function renderMaintenanceRow(req, isNew = false) {
     // AI columns
     const priorityHtml  = aiPriorityBadge(req.ai_priority, !!req.ai_is_emergency);
     const category      = req.ai_category   || '<span class="text-muted">—</span>';
-    const department    = req.ai_department  || '<span class="text-muted">—</span>';
     const aiSummary     = req.ai_summary
         ? `<div class="mt-1 text-muted small" style="font-style:italic;font-size:11px;">
             <i class="fas fa-robot me-1" style="color:#c5a059;"></i>${req.ai_summary}
@@ -121,7 +120,6 @@ function renderMaintenanceRow(req, isNew = false) {
             </td>
             <td>${priorityHtml}</td>
             <td><small>${category}</small></td>
-            <td><small>${department}</small></td>
             <td>
                 <small>${urgencyLabel}</small>
                 ${overdueHtml}
@@ -154,7 +152,7 @@ function updateMaintenanceStats(requests) {
 function renderMaintenanceTable(requests) {
     const tbody = document.getElementById('maintenanceTableBody');
     if (!requests || requests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">No maintenance requests found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">No maintenance requests found.</td></tr>';
         return;
     }
 
