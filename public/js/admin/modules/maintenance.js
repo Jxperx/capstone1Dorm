@@ -77,8 +77,12 @@ function categorizeRequest(req) {
 
 // ── Render single row for urgency column table ──
 function renderUrgencyRow(req) {
+    // Format date as MM/DD/YY (e.g., 09/05/26)
     const d = new Date(req.reported_at);
-    const dateFormatted = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const dateFormatted = `${mm}/${dd}/${yy}`;
 
     // Status badge style
     let statusBadgeClass = 'bg-warning text-dark';
@@ -93,29 +97,24 @@ function renderUrgencyRow(req) {
 
     // Overdue or SLA flag
     const overdueFlag = req._isOverdue
-        ? '<span class="badge bg-danger ms-1" style="font-size: 0.65rem;">Overdue</span>'
+        ? '<div class="mt-1"><span class="badge bg-danger" style="font-size: 0.65rem;">Overdue</span></div>'
         : '';
 
-    const unitText = req.room_number ? `Room ${req.room_number}` : '<span class="text-muted">Unassigned</span>';
+    const unitText = req.room_number ? req.room_number : '<span class="text-muted">Unassigned</span>';
 
     return `
         <tr style="cursor: pointer; transition: background-color 0.15s ease;"
             onclick="openMaintenanceDetailModal(${req.id})"
             class="align-middle"
-            title="Click to view details and take action">
-            <td class="text-nowrap" style="font-size: 0.8rem; color: #555;">
+            title="Click to view tenant contact, description, and update status">
+            <td class="text-nowrap" style="font-size: 0.82rem; color: #555; font-weight: 500;">
                 ${dateFormatted}
             </td>
-            <td>
-                <div class="fw-semibold text-dark text-truncate" style="max-width: 140px;" title="${req.full_name || 'Tenant'}">
-                    ${req.full_name || 'Unknown'}
-                </div>
-            </td>
-            <td class="text-nowrap" style="font-size: 0.82rem; font-weight: 500; color: #1a1a2e;">
+            <td class="text-nowrap" style="font-size: 0.84rem; font-weight: 600; color: #1a1a2e;">
                 ${unitText}
             </td>
             <td>
-                <div class="text-truncate" style="max-width: 150px; font-weight: 500;" title="${req.title}">
+                <div class="text-truncate" style="max-width: 140px; font-weight: 500;" title="${req.title}">
                     ${req.title}
                 </div>
                 ${overdueFlag}
@@ -170,7 +169,7 @@ function renderMaintenanceBoard(requests) {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted" style="font-size: 0.85rem;">${emptyMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">${emptyMessage}</td></tr>`;
         } else {
             tbody.innerHTML = list.map(req => renderUrgencyRow(req)).join('');
         }
