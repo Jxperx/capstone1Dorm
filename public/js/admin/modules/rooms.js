@@ -247,7 +247,7 @@ function applyRoomFilters() {
         if (!condoEmptyMsg) {
             const tr = document.createElement('tr');
             tr.id = 'condoEmptyFilterMsg';
-            tr.innerHTML = '<td colspan="3" class="text-center py-4 text-muted"><i class="fas fa-search me-2"></i>No condo units match your search or filter.</td>';
+            tr.innerHTML = '<td colspan="4" class="text-center py-4 text-muted"><i class="fas fa-search me-2"></i>No condo units match your search or filter.</td>';
             document.getElementById('condosTableBody')?.appendChild(tr);
         }
     } else if (condoEmptyMsg) {
@@ -270,7 +270,7 @@ async function loadRooms() {
         if (!res.ok) {
             console.error('Failed to fetch rooms:', res.status, res.statusText);
             dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Failed to load dormitories. Please reload the page.</td></tr>';
-            condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-danger">Failed to load condo units. Please reload the page.</td></tr>';
+            condosBody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-danger">Failed to load condo units. Please reload the page.</td></tr>';
             return;
         }
         allRooms = await res.json();
@@ -280,7 +280,7 @@ async function loadRooms() {
 
         if (!Array.isArray(allRooms) || allRooms.length === 0) {
             dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No dormitories found.</td></tr>';
-            condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No condo units found.</td></tr>';
+            condosBody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No condo units found.</td></tr>';
             updateInventoryMetrics([]);
             return;
         }
@@ -312,6 +312,7 @@ async function loadRooms() {
                 const row = `
                     <tr data-room-id="${room.id}" data-room-type="condo" data-room-number="${room.room_number}" data-available="${isAvailable}" style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})" title="Click to view occupants">
                         <td style="font-weight: 700; color: #1a1a2e; padding: 14px 12px;"><strong>${room.room_number}</strong></td>
+                        <td style="color: #1a1a2e; font-weight: 500; padding: 14px 12px;">₱${Number(room.monthly_rate).toFixed(2)}</td>
                         <td style="padding: 14px 12px;">${condoStatus}</td>
                         <td class="text-end" style="padding: 14px 12px;">
                             <button class="btn btn-sm rounded-circle me-1" style="width: 32px; height: 32px; padding: 0; border: 1px solid #d4a373; color: #d4a373; background: transparent;" onclick="openRoomModal(${room.id})" title="Edit Unit"><i class="fas fa-edit"></i></button>
