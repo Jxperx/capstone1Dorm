@@ -106,67 +106,82 @@ async function loadRooms() {
 }
 
 async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
-    currentOpenUnitModalRoomId = roomId;
-    const room = allRooms.find(r => r.id === roomId);
-    if (!room) return;
-
-    const titleEl = document.getElementById('unitModalTitle');
-    const typeBadge = document.getElementById('unitModalTypeBadge');
-    const metaEl = document.getElementById('unitModalMeta');
-    const occupancyText = document.getElementById('unitModalOccupancyText');
-    const editBtn = document.getElementById('unitModalEditRoomBtn');
-
-    const isCondo = room.room_type === 'condo';
-    const capacity = room.capacity || 1;
-    const monthlyRateFormatted = Number(room.monthly_rate || 0).toLocaleString();
-
-    if (titleEl) titleEl.textContent = `${isCondo ? 'Condo Unit' : 'Room'} ${room.room_number}`;
-    if (typeBadge) {
-        typeBadge.textContent = isCondo ? 'Condo Unit' : 'Dormitory';
-        typeBadge.className = isCondo ? 'badge bg-info text-dark text-uppercase fw-semibold' : 'badge bg-secondary text-uppercase fw-semibold';
-    }
-
-    if (editBtn) {
-        editBtn.onclick = () => {
-            const modalEl = document.getElementById('unitOccupantsModal');
-            const inst = bootstrap.Modal.getInstance(modalEl);
-            if (inst) inst.hide();
-            openRoomModal(room.id);
-        };
-    }
-
-    // Fetch latest tenants for this specific room
-    let occupants = [];
     try {
-        const res = await fetch(`/api/rooms/${room.id}/occupants`, { credentials: 'include' });
-        if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                occupants = data;
-            }
+        currentOpenUnitModalRoomId = roomId;
+        let room = allRooms.find(r => Number(r.id) === Number(roomId));
+        if (!room) {
+            await loadRooms();
+            room = allRooms.find(r => Number(r.id) === Number(roomId));
         }
-        
-        // Fallback to general admin tenants if dedicated endpoint was empty or unavailable
-        if (occupants.length === 0) {
-            const fallbackRes = await fetch('/api/admin/tenants', { credentials: 'include' });
-            if (fallbackRes.ok) {
-                const allTenants = await fallbackRes.json();
-                if (Array.isArray(allTenants)) {
-                    occupants = allTenants.filter(t => (t.room_id === room.id || String(t.room_number) === String(room.room_number)) && t.status !== 'archived');
+        if (!room) {
+            console.error('Room not found for id:', roomId);
+            return;
+        }
+
+        const modalEl = document.getElementById('unitOccupantsModal');
+        if (!modalEl) {
+            console.error('unitOccupantsModal element not found in DOM');
+            return;
+        }
+
+        const titleEl = document.getElementById('unitModalTitle');
+        const typeBadge = document.getElementById('unitModalTypeBadge');
+        const metaEl = document.getElementById('unitModalMeta');
+        const occupancyText = document.getElementById('unitModalOccupancyText');
+        const editBtn = document.getElementById('unitModalEditRoomBtn');
+
+        const isCondo = room.room_type === 'condo';
+        const capacity = Number(room.capacity) || 1;
+        const monthlyRateFormatted = Number(room.monthly_rate || 0).toLocaleString();
+
+        if (titleEl) titleEl.textContent = `${isCondo ? 'Condo Unit' : 'Room'} ${room.room_number}`;
+        if (typeBadge) {
+            typeBadge.textContent = isCondo ? 'Condo Unit' : 'Dormitory';
+            typeBadge.className = isCondo ? 'badge bg-info text-dark text-uppercase fw-semibold' : 'badge bg-secondary text-uppercase fw-semibold';
+        }
+
+        if (editBtn) {
+            editBtn.onclick = () => {
+                const inst = bootstrap.Modal.getInstance(modalEl);
+                if (inst) inst.hide();
+                openRoomModal(room.id);
+            };
+        }
+
+        // Fetch latest tenants for this specific room
+        let occupants = [];
+        try {
+            const res = await fetch(`/api/rooms/${room.id}/occupants`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    occupants = data;
                 }
             }
+            
+            // Fallback to general admin tenants if dedicated endpoint was empty or unavailable
+            if (occupants.length === 0) {
+                const fallbackRes = await fetch('/api/admin/tenants', { credentials: 'include' });
+                if (fallbackRes.ok) {
+                    const allTenants = await fallbackRes.json();
+                    if (Array.isArray(allTenants)) {
+                        occupants = allTenants.filter(t => (Number(t.room_id) === Number(room.id) || String(t.room_number) === String(room.room_number)) && t.status !== 'archived');
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching occupants for unit modal:', e);
         }
-    } catch (e) {
-        console.error('Error fetching occupants for unit modal:', e);
-    }
 
-    const activeCount = occupants.length;
-    const occupancyLabelEl = document.getElementById('unitModalOccupancyLabel');
-    const occupantsTitleEl = document.getElementById('unitModalOccupantsTitleText');
-    const capacitySection = document.getElementById('unitAvailableCapacitySection');
-    const capacityTitleEl = document.getElementById('unitModalCapacityTitleText');
-    const listEl = document.getElementById('unitOccupantsList');
-    const vacantListEl = document.getElementById('unitVacantSlotsList');
+        const activeCount = occupants.length;
+        const countEl = document.getElementById('unitModalOccupantsCount');
+        const vacantCountEl = document.getElementById('unitModalVacantCount');
+        const occupancyLabelEl = document.getElementById('unitModalOccupancyLabel');
+        const occupantsTitleEl = document.getElementById('unitModalOccupantsTitleText');
+        const capacitySection = document.getElementById('unitAvailableCapacitySection');
+        const capacityTitleEl = document.getElementById('unitModalCapacityTitleText');
+        const listEl = document.getElementById('unitOccupantsList');
+        const vacantListEl = document.getElementById('unitVacantSlotsList');
 
     if (isCondo) {
         // ── CONDO UNIT (Single-tenant / Whole Unit Model) ──
@@ -399,6 +414,9 @@ async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
         const modalEl = document.getElementById('unitOccupantsModal');
         const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         bsModal.show();
+    }
+    } catch (err) {
+        console.error('Error opening unit occupants modal:', err);
     }
 }
 
