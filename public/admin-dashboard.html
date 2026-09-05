@@ -1339,7 +1339,7 @@
                     <!-- Unit Metrics Card -->
                     <div class="p-3 mb-4 rounded border bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
-                            <span class="text-muted small text-uppercase fw-semibold">Current Occupancy:</span>
+                            <span class="text-muted small text-uppercase fw-semibold" id="unitModalOccupancyLabel">Current Occupancy:</span>
                             <span class="ms-2 fw-bold" id="unitModalOccupancyText">0 / 0 Occupied</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -1352,7 +1352,7 @@
                     <!-- Active Occupants Header & List -->
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px;">
-                            Active Occupants (<span id="unitModalOccupantsCount">0</span>)
+                            <span id="unitModalOccupantsTitleText">Active Occupants</span> (<span id="unitModalOccupantsCount">0</span>)
                         </h6>
                     </div>
                     <div id="unitOccupantsList" class="mb-4">
@@ -1360,13 +1360,15 @@
                     </div>
 
                     <!-- Available Capacity Header & List -->
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px;">
-                            Available Capacity (<span id="unitModalVacantCount">0</span>)
-                        </h6>
-                    </div>
-                    <div id="unitVacantSlotsList">
-                        <!-- Populated dynamically -->
+                    <div id="unitAvailableCapacitySection">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px;">
+                                <span id="unitModalCapacityTitleText">Available Capacity</span> (<span id="unitModalVacantCount">0</span>)
+                            </h6>
+                        </div>
+                        <div id="unitVacantSlotsList">
+                            <!-- Populated dynamically -->
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top">
@@ -1621,8 +1623,8 @@
 
     <!-- Admin Modules -->
     <script src="js/admin/modules/stats.js"></script>
-    <script src="js/admin/modules/rooms.js?v=2.4"></script>
-    <script src="js/admin/modules/tenants.js?v=2.4"></script>
+    <script src="js/admin/modules/rooms.js?v=2.5"></script>
+    <script src="js/admin/modules/tenants.js?v=2.5"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=1.1"></script>
     <script src="js/admin/modules/feedback.js"></script>
@@ -1636,7 +1638,7 @@
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=2.4"></script>
+    <script src="js/admin/main.js?v=2.5"></script>
 </body>
 </html>
 

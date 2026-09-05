@@ -125,7 +125,7 @@ async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
         typeBadge.textContent = isCondo ? 'Condo Unit' : 'Dormitory';
         typeBadge.className = isCondo ? 'badge bg-info text-dark text-uppercase fw-semibold' : 'badge bg-secondary text-uppercase fw-semibold';
     }
-    if (metaEl) metaEl.textContent = `Monthly Rate: PHP ${monthlyRateFormatted} | Capacity: ${capacity} ${capacity === 1 ? 'Bed' : 'Beds'}`;
+
     if (editBtn) {
         editBtn.onclick = () => {
             const modalEl = document.getElementById('unitOccupantsModal');
@@ -161,119 +161,237 @@ async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
     }
 
     const activeCount = occupants.length;
-    const vacantCount = Math.max(0, capacity - activeCount);
-
-    if (occupancyText) {
-        const pct = Math.round((activeCount / capacity) * 100);
-        let badgeClass = 'text-success';
-        if (pct >= 100) badgeClass = 'text-danger';
-        else if (pct >= 50) badgeClass = 'text-warning';
-        occupancyText.innerHTML = `<span class="${badgeClass}">${activeCount} of ${capacity} Occupied (${pct}%)</span>`;
-    }
-
-    const countEl = document.getElementById('unitModalOccupantsCount');
-    if (countEl) countEl.textContent = activeCount;
-
-    const vacantCountEl = document.getElementById('unitModalVacantCount');
-    if (vacantCountEl) vacantCountEl.textContent = vacantCount;
-
-    // Render Occupants
+    const occupancyLabelEl = document.getElementById('unitModalOccupancyLabel');
+    const occupantsTitleEl = document.getElementById('unitModalOccupantsTitleText');
+    const capacitySection = document.getElementById('unitAvailableCapacitySection');
+    const capacityTitleEl = document.getElementById('unitModalCapacityTitleText');
     const listEl = document.getElementById('unitOccupantsList');
-    if (listEl) {
-        if (occupants.length === 0) {
-            listEl.innerHTML = `
-                <div class="p-4 text-center border rounded bg-light text-muted">
-                    <p class="mb-1 fw-semibold text-dark">No active occupants assigned to this unit.</p>
-                    <small>Select an available bed slot below to assign a new tenant.</small>
-                </div>
-            `;
-        } else {
-            listEl.innerHTML = occupants.map((t, idx) => {
-                const bedLetter = String.fromCharCode(65 + (idx % 26));
-                const profileImg = t.profile_image_url || 'https://via.placeholder.com/44';
+    const vacantListEl = document.getElementById('unitVacantSlotsList');
 
-                const statusBadge = t.status === 'pending'
-                    ? '<span class="badge bg-warning text-dark text-uppercase fw-semibold" style="letter-spacing:0.5px;">PENDING SETUP</span>'
-                    : t.status === 'active'
-                    ? '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>'
-                    : '<span class="badge bg-secondary text-uppercase fw-semibold" style="letter-spacing:0.5px;">ARCHIVED</span>';
+    if (isCondo) {
+        // ── CONDO UNIT (Single-tenant / Whole Unit Model) ──
+        if (metaEl) metaEl.textContent = `Monthly Rate: PHP ${monthlyRateFormatted} | Whole Unit Rental`;
+        if (occupancyLabelEl) occupancyLabelEl.textContent = 'Unit Status:';
+        
+        const isOccupied = activeCount > 0;
+        if (occupancyText) {
+            occupancyText.innerHTML = isOccupied
+                ? '<span class="badge bg-danger text-uppercase fw-semibold" style="letter-spacing:0.5px;font-size:0.85rem;">OCCUPIED</span>'
+                : '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;font-size:0.85rem;">AVAILABLE</span>';
+        }
 
-                const leaseStart = t.lease_start_date ? new Date(t.lease_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
-                const leaseEnd = t.lease_end_date ? new Date(t.lease_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+        if (occupantsTitleEl) occupantsTitleEl.textContent = 'Current Tenant';
+        if (countEl) countEl.textContent = activeCount;
 
-                const tData = JSON.stringify(t).replace(/'/g, "&apos;");
+        // Render Condo Tenant (without Bed tags)
+        if (listEl) {
+            if (!isOccupied) {
+                listEl.innerHTML = `
+                    <div class="p-4 text-center border rounded bg-light text-muted">
+                        <p class="mb-1 fw-semibold text-dark">No tenant currently assigned to this condo unit.</p>
+                        <small>Assign a tenant below to occupy this unit.</small>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = occupants.map((t) => {
+                    const profileImg = t.profile_image_url || 'https://via.placeholder.com/44';
+                    const statusBadge = t.status === 'pending'
+                        ? '<span class="badge bg-warning text-dark text-uppercase fw-semibold" style="letter-spacing:0.5px;">PENDING SETUP</span>'
+                        : t.status === 'active'
+                        ? '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>'
+                        : '<span class="badge bg-secondary text-uppercase fw-semibold" style="letter-spacing:0.5px;">ARCHIVED</span>';
 
-                return `
-                    <div class="card mb-3 border shadow-sm">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                <div class="d-flex align-items-center">
-                                    <img src="${profileImg}" class="rounded-circle me-3 border" width="44" height="44" style="object-fit: cover;">
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <h6 class="mb-0 fw-bold text-dark">${t.full_name}</h6>
-                                            <span class="badge bg-light text-dark border">Bed ${bedLetter}</span>
-                                        </div>
-                                        <div class="text-muted small mt-1">
-                                            ${t.email} | Contact: ${t.phone_number || 'N/A'}
-                                        </div>
-                                        <div class="text-secondary small mt-1">
-                                            Guardian: ${t.guardian_name ? `${t.guardian_name} (${t.guardian_contact || 'N/A'})` : 'Not provided'}
+                    const leaseStart = t.lease_start_date ? new Date(t.lease_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+                    const leaseEnd = t.lease_end_date ? new Date(t.lease_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+                    const tData = JSON.stringify(t).replace(/'/g, "&apos;");
+
+                    return `
+                        <div class="card mb-3 border shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div class="d-flex align-items-center">
+                                        <img src="${profileImg}" class="rounded-circle me-3 border" width="44" height="44" style="object-fit: cover;">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h6 class="mb-0 fw-bold text-dark">${t.full_name}</h6>
+                                                <span class="badge bg-light text-dark border">Condo Resident</span>
+                                            </div>
+                                            <div class="text-muted small mt-1">
+                                                ${t.email} | Contact: ${t.phone_number || 'N/A'}
+                                            </div>
+                                            <div class="text-secondary small mt-1">
+                                                Guardian: ${t.guardian_name ? `${t.guardian_name} (${t.guardian_contact || 'N/A'})` : 'Not provided'}
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="text-end">
+                                        <div>${statusBadge}</div>
+                                        <div class="small text-muted mt-1">Lease: ${leaseStart} to ${leaseEnd}</div>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <div>${statusBadge}</div>
-                                    <div class="small text-muted mt-1">Lease: ${leaseStart} to ${leaseEnd}</div>
+                                <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top flex-wrap">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resendTenantInvite(${t.id})">
+                                        Resend Setup Link
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" data-tenant='${tData}' onclick='openEditTenantModalFromBtn(this)'>
+                                        Edit Profile
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning text-dark" onclick="endLease(${t.id})">
+                                        End Lease
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTenant(${t.id})">
+                                        Remove
+                                    </button>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top flex-wrap">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="resendTenantInvite(${t.id})">
-                                    Resend Setup Link
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary" data-tenant='${tData}' onclick='openEditTenantModalFromBtn(this)'>
-                                    Edit Profile
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning text-dark" onclick="endLease(${t.id})">
-                                    End Lease
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTenant(${t.id})">
-                                    Remove
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
-
-    // Render Vacant Slots
-    const vacantListEl = document.getElementById('unitVacantSlotsList');
-    if (vacantListEl) {
-        if (vacantCount === 0) {
-            vacantListEl.innerHTML = `
-                <div class="p-3 text-center border rounded bg-light text-muted small">
-                    This unit is currently at full capacity (${capacity} of ${capacity} beds occupied).
-                </div>
-            `;
-        } else {
-            let vacantHtml = '';
-            for (let i = 0; i < vacantCount; i++) {
-                const bedLetter = String.fromCharCode(65 + activeCount + i);
-                vacantHtml += `
-                    <div class="border border-dashed rounded p-3 mb-2 d-flex justify-content-between align-items-center bg-light flex-wrap gap-2">
-                        <div>
-                            <div class="fw-semibold text-dark">Vacant Bed Slot (${bedLetter})</div>
-                            <div class="small text-muted">Ready for new tenant assignment</div>
-                        </div>
-                        <button class="btn btn-sm btn-primary" onclick="assignTenantToRoom(${room.id})">
-                            Assign Tenant to Bed ${bedLetter}
-                        </button>
-                    </div>
-                `;
+                    `;
+                }).join('');
             }
-            vacantListEl.innerHTML = vacantHtml;
+        }
+
+        // Available Capacity Section for Condo:
+        if (capacitySection) {
+            if (isOccupied) {
+                // If condo is occupied, hide available capacity section completely
+                capacitySection.style.display = 'none';
+            } else {
+                capacitySection.style.display = 'block';
+                if (capacityTitleEl) capacityTitleEl.textContent = 'Unit Availability';
+                if (vacantCountEl) vacantCountEl.textContent = 'Vacant';
+                if (vacantListEl) {
+                    vacantListEl.innerHTML = `
+                        <div class="border border-dashed rounded p-3 mb-2 d-flex justify-content-between align-items-center bg-light flex-wrap gap-2">
+                            <div>
+                                <div class="fw-semibold text-dark">Condo Unit is Vacant</div>
+                                <div class="small text-muted">Ready to assign a tenant to this unit</div>
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="assignTenantToRoom(${room.id})">
+                                Assign Tenant to Unit
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+    } else {
+        // ── DORMITORY (Multi-Bed / Shared Capacity Model) ──
+        const vacantCount = Math.max(0, capacity - activeCount);
+        if (metaEl) metaEl.textContent = `Monthly Rate: PHP ${monthlyRateFormatted} | Capacity: ${capacity} ${capacity === 1 ? 'Bed' : 'Beds'}`;
+        if (occupancyLabelEl) occupancyLabelEl.textContent = 'Current Occupancy:';
+
+        if (occupancyText) {
+            const pct = Math.round((activeCount / capacity) * 100);
+            let badgeClass = 'text-success';
+            if (pct >= 100) badgeClass = 'text-danger';
+            else if (pct >= 50) badgeClass = 'text-warning';
+            occupancyText.innerHTML = `<span class="${badgeClass}">${activeCount} of ${capacity} Occupied (${pct}%)</span>`;
+        }
+
+        if (occupantsTitleEl) occupantsTitleEl.textContent = 'Active Occupants';
+        if (countEl) countEl.textContent = activeCount;
+
+        // Render Dorm Occupants with Bed A, Bed B...
+        if (listEl) {
+            if (occupants.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-4 text-center border rounded bg-light text-muted">
+                        <p class="mb-1 fw-semibold text-dark">No active occupants assigned to this dormitory.</p>
+                        <small>Select an available bed slot below to assign a new tenant.</small>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = occupants.map((t, idx) => {
+                    const bedLetter = String.fromCharCode(65 + (idx % 26));
+                    const profileImg = t.profile_image_url || 'https://via.placeholder.com/44';
+
+                    const statusBadge = t.status === 'pending'
+                        ? '<span class="badge bg-warning text-dark text-uppercase fw-semibold" style="letter-spacing:0.5px;">PENDING SETUP</span>'
+                        : t.status === 'active'
+                        ? '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>'
+                        : '<span class="badge bg-secondary text-uppercase fw-semibold" style="letter-spacing:0.5px;">ARCHIVED</span>';
+
+                    const leaseStart = t.lease_start_date ? new Date(t.lease_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+                    const leaseEnd = t.lease_end_date ? new Date(t.lease_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+                    const tData = JSON.stringify(t).replace(/'/g, "&apos;");
+
+                    return `
+                        <div class="card mb-3 border shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div class="d-flex align-items-center">
+                                        <img src="${profileImg}" class="rounded-circle me-3 border" width="44" height="44" style="object-fit: cover;">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h6 class="mb-0 fw-bold text-dark">${t.full_name}</h6>
+                                                <span class="badge bg-light text-dark border">Bed ${bedLetter}</span>
+                                            </div>
+                                            <div class="text-muted small mt-1">
+                                                ${t.email} | Contact: ${t.phone_number || 'N/A'}
+                                            </div>
+                                            <div class="text-secondary small mt-1">
+                                                Guardian: ${t.guardian_name ? `${t.guardian_name} (${t.guardian_contact || 'N/A'})` : 'Not provided'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div>${statusBadge}</div>
+                                        <div class="small text-muted mt-1">Lease: ${leaseStart} to ${leaseEnd}</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top flex-wrap">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resendTenantInvite(${t.id})">
+                                        Resend Setup Link
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" data-tenant='${tData}' onclick='openEditTenantModalFromBtn(this)'>
+                                        Edit Profile
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning text-dark" onclick="endLease(${t.id})">
+                                        End Lease
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTenant(${t.id})">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Available Capacity Section for Dormitory
+        if (capacitySection) {
+            capacitySection.style.display = 'block';
+            if (capacityTitleEl) capacityTitleEl.textContent = 'Available Capacity';
+            if (vacantCountEl) vacantCountEl.textContent = vacantCount;
+            if (vacantListEl) {
+                if (vacantCount === 0) {
+                    vacantListEl.innerHTML = `
+                        <div class="p-3 text-center border rounded bg-light text-muted small">
+                            This dormitory is currently at full capacity (${capacity} of ${capacity} beds occupied).
+                        </div>
+                    `;
+                } else {
+                    let vacantHtml = '';
+                    for (let i = 0; i < vacantCount; i++) {
+                        const bedLetter = String.fromCharCode(65 + activeCount + i);
+                        vacantHtml += `
+                            <div class="border border-dashed rounded p-3 mb-2 d-flex justify-content-between align-items-center bg-light flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-semibold text-dark">Vacant Bed Slot (${bedLetter})</div>
+                                    <div class="small text-muted">Ready for new tenant assignment</div>
+                                </div>
+                                <button class="btn btn-sm btn-primary" onclick="assignTenantToRoom(${room.id})">
+                                    Assign Tenant to Bed ${bedLetter}
+                                </button>
+                            </div>
+                        `;
+                    }
+                    vacantListEl.innerHTML = vacantHtml;
+                }
+            }
         }
     }
 
