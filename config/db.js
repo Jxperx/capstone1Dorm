@@ -192,7 +192,9 @@ const dummySql = new Proxy({}, {
     }
 });
 
-logger.info(`[DB] PostgreSQL adapter initialized for host '${process.env.DB_SERVER}', database '${process.env.DB_DATABASE}'.`);
+const parsedUrl = connectionString ? new URL(connectionString) : null;
+const hostName = parsedUrl ? parsedUrl.hostname : 'unknown';
+logger.info(`[DB] PostgreSQL adapter connected to Supabase host '${hostName}'.`);
 
 module.exports = {
     sql: dummySql,
