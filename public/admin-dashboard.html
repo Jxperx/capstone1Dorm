@@ -437,151 +437,178 @@
                 <!-- SECTION: Maintenance -->
                 <div id="section-maintenance" class="content-section">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h3 class="mb-1" style="font-family: 'Playfair Display', serif; font-weight: 700; color: #1a1a2e;">
-                                <i class="fas fa-tools me-2" style="color: #d4a373;"></i>Maintenance Requests
-                            </h3>
-                            <p class="text-muted small mb-0">Prioritized triage workflow categorized by urgency and response targets. Click any request row to inspect and take action.</p>
+                        <h2 style="font-family: 'Playfair Display', Georgia, serif; font-weight: 700; color: #1a1a2e; margin: 0; font-size: 1.75rem;">Maintenance Requests</h2>
+                        <button class="btn rounded-pill px-4 py-2 text-white fw-semibold shadow-sm" style="background-color: #c5a059; border: none; font-size: 0.85rem; letter-spacing: 0.5px;" onclick="loadMaintenance()">
+                            <i class="fas fa-sync-alt me-1"></i> REFRESH
+                        </button>
+                    </div>
+
+                    <!-- Metric Ribbon (Matching Room Management) -->
+                    <div class="row g-3 mb-4" id="maintenanceStats">
+                        <div class="col-6 col-lg-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #854d0e, #ca8a04); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Pending Triage</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-pending">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-clock text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Awaiting response</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #991b1b, #b91c1c); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Emergency &amp; High</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-critical">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-exclamation-triangle text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Immediate attention</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">In Progress</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-progress">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-tools text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Active repairs</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #4c1d95, #6d28d9); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Overdue</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-overdue">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-calendar-times text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Past target window</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Summary Stat Cards -->
-                    <div id="maintenanceStats" class="row g-3 mb-4">
-                        <div class="col-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-3" style="background: #ffffff; border-left: 4px solid #f39c12 !important;">
-                                <div class="card-body py-3 px-3">
-                                    <div style="font-size: 1.6rem; font-weight: 700; color: #d35400;" id="maint-stat-pending">—</div>
-                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Pending Triage</div>
+                    <!-- Search & Filter Controls (Matching Room Management) -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 ps-3">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="maintenanceSearchInput" class="form-control bg-light border-0" placeholder="Search unit, issue, or date..." oninput="filterMaintenanceBySearch()">
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-3" style="background: #ffffff; border-left: 4px solid #e74c3c !important;">
-                                <div class="card-body py-3 px-3">
-                                    <div style="font-size: 1.6rem; font-weight: 700; color: #c0392b;" id="maint-stat-critical">—</div>
-                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Emergency / High</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-3" style="background: #ffffff; border-left: 4px solid #3498db !important;">
-                                <div class="card-body py-3 px-3">
-                                    <div style="font-size: 1.6rem; font-weight: 700; color: #2980b9;" id="maint-stat-progress">—</div>
-                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">In Progress</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-3" style="background: #ffffff; border-left: 4px solid #8e44ad !important;">
-                                <div class="card-body py-3 px-3">
-                                    <div style="font-size: 1.6rem; font-weight: 700; color: #8e44ad;" id="maint-stat-overdue">—</div>
-                                    <div style="font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Overdue</div>
-                                </div>
+                            <div class="col-md-8 d-flex justify-content-md-end align-items-center gap-2 flex-wrap" id="maintenanceFilters">
+                                <span class="small text-muted me-2 fw-semibold">Filter:</span>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 maint-filter-btn active" onclick="filterMaintenance('all', this)">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('Emergency', this)">Emergency</button>
+                                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('High', this)">High Priority</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('Routine', this)">Medium &amp; Routine</button>
+                                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('pending', this)">Pending</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('in_progress', this)">In Progress</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 maint-filter-btn" onclick="filterMaintenance('overdue', this)">Overdue</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Filter Bar -->
-                    <div id="maintenanceFilters" class="mb-4 d-flex flex-wrap gap-2 align-items-center">
-                        <span style="font-size: 0.8rem; color: #888; font-weight: 600; margin-right: 4px;">Filter:</span>
-                        <button class="btn btn-sm rounded-pill active" onclick="filterMaintenance('all', this)" style="font-size: 0.78rem; background: #1a1a2e; color: #fff; border: none; padding: 5px 14px;">All Urgencies</button>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('Emergency', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-exclamation-circle me-1"></i>Emergency</button>
-                        <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMaintenance('High', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-arrow-up me-1"></i>High Priority</button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="filterMaintenance('Routine', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-clipboard-list me-1"></i>Medium &amp; Routine</button>
-                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 6px;"></div>
-                        <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMaintenance('pending', this)" style="font-size: 0.78rem; padding: 5px 14px;">Pending</button>
-                        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="filterMaintenance('in_progress', this)" style="font-size: 0.78rem; padding: 5px 14px;">In Progress</button>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="filterMaintenance('overdue', this)" style="font-size: 0.78rem; padding: 5px 14px;"><i class="fas fa-clock me-1"></i>Overdue</button>
-                    </div>
-
-                    <!-- Tri-Column Urgency Board -->
+                    <!-- Tri-Column Urgency Board (Matching Room Management card layout) -->
                     <div class="row g-4" id="maintenanceUrgencyBoard">
                         <!-- Column 1: Emergency -->
-                        <div class="col-12 col-xl-4">
-                            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                                <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-danger px-2 py-1"><i class="fas fa-exclamation-circle me-1"></i>Emergency</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">Target: Immediate (4h)</small>
+                        <div class="col-12 col-xl-4 mb-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-exclamation-circle me-2" style="color: #ef4444; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Emergency</h5>
                                     </div>
-                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle" id="maint-count-emergency" style="font-size: 0.8rem;">0</span>
+                                    <span class="badge rounded-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Target: 4h (<span id="maint-count-emergency">0</span>)</span>
                                 </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
-                                            <thead class="table-light text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-                                                <tr>
-                                                    <th style="width: 24%;">Date</th>
-                                                    <th style="width: 22%;">Unit</th>
-                                                    <th style="width: 34%;">Issue</th>
-                                                    <th style="width: 20%; text-align: center;">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="maint-emergency-body">
-                                                <tr><td colspan="4" class="text-center py-4 text-muted">Loading requests...</td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 36%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">ISSUE</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maint-emergency-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading requests...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Column 2: High Priority -->
-                        <div class="col-12 col-xl-4">
-                            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                                <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-arrow-up me-1"></i>High Priority</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">Target: 24 Hours</small>
+                        <div class="col-12 col-xl-4 mb-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-arrow-up me-2" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">High Priority</h5>
                                     </div>
-                                    <span class="badge rounded-pill bg-warning-subtle text-dark border border-warning-subtle" id="maint-count-high" style="font-size: 0.8rem;">0</span>
+                                    <span class="badge rounded-pill" style="background: #fef3c7; color: #92400e; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Target: 24h (<span id="maint-count-high">0</span>)</span>
                                 </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
-                                            <thead class="table-light text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-                                                <tr>
-                                                    <th style="width: 24%;">Date</th>
-                                                    <th style="width: 22%;">Unit</th>
-                                                    <th style="width: 34%;">Issue</th>
-                                                    <th style="width: 20%; text-align: center;">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="maint-high-body">
-                                                <tr><td colspan="4" class="text-center py-4 text-muted">Loading requests...</td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 36%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">ISSUE</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maint-high-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading requests...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Column 3: Medium & Routine -->
-                        <div class="col-12 col-xl-4">
-                            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                                <div class="card-header bg-white py-3 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #d4a373;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-secondary px-2 py-1"><i class="fas fa-clipboard-check me-1"></i>Medium &amp; Routine</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">Target: 2–3 Days</small>
+                        <div class="col-12 col-xl-4 mb-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-clipboard-check me-2" style="color: #6b7280; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Medium &amp; Routine</h5>
                                     </div>
-                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle" id="maint-count-routine" style="font-size: 0.8rem;">0</span>
+                                    <span class="badge rounded-pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Target: 2–3 Days (<span id="maint-count-routine">0</span>)</span>
                                 </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
-                                            <thead class="table-light text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-                                                <tr>
-                                                    <th style="width: 24%;">Date</th>
-                                                    <th style="width: 22%;">Unit</th>
-                                                    <th style="width: 34%;">Issue</th>
-                                                    <th style="width: 20%; text-align: center;">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="maint-routine-body">
-                                                <tr><td colspan="4" class="text-center py-4 text-muted">Loading requests...</td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 36%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">ISSUE</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maint-routine-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading requests...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -1984,7 +2011,7 @@
     <script src="js/admin/modules/rooms.js?v=3.3"></script>
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
-    <script src="js/admin/modules/maintenance.js?v=2.2"></script>
+    <script src="js/admin/modules/maintenance.js?v=2.3"></script>
     <script src="js/admin/modules/feedback.js"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>

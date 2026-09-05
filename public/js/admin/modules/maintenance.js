@@ -75,7 +75,7 @@ function categorizeRequest(req) {
     return 'Routine';
 }
 
-// ── Render single row for urgency column table ──
+// ── Render single row for urgency column table (Matching Room Management design) ──
 function renderUrgencyRow(req) {
     // Format date as MM/DD/YY (e.g., 09/05/26)
     const d = new Date(req.reported_at);
@@ -84,20 +84,17 @@ function renderUrgencyRow(req) {
     const yy = String(d.getFullYear()).slice(-2);
     const dateFormatted = `${mm}/${dd}/${yy}`;
 
-    // Status badge style
-    let statusBadgeClass = 'bg-warning text-dark';
-    let statusText = 'Pending';
+    // Status badge style (Exact Room Management colors & border radiuses)
+    let statusBadge = '<span class="badge rounded-pill" style="background:#fef3c7;color:#92400e;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:64px;">Pending</span>';
     if (req.status === 'in_progress') {
-        statusBadgeClass = 'bg-primary text-white';
-        statusText = 'In Progress';
+        statusBadge = '<span class="badge rounded-pill" style="background:#e0f2fe;color:#0369a1;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:78px;">In Progress</span>';
     } else if (req.status === 'resolved') {
-        statusBadgeClass = 'bg-success text-white';
-        statusText = 'Resolved';
+        statusBadge = '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:64px;">Resolved</span>';
     }
 
-    // Overdue or SLA flag
-    const overdueFlag = req._isOverdue
-        ? '<div class="mt-1"><span class="badge bg-danger" style="font-size: 0.65rem;">Overdue</span></div>'
+    // Overdue badge
+    const overdueBadge = req._isOverdue
+        ? '<div class="mt-1"><span class="badge rounded-pill" style="background:#fee2e2;color:#ef4444;font-weight:600;font-size:0.68rem;padding:2px 8px;">Overdue</span></div>'
         : '';
 
     const unitText = req.room_number ? req.room_number : '<span class="text-muted">Unassigned</span>';
@@ -106,23 +103,21 @@ function renderUrgencyRow(req) {
         <tr style="cursor: pointer; transition: background-color 0.15s ease;"
             onclick="openMaintenanceDetailModal(${req.id})"
             class="align-middle"
-            title="Click to view tenant contact, description, and update status">
-            <td class="text-nowrap" style="font-size: 0.82rem; color: #555; font-weight: 500;">
+            title="Click to view tenant details and take action">
+            <td style="color: #6b7280; font-size: 0.8rem; font-weight: 500; padding: 12px 6px; vertical-align: middle; white-space: nowrap;">
                 ${dateFormatted}
             </td>
-            <td class="text-nowrap" style="font-size: 0.84rem; font-weight: 600; color: #1a1a2e;">
-                ${unitText}
+            <td style="font-weight: 700; color: #1a1a2e; font-size: 0.85rem; padding: 12px 6px; vertical-align: middle; white-space: nowrap;">
+                <strong>${unitText}</strong>
             </td>
-            <td>
-                <div class="text-truncate" style="max-width: 140px; font-weight: 500;" title="${req.title}">
+            <td style="color: #1a1a2e; font-weight: 500; font-size: 0.83rem; padding: 12px 6px; vertical-align: middle;">
+                <div class="text-truncate" style="max-width: 140px;" title="${req.title}">
                     ${req.title}
                 </div>
-                ${overdueFlag}
+                ${overdueBadge}
             </td>
-            <td class="text-center text-nowrap">
-                <span class="badge ${statusBadgeClass}" style="font-size: 0.72rem; padding: 4px 8px; letter-spacing: 0.02em;">
-                    ${statusText}
-                </span>
+            <td class="text-center" style="padding: 12px 6px; vertical-align: middle; white-space: nowrap;">
+                ${statusBadge}
             </td>
         </tr>
     `;
@@ -169,7 +164,7 @@ function renderMaintenanceBoard(requests) {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">${emptyMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;"><i class="fas fa-search me-2"></i>${emptyMessage}</td></tr>`;
         } else {
             tbody.innerHTML = list.map(req => renderUrgencyRow(req)).join('');
         }
@@ -213,24 +208,33 @@ async function loadMaintenance() {
     }
 }
 
-// ── Filter Requests ──
+// ── Filter Requests & Live Search ──
 let currentMaintenanceFilter = 'all';
+let currentMaintenanceSearchQuery = '';
+
+function filterMaintenanceBySearch() {
+    const input = document.getElementById('maintenanceSearchInput');
+    currentMaintenanceSearchQuery = (input ? input.value : '').toLowerCase().trim();
+    applyCurrentFilter();
+}
 
 function filterMaintenance(filterValue, btnEl) {
     currentMaintenanceFilter = filterValue;
 
-    // Update active button styling
+    // Update active button styling (Room Management style)
     const container = document.getElementById('maintenanceFilters');
     if (container) {
-        container.querySelectorAll('.btn').forEach(b => {
+        container.querySelectorAll('.maint-filter-btn').forEach(b => {
             b.classList.remove('active');
             b.style.background = '';
             b.style.color = '';
+            b.style.border = '';
         });
         if (btnEl) {
             btnEl.classList.add('active');
             btnEl.style.background = '#1a1a2e';
             btnEl.style.color = '#fff';
+            btnEl.style.border = 'none';
         }
     }
 
@@ -257,6 +261,20 @@ function applyCurrentFilter() {
         filtered = allMaintenanceRequests.filter(r => categorizeRequest(r) === 'Routine');
     } else {
         filtered = allMaintenanceRequests.filter(r => r.ai_priority === currentMaintenanceFilter);
+    }
+
+    // Apply Live Text Search
+    if (currentMaintenanceSearchQuery) {
+        filtered = filtered.filter(r => {
+            const unit = (r.room_number || '').toLowerCase();
+            const title = (r.title || '').toLowerCase();
+            const desc = (r.description || '').toLowerCase();
+            const tenant = (r.full_name || '').toLowerCase();
+            return unit.includes(currentMaintenanceSearchQuery) ||
+                   title.includes(currentMaintenanceSearchQuery) ||
+                   desc.includes(currentMaintenanceSearchQuery) ||
+                   tenant.includes(currentMaintenanceSearchQuery);
+        });
     }
 
     renderMaintenanceBoard(filtered);
