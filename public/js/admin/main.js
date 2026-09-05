@@ -95,7 +95,7 @@ function viewProof(url) {
 }
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
+function initAdminMain() {
     // Sidebar Toggle
     const sidebarToggle = document.getElementById('sidebarToggle');
     if (sidebarToggle) {
@@ -137,5 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(typeof loadTenantsForCalc === 'function') loadTenantsForCalc();
     if(typeof loadAdminFeedback === 'function') loadAdminFeedback();
     if(typeof loadPropertyMediaAdmin === 'function') loadPropertyMediaAdmin();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminMain);
+} else {
+    initAdminMain();
+}
 

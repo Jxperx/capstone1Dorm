@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
@@ -9,7 +10,6 @@ const session = require('express-session');
 const fs = require('fs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 const logger = require('./utils/logger');
 
 // DB (needed by socket.io handlers too)

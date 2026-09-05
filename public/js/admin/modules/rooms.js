@@ -4,22 +4,29 @@ let currentOpenUnitModalRoomId = null;
 
 async function loadRooms() {
     try {
+        const dormsBody = document.getElementById('dormsTableBody');
+        const condosBody = document.getElementById('condosTableBody');
+
+        if (!dormsBody || !condosBody) {
+            setTimeout(loadRooms, 60);
+            return;
+        }
+
         const res = await fetch('/api/rooms', { credentials: 'include' });
         if (!res.ok) {
             console.error('Failed to fetch rooms:', res.status, res.statusText);
+            dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Failed to load dormitories. Please reload the page.</td></tr>';
+            condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-danger">Failed to load condo units. Please reload the page.</td></tr>';
             return;
         }
         allRooms = await res.json(); // Update global cache
         
-        const dormsBody = document.getElementById('dormsTableBody');
-        const condosBody = document.getElementById('condosTableBody');
-        
-        if (dormsBody) dormsBody.innerHTML = '';
-        if (condosBody) condosBody.innerHTML = '';
+        dormsBody.innerHTML = '';
+        condosBody.innerHTML = '';
 
         if (!Array.isArray(allRooms) || allRooms.length === 0) {
-            if (dormsBody) dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No dormitories found.</td></tr>';
-            if (condosBody) condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No condo units found.</td></tr>';
+            dormsBody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No dormitories found.</td></tr>';
+            condosBody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No condo units found.</td></tr>';
             return;
         }
 
@@ -605,7 +612,12 @@ function showMediaToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3500);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+        loadRooms();
+        loadPropertyMediaAdmin();
+    });
+} else {
     loadRooms();
     loadPropertyMediaAdmin();
-});
+}

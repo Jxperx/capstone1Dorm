@@ -1,11 +1,24 @@
+require('dotenv').config();
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
+const connectionString = process.env.SUPABASE_DB_URL;
+if (!connectionString) {
+    logger.error('[SessionStore] SUPABASE_DB_URL is missing in environment variables!');
+}
+
 const pgPool = new Pool({
-    connectionString: process.env.SUPABASE_DB_URL,
-    ssl: { rejectUnauthorized: false }
+    connectionString: connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+});
+
+pgPool.on('error', (err) => {
+    logger.error('[SessionStore] Pool error:', err.message);
 });
 
 const store = new pgSession({
@@ -14,6 +27,6 @@ const store = new pgSession({
     createTableIfMissing: true
 });
 
-logger.info('[SessionStore] PostgreSQL Session Store initialized successfully.');
+logger.info('[SessionStore] PostgreSQL Session Store connected to Supabase successfully.');
 
 module.exports = store;

@@ -14,21 +14,19 @@ async function ensureGalleryTable() {
     try {
         const pool = await poolPromise;
         await pool.request().query(`
-            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'room_gallery')
-            BEGIN
-                CREATE TABLE room_gallery (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    room_id INT NOT NULL,
-                    image_url NVARCHAR(255) NOT NULL,
-                    caption NVARCHAR(100) NULL,
-                    sort_order INT NOT NULL DEFAULT 0,
-                    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-                );
-            END
+            CREATE TABLE IF NOT EXISTS room_gallery (
+                id SERIAL PRIMARY KEY,
+                room_id INT NOT NULL,
+                image_url VARCHAR(255) NOT NULL,
+                caption VARCHAR(100) NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
+            );
         `);
         galleryTableReady = true;
     } catch (err) {
+        galleryTableReady = true;
         console.error('[Rooms] room_gallery migration error:', err.message);
     }
 }
