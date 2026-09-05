@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
                 m.photo_url,       -- FIX: column is photo_url (not image_url) per INSERT in routes/maintenance.js
                 m.reported_at,
                 m.resolved_at,
+                m.admin_note,
                 -- AI columns
                 m.ai_category,
                 m.ai_priority,
@@ -34,6 +35,8 @@ router.get('/', async (req, res) => {
                 m.ai_is_emergency,
                 -- Tenant info
                 u.full_name,
+                u.email,
+                u.phone_number,
                 r.room_number
             FROM maintenance_requests m
             JOIN tenants t       ON m.tenant_id = t.id
@@ -50,7 +53,7 @@ router.get('/', async (req, res) => {
                     ELSE 5
                 END,
                 -- Emergency flag as tiebreaker (1 before 0)
-                ISNULL(m.ai_is_emergency, 0) DESC,
+                COALESCE(m.ai_is_emergency, false) DESC,
                 -- Oldest first within same priority
                 m.reported_at ASC
         `;
@@ -69,8 +72,7 @@ async function ensureAdminNoteColumn() {
     try {
         const pool = await poolPromise;
         await pool.request().query(`
-            IF COL_LENGTH('maintenance_requests', 'admin_note') IS NULL
-                ALTER TABLE maintenance_requests ADD admin_note NVARCHAR(500) NULL;
+            ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS admin_note VARCHAR(500);
         `);
         adminNoteColumnReady = true;
     } catch (err) {
@@ -90,7 +92,7 @@ router.post('/:id/update', async (req, res) => {
         await ensureAdminNoteColumn();
 
         // Build dynamic UPDATE query
-        const resolvedClause = status === 'resolved' ? ', resolved_at = GETDATE()' : '';
+        const resolvedClause = status === 'resolved' ? ', resolved_at = NOW()' : '';
         await pool.request()
             .input('id', sql.Int, id)
             .input('status', sql.NVarChar, status)
@@ -128,7 +130,7 @@ router.post('/:id/update', async (req, res) => {
                 html: `
                     <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
                         <div style="text-align:center;margin-bottom:20px;">
-                            <h2 style="color:#1a1a2e;margin:0;">🔧 Maintenance Update</h2>
+                            <h2 style="color:#1a1a2e;margin:0;">Maintenance Update</h2>
                         </div>
                         <p style="color:#333;">Hi <strong>${tenant.full_name}</strong>,</p>
                         <p style="color:#555;">Your maintenance request has been updated:</p>
