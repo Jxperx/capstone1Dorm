@@ -509,5 +509,77 @@ router.post('/:id/send-lease-reminder', async (req, res) => {
     }
 });
 
+// Admin - Transfer Tenant to Another Room/Unit
+router.post('/:id/transfer', async (req, res) => {
+    const tenantId = parseInt(req.params.id, 10);
+    const { targetRoomId } = req.body;
+
+    if (Number.isNaN(tenantId)) {
+        return res.status(400).json({ error: 'Invalid tenant id' });
+    }
+    if (!targetRoomId) {
+        return res.status(400).json({ error: 'Target room is required' });
+    }
+
+    try {
+        const pool = await poolPromise;
+
+        // 1. Verify tenant exists
+        const tenantRes = await pool.request()
+            .input('id', sql.Int, tenantId)
+            .query('SELECT t.id, t.room_id, u.full_name FROM tenants t JOIN users u ON t.user_id = u.id WHERE t.id = @id');
+
+        if (tenantRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Tenant not found' });
+        }
+        const tenant = tenantRes.recordset[0];
+
+        // 2. Check target room and its capacity
+        const roomRes = await pool.request()
+            .input('rid', sql.Int, targetRoomId)
+            .query(`
+                SELECT r.id, r.room_number, r.capacity, r.room_type,
+                       COALESCE(t.active_count, 0) AS active_count
+                FROM rooms r
+                LEFT JOIN (
+                    SELECT room_id, COUNT(*) AS active_count
+                    FROM tenants
+                    WHERE status = 'active'
+                    GROUP BY room_id
+                ) t ON r.id = t.room_id
+                WHERE r.id = @rid
+            `);
+
+        if (roomRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Target room not found' });
+        }
+        const targetRoom = roomRes.recordset[0];
+
+        // If condo, max capacity is 1
+        const maxCapacity = targetRoom.room_type === 'condo' ? 1 : (Number(targetRoom.capacity) || 1);
+        if (Number(targetRoom.active_count) >= maxCapacity) {
+            return res.status(400).json({ 
+                error: `Cannot transfer: ${targetRoom.room_type === 'condo' ? 'Condo Unit' : 'Room'} ${targetRoom.room_number} is already fully occupied.` 
+            });
+        }
+
+        // 3. Update tenant room_id
+        await pool.request()
+            .input('tid', sql.Int, tenantId)
+            .input('rid', sql.Int, targetRoomId)
+            .query('UPDATE tenants SET room_id = @rid WHERE id = @tid');
+
+        res.json({
+            success: true,
+            message: `Successfully transferred ${tenant.full_name} to ${targetRoom.room_type === 'condo' ? 'Condo Unit' : 'Room'} ${targetRoom.room_number}.`,
+            targetRoomNumber: targetRoom.room_number
+        });
+
+    } catch (err) {
+        console.error('[Tenant Transfer Error]', err);
+        res.status(500).json({ error: 'Database error while transferring tenant' });
+    }
+});
+
 module.exports = router;
 

@@ -196,6 +196,107 @@
                             <i class="fas fa-plus me-2"></i>Add New Room
                         </button>
                     </div>
+
+                    <!-- Inventory Metric Ribbon -->
+                    <div class="row g-3 mb-4" id="roomInventoryMetrics">
+                        <div class="col-6 col-lg">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.8;">Total Units</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalUnits">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.1);">
+                                        <i class="fas fa-cubes text-info fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricUnitsSub">Dorms & Condos</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #065f46, #047857); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Available Units</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="metricAvailableUnits">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-door-open text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricAvailableSub">With open capacity</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #991b1b, #b91c1c); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupied Units</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupiedUnits">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-door-closed text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricOccupiedSub">Full occupancy</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Total Residents</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalResidents">0</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-users text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricResidentsSub">Across all units</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #854d0e, #ca8a04); color: #fff;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupancy Rate</div>
+                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupancyRate">0%</h3>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
+                                        <i class="fas fa-chart-pie text-white fs-5"></i>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricRateSub">Capacity utilization</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Controls -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 ps-3">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="roomSearchInput" class="form-control bg-light border-0" placeholder="Search room or unit number..." oninput="filterRoomTables()">
+                                </div>
+                            </div>
+                            <div class="col-md-7 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+                                <span class="small text-muted me-2 fw-semibold">Availability:</span>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 room-filter-btn active" id="btnFilterAll" onclick="setRoomFilter('all')">
+                                    All Units
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 room-filter-btn" id="btnFilterAvailable" onclick="setRoomFilter('available')">
+                                    Available Only
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 room-filter-btn" id="btnFilterOccupied" onclick="setRoomFilter('occupied')">
+                                    Occupied Only
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <!-- Dorm Management -->
                         <div class="col-md-6 mb-4">
@@ -1615,6 +1716,79 @@
     </div>
 </div>
 
+<!-- Transfer Tenant Modal -->
+<div class="modal fade" id="transferTenantModal" tabindex="-1" aria-labelledby="transferTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 bg-light py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0" id="transferTenantModalLabel">
+                    <i class="fas fa-exchange-alt text-primary me-2"></i> Transfer Resident Unit
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="transferTenantId">
+                <input type="hidden" id="transferCurrentRoomId">
+
+                <div class="bg-light p-3 rounded-3 border mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Resident:</span>
+                        <strong id="transferTenantName" class="text-dark">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Current Unit:</span>
+                        <span id="transferCurrentRoomName" class="badge bg-secondary">--</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="transferTargetRoomSelect" class="form-label fw-bold small text-uppercase text-dark">Select Target Unit</label>
+                    <select id="transferTargetRoomSelect" class="form-select rounded-3">
+                        <option value="">-- Select Available Unit --</option>
+                    </select>
+                    <div class="form-text small text-muted">Only units with open capacity are displayed.</div>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 rounded-3 border-0 small mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Transferring will immediately reassign this resident to the selected room. Existing payments and lease records will remain intact.
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light py-3 px-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" id="transferSubmitBtn" onclick="submitTenantTransfer()">
+                    <i class="fas fa-check-circle me-1"></i> Confirm Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enterprise Confirmation Modal -->
+<div class="modal fade" id="enterpriseConfirmModal" tabindex="-1" aria-labelledby="enterpriseConfirmModalLabel" aria-hidden="true" style="z-index: 10995;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 bg-light py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0" id="enterpriseConfirmModalLabel">
+                    <i id="enterpriseConfirmIcon" class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    <span id="enterpriseConfirmTitle">Confirm Action</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p id="enterpriseConfirmMessage" class="text-secondary mb-0" style="font-size: 0.95rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer border-0 bg-light py-3 px-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-semibold" id="enterpriseConfirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enterprise Toast Container -->
+<div id="enterpriseToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 10990;"></div>
+
     <script src="/socket.io/socket.io.js"></script>
     <!-- FingerprintJS (Fraud Detection Device Fingerprinting) -->
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
@@ -1623,22 +1797,22 @@
 
     <!-- Admin Modules -->
     <script src="js/admin/modules/stats.js"></script>
-    <script src="js/admin/modules/rooms.js?v=2.6"></script>
-    <script src="js/admin/modules/tenants.js?v=2.6"></script>
+    <script src="js/admin/modules/rooms.js?v=2.7"></script>
+    <script src="js/admin/modules/tenants.js?v=2.7"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=1.1"></script>
     <script src="js/admin/modules/feedback.js"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>
-    <script src="js/admin/modules/vacancyAnalytics.js"></script>
+    <script src="js/admin/modules/vacancyAnalytics.js?v=2.7"></script>
     <script src="js/admin/modules/reports.js"></script>
     <script src="js/admin/modules/rentPricing.js?v=1.1"></script>
     <script src="js/admin/modules/liveChat.js"></script>
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=2.6"></script>
+    <script src="js/admin/main.js?v=2.7"></script>
 </body>
 </html>
 

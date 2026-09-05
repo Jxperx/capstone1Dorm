@@ -69,49 +69,63 @@ async function loadTenants() {
 }
 
 async function deleteTenant(tenantId) {
-    if (!confirm('Are you sure you want to PERMANENTLY remove this tenant? This will delete ALL their history (payments, maintenance, etc.) from the database. This action cannot be undone.')) return;
+    window.showEnterpriseConfirm({
+        title: 'Delete Tenant Record',
+        message: 'Are you sure you want to PERMANENTLY remove this tenant? This will delete all their history (payments, maintenance, etc.) from the database. This action cannot be undone.',
+        confirmText: 'Delete Permanently',
+        confirmClass: 'btn-danger',
+        iconClass: 'fas fa-trash-alt text-danger',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/admin/tenants/${tenantId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const result = await res.json();
 
-    try {
-        const res = await fetch(`/api/admin/tenants/${tenantId}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        });
-        const result = await res.json();
-
-        if (res.ok) {
-            alert(result.message);
-            loadTenants();
-            if (typeof loadRooms === 'function') loadRooms();
-        } else {
-            alert(result.error || 'Failed to remove tenant');
+                if (res.ok) {
+                    window.showEnterpriseToast(result.message || 'Tenant removed successfully.');
+                    if (typeof loadTenants === 'function') loadTenants();
+                    if (typeof loadRooms === 'function') loadRooms();
+                } else {
+                    window.showEnterpriseToast(result.error || 'Failed to remove tenant.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.showEnterpriseToast('Error removing tenant.', 'error');
+            }
         }
-    } catch (err) {
-        console.error(err);
-        alert('Error removing tenant');
-    }
+    });
 }
 
 async function endLease(tenantId) {
-    if (!confirm('Are you sure you want to end this lease? The tenant will be marked as moved out and the room will be vacated.')) return;
+    window.showEnterpriseConfirm({
+        title: 'End Lease Agreement',
+        message: 'Are you sure you want to end this lease? The tenant will be marked as moved out and the room slot will be vacated.',
+        confirmText: 'End Lease',
+        confirmClass: 'btn-warning text-dark',
+        iconClass: 'fas fa-door-open text-warning',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/admin/tenants/${tenantId}/end-lease`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                const result = await res.json();
 
-    try {
-        const res = await fetch(`/api/admin/tenants/${tenantId}/end-lease`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        const result = await res.json();
-
-        if (res.ok) {
-            alert(result.message);
-            loadTenants();
-            loadRooms(); // Update room occupancy
-        } else {
-            alert(result.error || 'Failed to end lease');
+                if (res.ok) {
+                    window.showEnterpriseToast(result.message || 'Lease ended successfully.');
+                    if (typeof loadTenants === 'function') loadTenants();
+                    if (typeof loadRooms === 'function') loadRooms();
+                } else {
+                    window.showEnterpriseToast(result.error || 'Failed to end lease.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.showEnterpriseToast('Error ending lease.', 'error');
+            }
         }
-    } catch (err) {
-        console.error(err);
-        alert('Error ending lease');
-    }
+    });
 }
 
 // Wrapper to handle the button click
@@ -178,7 +192,7 @@ async function saveTenantChanges() {
         });
         const data = await res.json();
         if (res.ok) {
-            alert('Tenant updated successfully!');
+            window.showEnterpriseToast('Tenant updated successfully.');
             // FIX: Close the modal and refresh only the affected data tables instead of
             // reloading the entire page, which would lose the current dashboard section.
             const modalEl = document.getElementById('editTenantModal');
@@ -191,11 +205,11 @@ async function saveTenantChanges() {
                 openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
             }
         } else {
-            alert('Error: ' + data.error);
+            window.showEnterpriseToast(data.error || 'Failed to update tenant.', 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Error updating tenant');
+        window.showEnterpriseToast('Error updating tenant.', 'error');
     }
 }
 
@@ -251,7 +265,7 @@ async function submitAddTenant() {
             if (result.setupUrl) {
                 prompt('Tenant Account Created.\n\nCopy and send this Password Setup Link to the tenant:', result.setupUrl);
             } else {
-                alert(result.message || 'Tenant added successfully.');
+                window.showEnterpriseToast(result.message || 'Tenant added successfully.');
             }
 
             if (typeof loadTenants === 'function') loadTenants(); 
@@ -260,11 +274,11 @@ async function submitAddTenant() {
                 openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
             }
         } else {
-            alert('Failed to add tenant: ' + (result.error || 'Server error'));
+            window.showEnterpriseToast('Failed to add tenant: ' + (result.error || 'Server error'), 'error');
         }
     } catch (err) {
         console.error('Error adding tenant:', err);
-        alert('An error occurred while adding tenant.');
+        window.showEnterpriseToast('An error occurred while adding tenant.', 'error');
     }
 }
 
@@ -279,10 +293,10 @@ async function resendTenantInvite(tenantId) {
         if (res.ok && result.setupUrl) {
             prompt('New Password Setup Link Generated.\n\nCopy and send this link to the tenant:', result.setupUrl);
         } else {
-            alert('Failed to generate setup link: ' + (result.error || 'Server error'));
+            window.showEnterpriseToast('Failed to generate setup link: ' + (result.error || 'Server error'), 'error');
         }
     } catch (err) {
         console.error('Error resending invite:', err);
-        alert('Network error generating setup link.');
+        window.showEnterpriseToast('Network error generating setup link.', 'error');
     }
 }

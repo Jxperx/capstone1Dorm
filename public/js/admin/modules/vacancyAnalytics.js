@@ -162,7 +162,7 @@ async function submitLeaseRenewal() {
     const newEndDate = document.getElementById('renewNewEndDate').value;
 
     if (!tenantId || !newEndDate) {
-        alert('Please select a valid new lease expiration date.');
+        window.showEnterpriseToast('Please select a valid new lease expiration date.', 'warning');
         return;
     }
 
@@ -175,19 +175,21 @@ async function submitLeaseRenewal() {
         
         const data = await res.json();
         if (res.ok) {
-            alert('✅ Lease extended successfully!');
+            window.showEnterpriseToast('Lease extended successfully.');
             const modalEl = document.getElementById('renewLeaseModal');
             if (modalEl) {
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
             }
             loadVacancyPrediction();
+            if (typeof loadRooms === 'function') loadRooms();
+            if (typeof loadTenants === 'function') loadTenants();
         } else {
-            alert(data.error || 'Failed to extend lease.');
+            window.showEnterpriseToast(data.error || 'Failed to extend lease.', 'error');
         }
     } catch (err) {
         console.error('[Lease Renewal Error]:', err);
-        alert('Error renewing lease. Please try again.');
+        window.showEnterpriseToast('Error renewing lease. Please try again.', 'error');
     }
 }
 
@@ -210,8 +212,9 @@ async function sendLeaseReminder(tenantId, btnEl) {
                 btnEl.className = 'btn btn-sm btn-success rounded-pill';
                 btnEl.innerHTML = '<i class="fas fa-check me-1"></i> Reminder Sent';
             }
+            window.showEnterpriseToast('Lease reminder sent successfully.');
         } else {
-            alert(data.error || 'Failed to send reminder.');
+            window.showEnterpriseToast(data.error || 'Failed to send reminder.', 'error');
             if (btnEl) {
                 btnEl.disabled = false;
                 btnEl.innerHTML = originalText;
@@ -219,7 +222,7 @@ async function sendLeaseReminder(tenantId, btnEl) {
         }
     } catch (err) {
         console.error('[Send Reminder Error]:', err);
-        alert('Error sending reminder.');
+        window.showEnterpriseToast('Error sending reminder.', 'error');
         if (btnEl) {
             btnEl.disabled = false;
             btnEl.innerHTML = originalText;
@@ -228,45 +231,61 @@ async function sendLeaseReminder(tenantId, btnEl) {
 }
 
 async function endMoveoutLease(tenantId, tenantName) {
-    if (!confirm(`End lease for ${tenantName}? This will set their status to "past" and free up their unit for new tenants.`)) return;
-
-    try {
-        const res = await fetch(`/api/admin/tenants/${tenantId}/end-lease`, {
-            method: 'POST'
-        });
-        const data = await res.json();
-        if (res.ok) {
-            alert(`✅ Lease ended for ${tenantName}. Unit is now available.`);
-            loadVacancyPrediction();
-            if (typeof loadTenants === 'function') loadTenants();
-        } else {
-            alert(data.error || 'Failed to end lease.');
+    window.showEnterpriseConfirm({
+        title: 'End Lease Agreement',
+        message: `Are you sure you want to end the lease for ${tenantName}? This will set their status to past and make their unit available for new tenants.`,
+        confirmText: 'End Lease',
+        confirmClass: 'btn-warning text-dark',
+        iconClass: 'fas fa-door-open text-warning',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/admin/tenants/${tenantId}/end-lease`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.showEnterpriseToast(`Lease ended for ${tenantName}. Unit is now available.`);
+                    loadVacancyPrediction();
+                    if (typeof loadTenants === 'function') loadTenants();
+                    if (typeof loadRooms === 'function') loadRooms();
+                } else {
+                    window.showEnterpriseToast(data.error || 'Failed to end lease.', 'error');
+                }
+            } catch (err) {
+                console.error('[End Lease Error]:', err);
+                window.showEnterpriseToast('Error ending tenant lease.', 'error');
+            }
         }
-    } catch (err) {
-        console.error('[End Lease Error]:', err);
-        alert('Error ending tenant lease.');
-    }
+    });
 }
 
 async function deleteMoveoutAccount(tenantId, tenantName) {
-    if (!confirm(`⚠️ PERMANENT DELETE WARNING:\nAre you sure you want to delete ${tenantName}'s account? This action cannot be undone.`)) return;
-
-    try {
-        const res = await fetch(`/api/admin/tenants/${tenantId}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (res.ok) {
-            alert(`✅ Account deleted for ${tenantName}.`);
-            loadVacancyPrediction();
-            if (typeof loadTenants === 'function') loadTenants();
-        } else {
-            alert(data.error || 'Failed to delete account.');
+    window.showEnterpriseConfirm({
+        title: 'Delete Tenant Account',
+        message: `Are you sure you want to permanently delete ${tenantName}'s account? All history and data will be removed. This action cannot be undone.`,
+        confirmText: 'Delete Account',
+        confirmClass: 'btn-danger',
+        iconClass: 'fas fa-trash-alt text-danger',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/admin/tenants/${tenantId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.showEnterpriseToast(`Account deleted for ${tenantName}.`);
+                    loadVacancyPrediction();
+                    if (typeof loadTenants === 'function') loadTenants();
+                    if (typeof loadRooms === 'function') loadRooms();
+                } else {
+                    window.showEnterpriseToast(data.error || 'Failed to delete account.', 'error');
+                }
+            } catch (err) {
+                console.error('[Delete Account Error]:', err);
+                window.showEnterpriseToast('Error deleting tenant account.', 'error');
+            }
         }
-    } catch (err) {
-        console.error('[Delete Account Error]:', err);
-        alert('Error deleting tenant account.');
-    }
+    });
 }
 
 window.openRenewLeaseModal = openRenewLeaseModal;
