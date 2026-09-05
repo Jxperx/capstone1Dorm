@@ -299,24 +299,24 @@ async function loadRooms() {
             else if (fillPct === 0) barColor = '#e5e7eb';
 
             const statusBadge = isFull
-                ? '<span class="badge rounded-pill" style="background:#fee2e2;color:#ef4444;font-weight:600;padding:5px 14px;font-size:0.75rem;">Full</span>'
-                : '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:5px 14px;font-size:0.75rem;">Active</span>';
+                ? '<span class="badge rounded-pill" style="background:#fee2e2;color:#ef4444;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:64px;">Full</span>'
+                : '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:64px;">Active</span>';
 
             if (room.room_type === 'condo') {
                 const isOccupied = activeTenants > 0;
                 const isAvailable = !isOccupied;
                 const condoStatus = isOccupied
-                    ? '<span class="badge rounded-pill" style="background:#fde8e8;color:#e02424;font-weight:600;padding:5px 16px;font-size:0.75rem;">Occupied</span>'
-                    : '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:5px 16px;font-size:0.75rem;">Available</span>';
+                    ? '<span class="badge rounded-pill" style="background:#fde8e8;color:#e02424;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:78px;">Occupied</span>'
+                    : '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:6px 14px;font-size:0.75rem;display:inline-block;text-align:center;min-width:78px;">Available</span>';
                 
                 const row = `
                     <tr data-room-id="${room.id}" data-room-type="condo" data-room-number="${room.room_number}" data-available="${isAvailable}" style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})" title="Click to view occupants">
-                        <td style="font-weight: 700; color: #1a1a2e; padding: 14px 12px;"><strong>${room.room_number}</strong></td>
-                        <td style="color: #1a1a2e; font-weight: 500; padding: 14px 12px;">₱${Number(room.monthly_rate).toFixed(2)}</td>
-                        <td style="padding: 14px 12px;">${condoStatus}</td>
-                        <td class="text-end" style="padding: 14px 12px;">
-                            <button class="btn btn-sm rounded-circle me-1" style="width: 32px; height: 32px; padding: 0; border: 1px solid #d4a373; color: #d4a373; background: transparent;" onclick="openRoomModal(${room.id})" title="Edit Unit"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; border: 1px solid #ef4444; color: #ef4444; background: transparent;" onclick="deleteRoom(${room.id})" title="Delete Unit"><i class="fas fa-trash-alt"></i></button>
+                        <td style="font-weight: 700; color: #1a1a2e; padding: 14px 6px; vertical-align: middle;"><strong>${room.room_number}</strong></td>
+                        <td style="color: #1a1a2e; font-weight: 500; padding: 14px 6px; vertical-align: middle;">₱${Number(room.monthly_rate).toFixed(2)}</td>
+                        <td style="padding: 14px 6px; vertical-align: middle;">${condoStatus}</td>
+                        <td class="text-end" style="padding: 14px 6px; vertical-align: middle; white-space: nowrap;">
+                            <button class="btn btn-sm rounded-circle me-1" style="width: 32px; height: 32px; padding: 0; border: 1px solid #d4a373; color: #d4a373; background: transparent; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;" onclick="openRoomModal(${room.id})" title="Edit Unit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; border: 1px solid #ef4444; color: #ef4444; background: transparent; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;" onclick="deleteRoom(${room.id})" title="Delete Unit"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
                 `;
@@ -325,21 +325,21 @@ async function loadRooms() {
                 const isAvailable = activeTenants < capacity;
                 const row = `
                     <tr data-room-id="${room.id}" data-room-type="dorm" data-room-number="${room.room_number}" data-available="${isAvailable}" style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})" title="Click to view occupants">
-                        <td style="font-weight: 700; color: #1a1a2e; padding: 14px 12px;"><strong>${room.room_number}</strong></td>
-                        <td style="color: #4b5563; padding: 14px 12px;">${room.capacity} Beds</td>
-                        <td style="color: #1a1a2e; font-weight: 500; padding: 14px 12px;">₱${Number(room.monthly_rate).toFixed(2)}</td>
-                        <td style="padding: 14px 12px;">
-                            <div style="display:flex;align-items:center;gap:8px;width:120px;">
-                                <div style="width:60px;background:#e5e7eb;border-radius:6px;height:6px;overflow:hidden;">
+                        <td style="font-weight: 700; color: #1a1a2e; padding: 14px 6px; vertical-align: middle;"><strong>${room.room_number}</strong></td>
+                        <td style="color: #4b5563; padding: 14px 6px; vertical-align: middle;">${room.capacity} Beds</td>
+                        <td style="color: #1a1a2e; font-weight: 500; padding: 14px 6px; vertical-align: middle;">₱${Number(room.monthly_rate).toFixed(2)}</td>
+                        <td style="padding: 14px 6px; vertical-align: middle;">
+                            <div style="display:flex;align-items:center;gap:8px;max-width:110px;">
+                                <div style="width:50px;background:#e5e7eb;border-radius:6px;height:6px;overflow:hidden;flex-shrink:0;">
                                     <div style="width:${Math.max(fillPct, activeTenants > 0 ? 15 : 0)}%;height:100%;background:${barColor};border-radius:6px;transition:width 0.4s ease;"></div>
                                 </div>
                                 <span style="font-size:0.82rem;font-weight:700;color:${activeTenants > 0 ? '#f59e0b' : '#10b981'};white-space:nowrap;">${activeTenants}/${capacity}</span>
                             </div>
                         </td>
-                        <td style="padding: 14px 12px;">${statusBadge}</td>
-                        <td class="text-end" style="padding: 14px 12px;">
-                            <button class="btn btn-sm rounded-circle me-1" style="width: 32px; height: 32px; padding: 0; border: 1px solid #d4a373; color: #d4a373; background: transparent;" onclick="openRoomModal(${room.id})" title="Edit Room"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; border: 1px solid #ef4444; color: #ef4444; background: transparent;" onclick="deleteRoom(${room.id})" title="Delete Room"><i class="fas fa-trash-alt"></i></button>
+                        <td style="padding: 14px 6px; vertical-align: middle;">${statusBadge}</td>
+                        <td class="text-end" style="padding: 14px 6px; vertical-align: middle; white-space: nowrap;">
+                            <button class="btn btn-sm rounded-circle me-1" style="width: 32px; height: 32px; padding: 0; border: 1px solid #d4a373; color: #d4a373; background: transparent; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;" onclick="openRoomModal(${room.id})" title="Edit Room"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; border: 1px solid #ef4444; color: #ef4444; background: transparent; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;" onclick="deleteRoom(${room.id})" title="Delete Room"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
                 `;
