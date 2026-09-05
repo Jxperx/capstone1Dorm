@@ -1,5 +1,6 @@
-// --- 2. Load Rooms ---
+// --- 2. Load Rooms & Occupancy ---
 let allRooms = []; // Global cache for rooms
+let currentOpenUnitModalRoomId = null;
 
 async function loadRooms() {
     try {
@@ -20,39 +21,51 @@ async function loadRooms() {
             const isFull = activeTenants >= capacity;
 
             // Occupancy bar color thresholds
-            let barColor = '#27ae60'; // green
-            if (fillPct >= 80) barColor = '#e74c3c';      // red
-            else if (fillPct >= 50) barColor = '#f39c12';  // amber
+            let barColor = '#198754'; // enterprise green
+            if (fillPct >= 80) barColor = '#dc3545';      // red
+            else if (fillPct >= 50) barColor = '#fd7e14';  // amber
 
-            // Status badge: FULL (red) or Active (green)
+            // Status badge: FULL or Active
             const statusBadge = isFull
-                ? '<span class="badge bg-danger">FULL</span>'
-                : '<span class="badge bg-success">Active</span>';
+                ? '<span class="badge bg-danger text-uppercase fw-semibold" style="letter-spacing:0.5px;">FULL</span>'
+                : '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>';
+
+            const rateFormatted = Number(room.monthly_rate || 0).toLocaleString();
 
             if (room.room_type === 'condo') {
-                // Condo row — simplified: Unit + Status + actions
                 const isOccupied = activeTenants > 0;
                 const condoStatus = isOccupied
-                    ? '<span class="badge bg-danger">Occupied</span>'
-                    : '<span class="badge bg-success">Available</span>';
+                    ? '<span class="badge bg-danger text-uppercase fw-semibold" style="letter-spacing:0.5px;">OCCUPIED</span>'
+                    : '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">AVAILABLE</span>';
+                
                 const row = `
-                    <tr>
+                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})">
                         <td><strong>${room.room_number}</strong></td>
-                        <td>${condoStatus}</td>
+                        <td>PHP ${rateFormatted}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openRoomModal(${room.id})"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})"><i class="fas fa-trash"></i></button>
+                            <span class="badge bg-light text-dark border">${activeTenants} / ${capacity}</span>
+                        </td>
+                        <td>${condoStatus}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-primary me-1" onclick="openUnitOccupantsModal(${room.id})" title="Inspect occupants and capacity">
+                                Occupants
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openRoomModal(${room.id})" title="Edit unit specifications">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})" title="Delete unit">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
                 if (condosBody) condosBody.innerHTML += row;
             } else {
-                // Dorm row — with occupancy column
                 const row = `
-                    <tr>
+                    <tr style="cursor:pointer;" onclick="if (!event.target.closest('button')) openUnitOccupantsModal(${room.id})">
                         <td><strong>${room.room_number}</strong></td>
                         <td>${room.capacity} Beds</td>
-                        <td>₱${room.monthly_rate}</td>
+                        <td>PHP ${rateFormatted}</td>
                         <td>
                             <div style="display:flex;align-items:center;gap:8px;width:130px;">
                                 <div style="width:80px;background:#e9ecef;border-radius:6px;height:8px;overflow:hidden;">
@@ -62,18 +75,205 @@ async function loadRooms() {
                             </div>
                         </td>
                         <td>${statusBadge}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openRoomModal(${room.id})"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})"><i class="fas fa-trash"></i></button>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-primary me-1" onclick="openUnitOccupantsModal(${room.id})" title="Inspect occupants and capacity">
+                                Occupants
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openRoomModal(${room.id})" title="Edit room specifications">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(${room.id})" title="Delete room">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
                 if (dormsBody) dormsBody.innerHTML += row;
             }
         });
+
+        // If the unit occupants modal is currently open, refresh its content silently
+        const modalEl = document.getElementById('unitOccupantsModal');
+        if (modalEl && modalEl.classList.contains('show') && currentOpenUnitModalRoomId) {
+            openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
+        }
     } catch (err) {
-        console.error(err);
+        console.error('Error loading rooms:', err);
     }
+}
+
+async function openUnitOccupantsModal(roomId, isBackgroundRefresh = false) {
+    currentOpenUnitModalRoomId = roomId;
+    const room = allRooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    const titleEl = document.getElementById('unitModalTitle');
+    const typeBadge = document.getElementById('unitModalTypeBadge');
+    const metaEl = document.getElementById('unitModalMeta');
+    const occupancyText = document.getElementById('unitModalOccupancyText');
+    const editBtn = document.getElementById('unitModalEditRoomBtn');
+
+    const isCondo = room.room_type === 'condo';
+    const capacity = room.capacity || 1;
+    const monthlyRateFormatted = Number(room.monthly_rate || 0).toLocaleString();
+
+    if (titleEl) titleEl.textContent = `${isCondo ? 'Condo Unit' : 'Room'} ${room.room_number}`;
+    if (typeBadge) {
+        typeBadge.textContent = isCondo ? 'Condo Unit' : 'Dormitory';
+        typeBadge.className = isCondo ? 'badge bg-info text-dark text-uppercase fw-semibold' : 'badge bg-secondary text-uppercase fw-semibold';
+    }
+    if (metaEl) metaEl.textContent = `Monthly Rate: PHP ${monthlyRateFormatted} | Capacity: ${capacity} ${capacity === 1 ? 'Bed' : 'Beds'}`;
+    if (editBtn) {
+        editBtn.onclick = () => {
+            const modalEl = document.getElementById('unitOccupantsModal');
+            const inst = bootstrap.Modal.getInstance(modalEl);
+            if (inst) inst.hide();
+            openRoomModal(room.id);
+        };
+    }
+
+    // Fetch latest tenants data
+    let tenants = [];
+    try {
+        const res = await fetch('/api/admin/tenants', { credentials: 'include' });
+        if (res.ok) {
+            tenants = await res.json();
+        }
+    } catch (e) {
+        console.error('Error fetching tenants for unit modal:', e);
+    }
+
+    // Filter occupants assigned to this specific room (by room_id or room_number)
+    const occupants = tenants.filter(t => (t.room_id === room.id || String(t.room_number) === String(room.room_number)) && t.status !== 'archived');
+    const activeCount = occupants.length;
+    const vacantCount = Math.max(0, capacity - activeCount);
+
+    if (occupancyText) {
+        const pct = Math.round((activeCount / capacity) * 100);
+        let badgeClass = 'text-success';
+        if (pct >= 100) badgeClass = 'text-danger';
+        else if (pct >= 50) badgeClass = 'text-warning';
+        occupancyText.innerHTML = `<span class="${badgeClass}">${activeCount} of ${capacity} Occupied (${pct}%)</span>`;
+    }
+
+    const countEl = document.getElementById('unitModalOccupantsCount');
+    if (countEl) countEl.textContent = activeCount;
+
+    const vacantCountEl = document.getElementById('unitModalVacantCount');
+    if (vacantCountEl) vacantCountEl.textContent = vacantCount;
+
+    // Render Occupants
+    const listEl = document.getElementById('unitOccupantsList');
+    if (listEl) {
+        if (occupants.length === 0) {
+            listEl.innerHTML = `
+                <div class="p-4 text-center border rounded bg-light text-muted">
+                    <p class="mb-1 fw-semibold text-dark">No active occupants assigned to this unit.</p>
+                    <small>Select an available bed slot below to assign a new tenant.</small>
+                </div>
+            `;
+        } else {
+            listEl.innerHTML = occupants.map((t, idx) => {
+                const bedLetter = String.fromCharCode(65 + (idx % 26));
+                const profileImg = t.profile_image_url || 'https://via.placeholder.com/44';
+
+                const statusBadge = t.status === 'pending'
+                    ? '<span class="badge bg-warning text-dark text-uppercase fw-semibold" style="letter-spacing:0.5px;">PENDING SETUP</span>'
+                    : t.status === 'active'
+                    ? '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>'
+                    : '<span class="badge bg-secondary text-uppercase fw-semibold" style="letter-spacing:0.5px;">ARCHIVED</span>';
+
+                const leaseStart = t.lease_start_date ? new Date(t.lease_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+                const leaseEnd = t.lease_end_date ? new Date(t.lease_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set';
+
+                const tData = JSON.stringify(t).replace(/'/g, "&apos;");
+
+                return `
+                    <div class="card mb-3 border shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <img src="${profileImg}" class="rounded-circle me-3 border" width="44" height="44" style="object-fit: cover;">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h6 class="mb-0 fw-bold text-dark">${t.full_name}</h6>
+                                            <span class="badge bg-light text-dark border">Bed ${bedLetter}</span>
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            ${t.email} | Contact: ${t.phone_number || 'N/A'}
+                                        </div>
+                                        <div class="text-secondary small mt-1">
+                                            Guardian: ${t.guardian_name ? `${t.guardian_name} (${t.guardian_contact || 'N/A'})` : 'Not provided'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div>${statusBadge}</div>
+                                    <div class="small text-muted mt-1">Lease: ${leaseStart} to ${leaseEnd}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top flex-wrap">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resendTenantInvite(${t.id})">
+                                    Resend Setup Link
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" data-tenant='${tData}' onclick='openEditTenantModalFromBtn(this)'>
+                                    Edit Profile
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning text-dark" onclick="endLease(${t.id})">
+                                    End Lease
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTenant(${t.id})">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // Render Vacant Slots
+    const vacantListEl = document.getElementById('unitVacantSlotsList');
+    if (vacantListEl) {
+        if (vacantCount === 0) {
+            vacantListEl.innerHTML = `
+                <div class="p-3 text-center border rounded bg-light text-muted small">
+                    This unit is currently at full capacity (${capacity} of ${capacity} beds occupied).
+                </div>
+            `;
+        } else {
+            let vacantHtml = '';
+            for (let i = 0; i < vacantCount; i++) {
+                const bedLetter = String.fromCharCode(65 + activeCount + i);
+                vacantHtml += `
+                    <div class="border border-dashed rounded p-3 mb-2 d-flex justify-content-between align-items-center bg-light flex-wrap gap-2">
+                        <div>
+                            <div class="fw-semibold text-dark">Vacant Bed Slot (${bedLetter})</div>
+                            <div class="small text-muted">Ready for new tenant assignment</div>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="assignTenantToRoom(${room.id})">
+                            Assign Tenant to Bed ${bedLetter}
+                        </button>
+                    </div>
+                `;
+            }
+            vacantListEl.innerHTML = vacantHtml;
+        }
+    }
+
+    if (!isBackgroundRefresh) {
+        const modalEl = document.getElementById('unitOccupantsModal');
+        const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        bsModal.show();
+    }
+}
+
+function assignTenantToRoom(roomId) {
+    const modalEl = document.getElementById('unitOccupantsModal');
+    const bsModal = bootstrap.Modal.getInstance(modalEl);
+    if (bsModal) bsModal.hide();
+    prepareAddTenant(roomId);
 }
 
 // --- Room Management Functions ---

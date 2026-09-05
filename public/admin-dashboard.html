@@ -34,9 +34,6 @@
                 <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rooms', this)">
                     <i class="fas fa-door-open me-2"></i>Room Management
                 </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('tenants', this)">
-                    <i class="fas fa-users me-2"></i>Tenants
-                </a>
 
                 <a href="#" class="list-group-item list-group-item-action" onclick="showSection('maintenance', this)">
                     <i class="fas fa-tools me-2"></i>Maintenance
@@ -193,30 +190,44 @@
 
                 <!-- SECTION: Room Management -->
                 <div id="section-rooms" class="content-section">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Room & Unit Management</h3>
-                        <button class="btn btn-primary rounded-pill shadow-sm" onclick="openRoomModal()">
-                            <i class="fas fa-plus me-2"></i>Add New Room
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <div>
+                            <h3 class="mb-1 fw-bold text-dark">Room & Occupancy Management</h3>
+                            <p class="text-muted small mb-0">Select any room or unit to inspect occupants, assign vacant beds, or manage leasing records.</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm"
+                                    data-bs-toggle="modal" data-bs-target="#addReadingModal"
+                                    onclick="if(typeof loadTenantsForCalc==='function') loadTenantsForCalc();">
+                                <i class="fas fa-bolt me-1"></i>Log Meter Reading
+                            </button>
+                            <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="prepareAddTenant()">
+                                <i class="fas fa-user-plus me-1"></i>Add New Tenant
+                            </button>
+                            <button class="btn btn-dark btn-sm rounded-pill px-3 shadow-sm" onclick="openRoomModal()">
+                                <i class="fas fa-plus me-1"></i>Add New Room
+                            </button>
+                        </div>
                     </div>
                     <div class="row">
                         <!-- Dorm Management -->
                         <div class="col-md-6 mb-4">
                             <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom-0">
-                                    <h5 class="mb-0"><i class="fas fa-bed me-2 text-primary"></i>Dormitories</h5>
+                                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 fw-bold text-dark">Dormitories</h5>
+                                    <span class="badge bg-light text-secondary border">Shared Rooms</span>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table align-middle">
-                                            <thead>
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
                                                 <tr>
                                                     <th>Room</th>
                                                     <th>Capacity</th>
                                                     <th>Rate</th>
                                                     <th>Occupancy</th>
                                                     <th>Status</th>
-                                                    <th></th>
+                                                    <th class="text-end">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="dormsTableBody">
@@ -231,17 +242,20 @@
                         <!-- Condo Management -->
                         <div class="col-md-6 mb-4">
                             <div class="card shadow-sm h-100">
-                                <div class="card-header bg-white border-bottom-0">
-                                    <h5 class="mb-0"><i class="fas fa-building me-2 text-info"></i>Condo Units</h5>
+                                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 fw-bold text-dark">Condo Units</h5>
+                                    <span class="badge bg-light text-secondary border">Private Units</span>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table align-middle">
-                                            <thead>
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
                                                 <tr>
                                                     <th>Unit</th>
+                                                    <th>Rate</th>
+                                                    <th>Occupancy</th>
                                                     <th>Status</th>
-                                                    <th></th>
+                                                    <th class="text-end">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="condosTableBody">
@@ -1319,6 +1333,61 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="submitSaveRoom()">Save Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unit Occupants & Capacity Management Modal -->
+    <div class="modal fade" id="unitOccupantsModal" tabindex="-1" aria-labelledby="unitOccupantsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white py-3 px-4">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title fw-bold text-white mb-0" id="unitModalTitle">Room Details</h5>
+                            <span class="badge bg-secondary text-uppercase fw-semibold" id="unitModalTypeBadge">Dormitory</span>
+                        </div>
+                        <div class="small text-light opacity-75 mt-1" id="unitModalMeta">Rate: PHP 0 | Capacity: 0 Beds</div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Unit Metrics Card -->
+                    <div class="p-3 mb-4 rounded border bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Current Occupancy:</span>
+                            <span class="ms-2 fw-bold" id="unitModalOccupancyText">0 / 0 Occupied</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="unitModalEditRoomBtn">
+                                <i class="fas fa-cog me-1"></i>Edit Room Details
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Occupants Header & List -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px;">
+                            Active Occupants (<span id="unitModalOccupantsCount">0</span>)
+                        </h6>
+                    </div>
+                    <div id="unitOccupantsList" class="mb-4">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Available Capacity Header & List -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px;">
+                            Available Capacity (<span id="unitModalVacantCount">0</span>)
+                        </h6>
+                    </div>
+                    <div id="unitVacantSlotsList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

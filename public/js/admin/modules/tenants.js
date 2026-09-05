@@ -4,27 +4,28 @@ async function loadTenants() {
         const res = await fetch('/api/admin/tenants', { credentials: 'include' });
         const tenants = await res.json();
         const tbody = document.getElementById('tenantsTableBody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         if (tenants.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No tenants found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No tenants found.</td></tr>';
             return;
         }
 
         tenants.forEach(t => {
-            const room = t.room_number ? `Room ${t.room_number}` : '<span class="text-danger">Unassigned</span>';
+            const room = t.room_number ? `Room ${t.room_number}` : '<span class="text-danger fw-semibold">Unassigned</span>';
             const guardian = t.guardian_name ? 
-                `${t.guardian_name}<br><small class="text-muted">${t.guardian_contact}</small>` : 
+                `${t.guardian_name}<br><small class="text-muted">${t.guardian_contact || 'N/A'}</small>` : 
                 '<span class="text-muted">Not provided</span>';
             
             const profileImg = t.profile_image_url || 'https://via.placeholder.com/40';
 
             // Status badge logic
             const statusBadgeHtml = t.status === 'pending'
-                ? '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending Setup</span>'
+                ? '<span class="badge bg-warning text-dark text-uppercase fw-semibold" style="letter-spacing:0.5px;">PENDING SETUP</span>'
                 : t.status === 'active'
-                ? '<span class="badge bg-success">Active</span>'
-                : '<span class="badge bg-secondary">Archived</span>';
+                ? '<span class="badge bg-success text-uppercase fw-semibold" style="letter-spacing:0.5px;">ACTIVE</span>'
+                : '<span class="badge bg-secondary text-uppercase fw-semibold" style="letter-spacing:0.5px;">ARCHIVED</span>';
 
             const endLeaseBtn = t.status === 'active' ? 
                 `<button class="btn btn-sm btn-outline-danger" onclick="endLease(${t.id})"><i class="fas fa-sign-out-alt"></i> End Lease</button>` :
@@ -186,6 +187,9 @@ async function saveTenantChanges() {
             // Re-fetch tenant list and room occupancy in-place
             if (typeof loadTenants === 'function') loadTenants();
             if (typeof loadRooms   === 'function') loadRooms();
+            if (typeof currentOpenUnitModalRoomId !== 'undefined' && currentOpenUnitModalRoomId && typeof openUnitOccupantsModal === 'function') {
+                openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
+            }
         } else {
             alert('Error: ' + data.error);
         }
@@ -196,7 +200,7 @@ async function saveTenantChanges() {
 }
 
 // --- Add Tenant Logic ---
-async function prepareAddTenant() {
+async function prepareAddTenant(preselectedRoomId = null) {
     // Load rooms if not already loaded
     if (typeof allRooms === 'undefined' || allRooms.length === 0) {
         try {
@@ -213,9 +217,14 @@ async function prepareAddTenant() {
     allRooms.forEach(room => {
         select.innerHTML += `<option value="${room.id}">Room ${room.room_number} (${room.room_type}, Cap: ${room.capacity})</option>`;
     });
+
+    if (preselectedRoomId) {
+        select.value = preselectedRoomId;
+    }
     
     // Set default date to today
-    document.querySelector('input[name="lease_start"]').valueAsDate = new Date();
+    const leaseInput = document.querySelector('input[name="lease_start"]');
+    if (leaseInput) leaseInput.valueAsDate = new Date();
 
     new bootstrap.Modal(document.getElementById('addTenantModal')).show();
 }
@@ -240,15 +249,18 @@ async function submitAddTenant() {
             form.reset();
 
             if (result.setupUrl) {
-                prompt('✅ Tenant Account Created!\n\nCopy & send this Password Setup Link to the tenant:', result.setupUrl);
+                prompt('Tenant Account Created.\n\nCopy and send this Password Setup Link to the tenant:', result.setupUrl);
             } else {
-                alert('✅ ' + (result.message || 'Tenant added successfully!'));
+                alert(result.message || 'Tenant added successfully.');
             }
 
             if (typeof loadTenants === 'function') loadTenants(); 
             if (typeof loadRooms === 'function') loadRooms(); 
+            if (typeof currentOpenUnitModalRoomId !== 'undefined' && currentOpenUnitModalRoomId && typeof openUnitOccupantsModal === 'function') {
+                openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
+            }
         } else {
-            alert('❌ ' + (result.error || 'Failed to add tenant'));
+            alert('Failed to add tenant: ' + (result.error || 'Server error'));
         }
     } catch (err) {
         console.error('Error adding tenant:', err);
@@ -265,9 +277,9 @@ async function resendTenantInvite(tenantId) {
         const result = await res.json();
 
         if (res.ok && result.setupUrl) {
-            prompt('📧 New Password Setup Link Generated!\n\nCopy & send this link to the tenant:', result.setupUrl);
+            prompt('New Password Setup Link Generated.\n\nCopy and send this link to the tenant:', result.setupUrl);
         } else {
-            alert('❌ ' + (result.error || 'Failed to generate setup link.'));
+            alert('Failed to generate setup link: ' + (result.error || 'Server error'));
         }
     } catch (err) {
         console.error('Error resending invite:', err);

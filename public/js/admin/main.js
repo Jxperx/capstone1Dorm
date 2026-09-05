@@ -1,5 +1,10 @@
 // --- Navigation Functions ---
 function showSection(sectionId, linkElement) {
+    // If tenants is requested, redirect to unified rooms section
+    if (sectionId === 'tenants') {
+        sectionId = 'rooms';
+    }
+
     // Hide all sections
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
@@ -34,8 +39,8 @@ function showSection(sectionId, linkElement) {
     // Update Page Title
     const titles = {
         'dashboard': 'Dashboard Overview',
-        'rooms': 'Room & Unit Management',
-        'tenants': 'Tenant Management',
+        'rooms': 'Room & Occupancy Management',
+        'tenants': 'Room & Occupancy Management',
         'payments': 'Payment Management',
         'maintenance': 'Maintenance Requests',
         'media': 'Condo and Dorm Media',
