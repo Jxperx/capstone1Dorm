@@ -139,7 +139,7 @@ function updateKpiRibbon(feedbacks, alerts, churnList, summary) {
 
     // 2. Positive Sentiment Ratio
     const positiveCount = feedbacks.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive').length;
-    const attentionCount = feedbacks.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention).length;
+    const attentionCount = feedbacks.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention)).length;
     const total = positiveCount + attentionCount;
     const positivePct = total > 0 ? Math.round((positiveCount / total) * 100) : (summary?.positiveCount ? 16 : 0);
 
@@ -203,11 +203,13 @@ function applyFiltersAndRender() {
     const filtered = allFeedbackRecords.filter(item => {
         // 1. Filter pill criteria
         if (currentFeedbackFilter === 'needs_attention') {
-            if ((item.ai_sentiment || '').toLowerCase() !== 'negative' && !item.ai_needs_attention) return false;
+            if (item.is_resolved || ((item.ai_sentiment || '').toLowerCase() !== 'negative' && !item.ai_needs_attention)) return false;
         } else if (currentFeedbackFilter === 'neutral') {
-            if ((item.ai_sentiment || '').toLowerCase() !== 'neutral' || item.ai_needs_attention) return false;
+            if (item.is_resolved || (item.ai_sentiment || '').toLowerCase() !== 'neutral' || item.ai_needs_attention) return false;
         } else if (currentFeedbackFilter === 'positive') {
             if ((item.ai_sentiment || '').toLowerCase() !== 'positive') return false;
+        } else if (currentFeedbackFilter === 'resolved') {
+            if (!item.is_resolved) return false;
         } else if (currentFeedbackFilter === 'wifi') {
             const haystack = `${item.feedback_text || ''} ${item.category || ''} ${item.ai_summary || ''} ${JSON.stringify(item.ai_topics || '')} ${JSON.stringify(item.ai_keywords || '')}`.toLowerCase();
             if (!haystack.includes('wifi') && !haystack.includes('internet') && !haystack.includes('connection')) return false;
@@ -239,9 +241,16 @@ function applyFiltersAndRender() {
     });
 
     // Partition into 3 columns
-    const attentionList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention);
-    const neutralList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
-    const positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
+    let attentionList, neutralList, positiveList;
+    if (currentFeedbackFilter === 'resolved') {
+        attentionList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention);
+        neutralList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'neutral');
+        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
+    } else {
+        attentionList = filtered.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
+        neutralList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
+        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
+    }
 
     // Render each column table
     renderColumnTable('fb-attention-body', attentionList, 'attention');
@@ -300,7 +309,9 @@ function renderColumnTable(tbodyId, list, type) {
 
         // Status Badge per column
         let statusBadge;
-        if (type === 'attention') {
+        if (item.is_resolved) {
+            statusBadge = '<span class="badge rounded-pill" style="background:#e8f8f0;color:#10b981;font-weight:600;padding:6px 10px;font-size:0.75rem;">Resolved</span>';
+        } else if (type === 'attention') {
             statusBadge = '<span class="badge rounded-pill" style="background:#fee2e2;color:#ef4444;font-weight:600;padding:6px 10px;font-size:0.75rem;">Action Needed</span>';
         } else if (type === 'neutral') {
             statusBadge = '<span class="badge rounded-pill" style="background:#fef3c7;color:#92400e;font-weight:600;padding:6px 10px;font-size:0.75rem;">Under Review</span>';
@@ -382,17 +393,27 @@ function openFeedbackDetailModal(id) {
 
     const attBadge = document.getElementById('feedbackDetailAttentionBadge');
     if (attBadge) {
-        attBadge.style.display = item.ai_needs_attention ? 'inline-block' : 'none';
-        if (item.ai_needs_attention) {
+        attBadge.style.display = (!item.is_resolved && item.ai_needs_attention) ? 'inline-block' : 'none';
+        if (!item.is_resolved && item.ai_needs_attention) {
             attBadge.className = 'badge rounded-pill';
             attBadge.style.cssText = 'background:#fee2e2;color:#ef4444;font-weight:600;padding:6px 14px;font-size:0.75rem;';
+        }
+    }
+
+    const resBadge = document.getElementById('feedbackDetailResolvedBadge');
+    if (resBadge) {
+        resBadge.style.display = item.is_resolved ? 'inline-block' : 'none';
+        if (item.is_resolved) {
+            resBadge.className = 'badge rounded-pill';
+            resBadge.style.cssText = 'background:#e8f8f0;color:#10b981;font-weight:600;padding:6px 14px;font-size:0.75rem;';
+            resBadge.textContent = 'Resolved';
         }
     }
 
     // 3. In-Modal Churn Risk Badge
     const churnBadge = document.getElementById('feedbackDetailChurnBadge');
     if (churnBadge) {
-        if (item._churnRisk) {
+        if (!item.is_resolved && item._churnRisk) {
             churnBadge.style.display = 'inline-block';
             churnBadge.textContent = `Churn Risk: ${item._churnRisk}%`;
         } else {
@@ -411,7 +432,24 @@ function openFeedbackDetailModal(id) {
     const impactEl = document.getElementById('feedbackDetailImpact');
     const resolveBtn = document.getElementById('feedbackDetailResolveBtn');
 
-    if (item._correlatedAlert) {
+    if (item.is_resolved) {
+        if (trendBadge) {
+            trendBadge.textContent = 'Resolved Concern';
+            trendBadge.className = 'badge bg-success text-white border fw-bold';
+        }
+        if (trendDesc) {
+            trendDesc.textContent = item.ai_summary || `Feedback regarding ${item.category || 'dorm services'}. This matter has been marked as resolved by management.`;
+        }
+        if (actionPlan) {
+            actionPlan.textContent = 'Action item marked as resolved by dormitory management.';
+        }
+        if (impactEl) {
+            impactEl.textContent = 'Resolution logged in the dormitory management register.';
+        }
+        if (resolveBtn) {
+            resolveBtn.style.display = 'none';
+        }
+    } else if (item._correlatedAlert) {
         const a = item._correlatedAlert;
         if (trendBadge) {
             trendBadge.textContent = `Active Trend: ${a.issue_topic} (${a.negative_count || 0} complaints)`;
@@ -428,6 +466,7 @@ function openFeedbackDetailModal(id) {
         }
         if (resolveBtn) {
             resolveBtn.style.display = 'inline-block';
+            resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
         }
     } else {
         if (trendBadge) {
@@ -444,7 +483,9 @@ function openFeedbackDetailModal(id) {
             impactEl.textContent = 'Addressing resident inquiries preserves high retention and community satisfaction.';
         }
         if (resolveBtn) {
-            resolveBtn.style.display = 'none';
+            const needsAction = item.ai_needs_attention || (item.ai_sentiment || '').toLowerCase() === 'negative';
+            resolveBtn.style.display = needsAction ? 'inline-block' : 'none';
+            resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
         }
     }
 
@@ -515,16 +556,69 @@ function openNoticeFromDetail() {
 }
 
 async function resolveTrendFromDetail() {
-    if (!selectedFeedbackRecord || !selectedFeedbackRecord._correlatedAlert) return;
-    const alertId = selectedFeedbackRecord._correlatedAlert.id;
-    const topic = selectedFeedbackRecord._correlatedAlert.issue_topic;
+    if (!selectedFeedbackRecord) return;
+    const alertId = selectedFeedbackRecord._correlatedAlert?.id || null;
+    const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Resident Feedback';
+    const feedbackId = selectedFeedbackRecord.id;
 
     const modalEl = document.getElementById('feedbackDetailModal');
     if (modalEl && window.bootstrap) {
         bootstrap.Modal.getInstance(modalEl)?.hide();
     }
 
-    await resolveTrendAlert(alertId, topic);
+    const executeResolve = async () => {
+        try {
+            const res = await fetch('/api/admin/feedback/resolve-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback_id: feedbackId,
+                    alert_id: alertId,
+                    topic: topic
+                }),
+                credentials: 'include'
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Instantly update local state
+                selectedFeedbackRecord.is_resolved = true;
+                selectedFeedbackRecord.ai_needs_attention = false;
+                allFeedbackRecords.forEach(r => {
+                    if (r.id === feedbackId || (alertId && r._correlatedAlert && r._correlatedAlert.id === alertId)) {
+                        r.is_resolved = true;
+                        r.ai_needs_attention = false;
+                    }
+                });
+                if (alertId) {
+                    activeAlertsData = activeAlertsData.filter(a => a.id !== alertId);
+                }
+                showFeedbackToast(data.message || `Resolved "${topic}"! Dorm Health Score boosted.`);
+                applyFiltersAndRender();
+                loadAdminFeedback(false);
+            } else {
+                showFeedbackToast(data.error || 'Failed to resolve feedback', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showFeedbackToast('Error resolving feedback', 'error');
+        }
+    };
+
+    if (window.showEnterpriseConfirm) {
+        window.showEnterpriseConfirm({
+            title: 'Mark Issue as Resolved',
+            message: `Mark this feedback for "${topic}" as resolved? This will clear it from Needs Attention and boost Dorm Health.`,
+            confirmText: 'Mark Resolved',
+            confirmClass: 'btn-success',
+            iconClass: 'fas fa-check-circle text-success',
+            onConfirm: executeResolve
+        });
+    } else {
+        if (confirm(`Mark this feedback for "${topic}" as resolved?`)) {
+            executeResolve();
+        }
+    }
 }
 
 // ── 1-Click Building Work Order Dispatcher ──
@@ -625,14 +719,23 @@ function resolveTrendAlert(alertId, topic) {
             const res = await fetch('/api/admin/feedback/resolve-alert', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ alert_id: alertId }),
+                body: JSON.stringify({ alert_id: alertId, topic: topic }),
                 credentials: 'include'
             });
             const data = await res.json();
 
             if (res.ok) {
-                showFeedbackToast(`Resolved "${topic}"! Dorm Health Score boosted.`);
-                loadAdminFeedback();
+                // Instantly update active alerts and correlated feedback locally
+                activeAlertsData = activeAlertsData.filter(a => a.id !== alertId);
+                allFeedbackRecords.forEach(fb => {
+                    if (fb._correlatedAlert && fb._correlatedAlert.id === alertId) {
+                        fb.is_resolved = true;
+                        fb.ai_needs_attention = false;
+                    }
+                });
+                showFeedbackToast(data.message || `Resolved "${topic}"! Dorm Health Score boosted.`);
+                applyFiltersAndRender();
+                loadAdminFeedback(false);
             } else {
                 showFeedbackToast(data.error || 'Failed to resolve alert', 'error');
             }

@@ -20,7 +20,7 @@ async function detectTrendsAndAlert() {
         // 1. Fetch ALL feedback from the last 90 days (both positive and negative)
         //    so we can calculate the true negative ratio per topic
         const result = await pool.request().query(`
-            SELECT id, ai_topics, ai_sentiment, ai_sentiment_score 
+            SELECT id, ai_topics, ai_sentiment, ai_sentiment_score, is_resolved 
             FROM tenant_feedback 
             WHERE created_at >= DATEADD(day, -90, GETDATE())
         `);
@@ -40,7 +40,8 @@ async function detectTrendsAndAlert() {
             }
             
             const score = parseFloat(fb.ai_sentiment_score) || 0;
-            const isNegative = (fb.ai_sentiment === 'Negative' || score <= -0.3);
+            const isResolved = Boolean(fb.is_resolved);
+            const isNegative = (fb.ai_sentiment === 'Negative' || score <= -0.3) && !isResolved;
 
             topics.forEach(topic => {
                 if (!topicStats[topic]) {
@@ -75,7 +76,7 @@ async function detectTrendsAndAlert() {
                 .query(`
                     SELECT TOP 1 id FROM feedback_alerts 
                     WHERE issue_topic = @topic 
-                      AND is_resolved = 0 
+                      AND (is_resolved IS NULL OR is_resolved = 0)
                       AND created_at >= DATEADD(day, -7, GETDATE())
                 `);
 

@@ -37,6 +37,8 @@ async function ensureFeedbackTables() {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
 
+            ALTER TABLE tenant_feedback ADD COLUMN IF NOT EXISTS is_resolved BOOLEAN DEFAULT FALSE;
+            ALTER TABLE tenant_feedback ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ NULL;
             ALTER TABLE feedback_alerts ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ NULL;
         `);
         feedbackTablesReady = true;
@@ -68,6 +70,8 @@ router.get('/all', async (req, res) => {
                 f.ai_summary, 
                 f.ai_needs_attention, 
                 f.ai_confidence, 
+                f.is_resolved,
+                f.resolved_at,
                 f.created_at,
                 COALESCE(u.full_name, 'Resident Tenant') as tenant_name,
                 u.email,
@@ -165,8 +169,9 @@ router.get('/executive-summary', async (req, res) => {
         const statsRes = await pool.request().query(`
             SELECT 
                 COUNT(*) as total_feedback,
-                SUM(CASE WHEN ai_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_count,
+                SUM(CASE WHEN ai_sentiment = 'Negative' AND (is_resolved IS NULL OR is_resolved = FALSE) THEN 1 ELSE 0 END) as negative_count,
                 SUM(CASE WHEN ai_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
+                SUM(CASE WHEN is_resolved = TRUE THEN 1 ELSE 0 END) as resolved_feedback_count,
                 AVG(CAST(COALESCE(ai_sentiment_score, 0) AS FLOAT)) as avg_score
             FROM tenant_feedback
         `);
@@ -175,30 +180,33 @@ router.get('/executive-summary', async (req, res) => {
         const total = stats.total_feedback || 0;
         const neg = stats.negative_count || 0;
         const pos = stats.positive_count || 0;
+        const resolvedFb = stats.resolved_feedback_count || 0;
         const avgScore = stats.avg_score || 0;
 
         // Active & Resolved Alerts count
         const alertRes = await pool.request().query(`
             SELECT 
-                SUM(CASE WHEN is_resolved = 0 THEN 1 ELSE 0 END) as alert_count,
+                SUM(CASE WHEN is_resolved = 0 OR is_resolved IS NULL THEN 1 ELSE 0 END) as alert_count,
                 SUM(CASE WHEN is_resolved = 1 THEN 1 ELSE 0 END) as resolved_count
             FROM feedback_alerts
         `);
         const alertCount = alertRes.recordset[0]?.alert_count || 0;
         const resolvedCount = alertRes.recordset[0]?.resolved_count || 0;
 
-        // Health Score calculation (base 100, penalized by negative feedback, boosted by resolved alerts)
+        // Health Score calculation (base 100, penalized by unresolved negative feedback, boosted by resolved items)
         let healthScore = 100;
         if (total > 0) {
             const negRatio = neg / total;
-            healthScore = Math.max(20, Math.min(100, Math.round(100 - (negRatio * 45) + (avgScore * 20) + (resolvedCount * 5))));
+            healthScore = Math.max(20, Math.min(100, Math.round(100 - (negRatio * 50) + (avgScore * 20) + (resolvedCount * 5) + (resolvedFb * 2))));
         }
 
-        // Unique at-risk tenants count (submitted severe negative feedback)
+        // Unique at-risk tenants count (submitted severe unresolved negative feedback)
         const churnRes = await pool.request().query(`
             SELECT COUNT(DISTINCT tenant_id) as churn_count 
             FROM tenant_feedback 
-            WHERE ai_sentiment = 'Negative' AND (ai_needs_attention = 1 OR ai_sentiment_score <= -0.50)
+            WHERE ai_sentiment = 'Negative' 
+              AND (ai_needs_attention = 1 OR ai_sentiment_score <= -0.50)
+              AND (is_resolved IS NULL OR is_resolved = FALSE)
         `);
         const churnCount = churnRes.recordset[0]?.churn_count || 0;
 
@@ -265,7 +273,7 @@ router.get('/churn-risk', async (req, res) => {
             LEFT JOIN tenants t ON f.tenant_id = t.id
             LEFT JOIN users u ON t.user_id = u.id
             LEFT JOIN rooms r ON t.room_id = r.id
-            WHERE f.ai_sentiment = 'Negative'
+            WHERE f.ai_sentiment = 'Negative' AND (f.is_resolved IS NULL OR f.is_resolved = FALSE)
             GROUP BY t.id, u.full_name, u.email, r.room_number
             HAVING COUNT(f.id) >= 2 OR MIN(f.ai_sentiment_score) <= -0.60
             ORDER BY COUNT(f.id) DESC, MIN(f.ai_sentiment_score) ASC
@@ -426,31 +434,77 @@ router.post('/send-notice', async (req, res) => {
 });
 
 /**
- * POST /api/admin/feedback/resolve-alert (NEW CLOSED-LOOP FEATURE)
- * Marks an AI Trend Alert as resolved, boosting Dorm Health Score and logging resolution impact.
+ * POST /api/admin/feedback/resolve-alert
+ * Closed-loop resolution: Marks an AI Trend Alert and/or individual feedback as resolved.
+ * When an alert or topic is resolved, updates correlated complaints in tenant_feedback.
  */
-router.post('/resolve-alert', async (req, res) => {
+async function handleResolveFeedbackOrAlert(req, res) {
     if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { alert_id } = req.body;
-    if (!alert_id) return res.status(400).json({ error: 'Alert ID is required.' });
+    const { alert_id, feedback_id, topic } = req.body;
+    if (!alert_id && !feedback_id) {
+        return res.status(400).json({ error: 'Alert ID or Feedback ID is required.' });
+    }
 
     try {
         const pool = await poolPromise;
         await ensureFeedbackTables();
 
-        await pool.request()
-            .input('id', sql.Int, alert_id)
-            .query("UPDATE feedback_alerts SET is_resolved = 1, resolved_at = NOW() WHERE id = @id");
+        let resolvedTopic = topic;
 
-        res.json({ success: true, message: 'AI Trend Alert marked as resolved! Health Score updated.' });
+        // 1. Mark individual feedback as resolved if feedback_id provided
+        if (feedback_id) {
+            await pool.request()
+                .input('fId', sql.Int, feedback_id)
+                .query(`
+                    UPDATE tenant_feedback 
+                    SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
+                    WHERE id = @fId
+                `);
+        }
+
+        // 2. Mark trend alert as resolved if alert_id provided
+        if (alert_id) {
+            const alertRes = await pool.request()
+                .input('id', sql.Int, alert_id)
+                .query("SELECT id, issue_topic FROM feedback_alerts WHERE id = @id");
+
+            if (alertRes.recordset.length > 0 && !resolvedTopic) {
+                resolvedTopic = alertRes.recordset[0].issue_topic;
+            }
+
+            await pool.request()
+                .input('id', sql.Int, alert_id)
+                .query("UPDATE feedback_alerts SET is_resolved = TRUE, resolved_at = NOW() WHERE id = @id");
+        }
+
+        // 3. If an alert or topic was resolved, mark open negative feedbacks on that topic as resolved
+        if (resolvedTopic) {
+            await pool.request()
+                .input('pattern', sql.NVarChar, `%${resolvedTopic}%`)
+                .query(`
+                    UPDATE tenant_feedback 
+                    SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
+                    WHERE (ai_topics ILIKE @pattern OR feedback_text ILIKE @pattern)
+                      AND (is_resolved IS NULL OR is_resolved = FALSE)
+                `);
+        }
+
+        const msg = resolvedTopic
+            ? `Resolved "${resolvedTopic}" and related feedback! Dorm Health Score boosted.`
+            : 'Feedback marked as resolved! Dorm Health Score boosted.';
+
+        res.json({ success: true, message: msg });
     } catch (err) {
         console.error('[Resolve Alert Error]', err);
-        res.status(500).json({ error: 'Failed to resolve alert.' });
+        res.status(500).json({ error: 'Failed to resolve alert or feedback.' });
     }
-});
+}
+
+router.post('/resolve-alert', handleResolveFeedbackOrAlert);
+router.post('/resolve-item', handleResolveFeedbackOrAlert);
 
 /**
  * POST /api/admin/feedback/ask-ai

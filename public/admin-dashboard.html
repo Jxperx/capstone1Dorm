@@ -761,6 +761,7 @@
                                     <button class="btn btn-sm fb-filter-btn btn-outline-danger rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('needs_attention', this)">Needs Attention</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-warning rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('neutral', this)">Neutral &amp; Inquiries</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-success rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('positive', this)">Positive</button>
+                                    <button class="btn btn-sm fb-filter-btn btn-outline-success rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('resolved', this)">Resolved</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('wifi', this)">WiFi</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('noise', this)">Noise</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('clean', this)">Cleanliness</button>
@@ -1493,6 +1494,7 @@
                                 <h5 class="modal-title fw-bold text-white mb-0" id="feedbackDetailModalLabel">Resident Feedback Inspection</h5>
                                 <span class="badge" id="feedbackDetailSentimentBadge">Sentiment</span>
                                 <span class="badge" id="feedbackDetailAttentionBadge" style="display: none;">Needs Attention</span>
+                                <span class="badge" id="feedbackDetailResolvedBadge" style="display: none; background: #e8f8f0; color: #10b981; font-weight: 600;">Resolved</span>
                                 <span class="badge" id="feedbackDetailChurnBadge" style="display: none; background: #fee2e2; color: #ef4444; font-weight: 600;">Churn Risk</span>
                             </div>
                             <div class="small text-light opacity-75 mt-1" id="feedbackDetailMeta">Submitted on —</div>
@@ -2191,7 +2193,7 @@
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=2.4"></script>
-    <script src="js/admin/modules/feedback.js?v=2.1"></script>
+    <script src="js/admin/modules/feedback.js?v=2.2"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>

@@ -41,7 +41,8 @@ const NEGATIVE_WORDS = [
     'bad', 'terrible', 'awful', 'horrible', 'worst', 'poor', 'slow', 'loud',
     'noisy', 'dirty', 'broken', 'rude', 'unsafe', 'smell', 'annoying',
     'hate', 'disappointing', 'messy', 'complain', 'issue', 'problem', 'fight',
-    'fighting', 'danger', 'dangerous', 'unacceptable', 'never'
+    'fighting', 'danger', 'dangerous', 'unacceptable', 'never', 'disconnected',
+    'unreliable', 'outage', 'offline', 'impossible', 'fail', 'failed', 'cannot', 'cant'
 ];
 
 const POSITIVE_WORDS = [
@@ -104,7 +105,7 @@ function _ruleBased(text) {
     };
 }
 
-// â”€â”€â”€ Gemini AI Analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Gemini AI Analysis --------------------------------------------------------
 async function _geminiAnalyze(text) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
@@ -114,7 +115,7 @@ async function _geminiAnalyze(text) {
 A tenant has submitted the following feedback:
 "${text}"
 
-Analyze this feedback and respond ONLY with a valid JSON object (no markdown, no code fences) in this exact format:
+Analyze this feedback and return ONLY a valid JSON object in this exact format:
 {
   "sentiment": "<Positive|Negative|Neutral|Mixed>",
   "score": <float between -1.0 and 1.0>,
@@ -128,7 +129,7 @@ Analyze this feedback and respond ONLY with a valid JSON object (no markdown, no
 Rules:
 - sentiment must be one of: Positive, Negative, Neutral, Mixed
 - score: -1.0 = very negative, 0 = neutral, 1.0 = very positive
-- topics: identify 1-3 relevant topics from: [Internet/WiFi, Noise, Cleanliness, Safety/Security, Staff Behavior, Maintenance, Water Supply, Electricity, Bathroom/Plumbing, Air Conditioning, Pest Control, Amenities, General Experience]
+- topics: identify 1-3 relevant topics from: [Internet / WiFi, Noise, Cleanliness, Safety / Security, Staff Behavior, Maintenance, Water Supply, Electricity, Bathroom / Plumbing, Air Conditioning, Pest Control, Amenities, General Experience]
 - keywords: extract 2-5 key words or phrases directly from the feedback
 - summary: write in a formal, professional tone suitable for a property manager. Do NOT just restate the feedback word for word. Provide insight.
 - needsAttention: true if the feedback indicates a safety issue, repeated complaint, urgent matter, or strong negative sentiment
@@ -136,12 +137,14 @@ Rules:
 
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
         method: 'POST',
+        signal: AbortSignal.timeout(10000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
+                responseMimeType: 'application/json',
                 temperature: 0.2,
-                maxOutputTokens: 512,
+                maxOutputTokens: 1024,
             }
         })
     });
@@ -154,9 +157,15 @@ Rules:
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!raw) throw new Error('Empty Gemini response');
 
-    // Strip markdown fences if present
-    const cleaned = raw.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
-    const parsed = JSON.parse(cleaned);
+    let jsonStr = raw.trim();
+    if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    }
+    const match = jsonStr.match(/\{[\s\S]*\}/);
+    if (match) {
+        jsonStr = match[0];
+    }
+    const parsed = JSON.parse(jsonStr);
 
     // Validate and sanitize
     return {
@@ -170,7 +179,7 @@ Rules:
     };
 }
 
-// â”€â”€â”€ Main Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Main Export --------------------------------------------------------------
 async function analyzeFeedback(text) {
     if (!text || typeof text !== 'string' || text.trim().length < 3) {
         return { ...FALLBACK_RESULT };
@@ -179,7 +188,7 @@ async function analyzeFeedback(text) {
     // Try Gemini first (high quality), fall back to rule-based engine
     try {
         const result = await _geminiAnalyze(text);
-        console.log(`[AI Feedback] Gemini analysis complete â€” ${result.sentiment} (${Math.round(result.confidence * 100)}% confidence)`);
+        console.log(`[AI Feedback] Gemini analysis complete: ${result.sentiment} (${Math.round(result.confidence * 100)}% confidence)`);
         return result;
     } catch (err) {
         console.warn('[AI Feedback] Gemini unavailable, using rule-based fallback:', err.message);
