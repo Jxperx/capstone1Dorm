@@ -280,39 +280,22 @@ function applyFiltersAndRender() {
     let neutralList = [];
     let positiveList = [];
 
-    if (currentFeedbackFilter === 'needs_attention') {
-        attentionList = filtered.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
-    } else if (currentFeedbackFilter === 'neutral') {
-        neutralList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
-    } else if (currentFeedbackFilter === 'positive') {
-        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
-    } else if (currentFeedbackFilter === 'resolved') {
+    if (currentFeedbackFilter === 'resolved') {
+        // Explicit Resolved filter: Show all resolved historical feedback
         attentionList = filtered.filter(f => f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
         neutralList = filtered.filter(f => f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral');
         positiveList = filtered.filter(f => f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'positive');
     } else {
-        // 'all' or topic filters ('wifi', 'noise', 'clean')
-        // Preserves all records so data never disappears. Active items sort on top.
-        attentionList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention);
-        neutralList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
+        // Active operational queue (ALL, needs_attention, neutral, or topic filters):
+        // Resolved items disappear from active queue and are archived to Reports & Analytics.
+        attentionList = filtered.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
+        neutralList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
         positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
     }
 
-    // Sort attentionList: Active (unresolved) on top, then resolved. Both descending by date.
-    attentionList.sort((a, b) => {
-        if (!a.is_resolved && b.is_resolved) return -1;
-        if (a.is_resolved && !b.is_resolved) return 1;
-        return new Date(b.created_at) - new Date(a.created_at);
-    });
-
-    // Sort neutralList: Active on top, then resolved. Both descending by date.
-    neutralList.sort((a, b) => {
-        if (!a.is_resolved && b.is_resolved) return -1;
-        if (a.is_resolved && !b.is_resolved) return 1;
-        return new Date(b.created_at) - new Date(a.created_at);
-    });
-
-    // Sort positiveList descending by date.
+    // Sort by date descending
+    attentionList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    neutralList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     positiveList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Render each column table
@@ -325,9 +308,7 @@ function applyFiltersAndRender() {
     const cNeutral = document.getElementById('fb-count-neutral');
     const cPositive = document.getElementById('fb-count-positive');
 
-    // Column 1 badge indicates how many currently require active administrative action
-    const unresolvedCount = attentionList.filter(f => !f.is_resolved).length;
-    if (cAttention) cAttention.textContent = unresolvedCount;
+    if (cAttention) cAttention.textContent = attentionList.length;
     if (cNeutral) cNeutral.textContent = neutralList.length;
     if (cPositive) cPositive.textContent = positiveList.length;
 }
@@ -338,20 +319,29 @@ function renderColumnTable(tbodyId, list, type) {
     if (!tbody) return;
 
     if (list.length === 0) {
+        let iconHtml = '<i class="fas fa-search me-2"></i>';
         let emptyLabel = 'No feedback records in this category.';
         if (type === 'attention') {
-            emptyLabel = currentFeedbackFilter === 'needs_attention'
-                ? 'No unresolved issues requiring attention.'
-                : 'No feedback records requiring attention.';
+            if (currentFeedbackFilter === 'resolved') {
+                emptyLabel = 'No resolved complaints found.';
+            } else {
+                iconHtml = '<i class="fas fa-check-circle text-success me-2"></i>';
+                emptyLabel = 'All issues resolved. No pending action required.';
+            }
         } else if (type === 'neutral') {
-            emptyLabel = 'No neutral feedback records.';
+            if (currentFeedbackFilter === 'resolved') {
+                emptyLabel = 'No resolved inquiries found.';
+            } else {
+                iconHtml = '<i class="fas fa-check-circle text-success me-2"></i>';
+                emptyLabel = 'No pending inquiries requiring review.';
+            }
         } else if (type === 'positive') {
-            emptyLabel = 'No positive commendations yet.';
+            emptyLabel = 'No positive commendations recorded.';
         }
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.83rem;">
-                    <i class="fas fa-search me-2"></i>${emptyLabel}
+                    ${iconHtml}${emptyLabel}
                 </td>
             </tr>
         `;
@@ -663,7 +653,7 @@ async function resolveTrendFromDetail() {
                     rec.is_resolved = true;
                     rec.ai_needs_attention = false;
                 }
-                showFeedbackToast(data.message || 'Feedback marked as resolved.');
+                showFeedbackToast(data.message || 'Issue resolved and archived. Retrievable in Reports & Analytics.');
                 applyFiltersAndRender();
                 loadAdminFeedback(false);
             } else {
@@ -678,14 +668,14 @@ async function resolveTrendFromDetail() {
     if (window.showEnterpriseConfirm) {
         window.showEnterpriseConfirm({
             title: 'Mark Issue as Resolved',
-            message: `Mark this feedback item as resolved? Its status badge will update to Resolved.`,
+            message: `Mark this feedback item as resolved? It will clear from the active board and remain safely archived for Reports & Analytics.`,
             confirmText: 'Mark Resolved',
             confirmClass: 'btn-success',
             iconClass: 'fas fa-check-circle text-success',
             onConfirm: executeResolve
         });
     } else {
-        if (confirm(`Mark this feedback for "${topic}" as resolved?`)) {
+        if (confirm(`Mark this feedback for "${topic}" as resolved? It will be archived for Reports & Analytics.`)) {
             executeResolve();
         }
     }

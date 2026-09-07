@@ -272,7 +272,7 @@ const ReportModule = (() => {
         return val ?? '—';
     }
     function typeLabel(type) {
-        return { maintenance: '🔧 Maintenance', financial: '💰 Financial', complaints: '💬 Complaints', booking: '📋 Booking', incident: '🚨 Incident' }[type] || type;
+        return { maintenance: 'Maintenance', financial: 'Financial', complaints: 'Complaints', booking: 'Booking', incident: 'Incident' }[type] || type;
     }
 
     return { init, generateReport, exportCSV, printReport, loadSaved, deleteReport, loadReportHistory };

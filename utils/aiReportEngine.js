@@ -167,10 +167,10 @@ async function buildFinancialReport(rows, filters) {
     const confidence = Math.round(((rows.length - pending.length * 0.3) / Math.max(rows.length, 1)) * 100);
 
     const insights = [];
-    if (latePayments.length > 0) insights.push(`âš ï¸ ${latePayments.length} payment(s) overdue by more than 30 days.`);
-    if (anomalies.length > 0) insights.push(`ðŸ” ${anomalies.length} duplicate payment pattern(s) detected â€” possible anomaly.`);
-    insights.push(`ðŸ’° Total approved revenue: â‚±${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`);
-    if (pendingAmount > 0) insights.push(`â³ â‚±${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} awaiting approval.`);
+    if (latePayments.length > 0) insights.push(`${latePayments.length} payment(s) overdue by more than 30 days.`);
+    if (anomalies.length > 0) insights.push(`${anomalies.length} duplicate payment pattern(s) detected - possible anomaly.`);
+    insights.push(`Total approved revenue: PHP ${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`);
+    if (pendingAmount > 0) insights.push(`PHP ${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} awaiting approval.`);
 
     const recs = [];
     if (latePayments.length > 0) recs.push(`Send reminders to ${latePayments.length} tenant(s) with overdue payments.`);
@@ -178,16 +178,16 @@ async function buildFinancialReport(rows, filters) {
     if (pending.length > 0) recs.push(`Approve or reject ${pending.length} pending payment(s) promptly.`);
     recs.push('Ensure all payments are logged with valid reference numbers.');
 
-    const summaryPrompt = `Write a 3-sentence financial summary: Total revenue â‚±${totalRevenue.toFixed(2)}, ${pending.length} pending payments worth â‚±${pendingAmount.toFixed(2)}, ${latePayments.length} overdue, ${anomalies.length} anomalies detected. Professional tone.`;
+    const summaryPrompt = `Write a 3-sentence financial summary: Total revenue PHP ${totalRevenue.toFixed(2)}, ${pending.length} pending payments worth PHP ${pendingAmount.toFixed(2)}, ${latePayments.length} overdue, ${anomalies.length} anomalies detected. Professional tone.`;
     const aiSummary = await geminiSummary(summaryPrompt);
-    const summary = aiSummary || `Total approved revenue stands at â‚±${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })} from ${approved.length} transactions. There are ${pending.length} payments pending approval worth â‚±${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}. ${latePayments.length > 0 ? `${latePayments.length} payment(s) are overdue and require immediate follow-up.` : 'No overdue payments detected.'}`;
+    const summary = aiSummary || `Total approved revenue stands at PHP ${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })} from ${approved.length} transactions. There are ${pending.length} payments pending approval worth PHP ${pendingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}. ${latePayments.length > 0 ? `${latePayments.length} payment(s) are overdue and require immediate follow-up.` : 'No overdue payments detected.'}`;
 
     const ranked = [...latePayments]
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
         .slice(0, 5)
         .map((r, i) => ({
             rank: i + 1,
-            item: `Late Payment â€” ${r.full_name || 'Unknown'} (Room ${r.room_number || 'â€”'}) â‚±${parseFloat(r.amount).toLocaleString()} â€” ${Math.round((now - new Date(r.created_at)) / 86400000)} days overdue`,
+            item: `Late Payment - ${r.full_name || 'Unknown'} (Room ${r.room_number || '—'}) PHP ${parseFloat(r.amount).toLocaleString()} - ${Math.round((now - new Date(r.created_at)) / 86400000)} days overdue`,
             emergency: false
         }));
 
@@ -208,21 +208,24 @@ async function buildFinancialReport(rows, filters) {
     };
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  COMPLAINTS (FEEDBACK) REPORT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 async function buildComplaintsReport(rows, filters) {
     const negative = rows.filter(r => r.ai_sentiment === 'Negative');
     const positive = rows.filter(r => r.ai_sentiment === 'Positive');
-    const needsAttn = rows.filter(r => r.ai_needs_attention);
+    const needsAttn = rows.filter(r => r.ai_needs_attention && !r.is_resolved);
+    const resolved = rows.filter(r => r.is_resolved).length;
+    const pendingNegative = rows.filter(r => !r.is_resolved && r.ai_sentiment === 'Negative').length;
 
     // Unit clustering
     const unitMap = {};
     rows.forEach(r => {
         const u = r.room_number || 'Unknown';
-        if (!unitMap[u]) unitMap[u] = { negative: 0, total: 0 };
+        if (!unitMap[u]) unitMap[u] = { negative: 0, total: 0, resolved: 0 };
         unitMap[u].total++;
         if (r.ai_sentiment === 'Negative') unitMap[u].negative++;
+        if (r.is_resolved) unitMap[u].resolved++;
     });
 
     const topicMap = {};
@@ -234,7 +237,7 @@ async function buildComplaintsReport(rows, filters) {
     });
 
     const urgencyW = needsAttn.length / Math.max(rows.length, 1);
-    const freqW    = negative.length / Math.max(rows.length, 1);
+    const freqW    = pendingNegative / Math.max(rows.length, 1);
     const impactW  = Object.values(unitMap).some(u => u.negative > 2) ? 0.8 : 0.3;
     const timeW    = 0.4;
     const { priority, risk } = calcPriority(urgencyW, freqW, impactW, timeW);
@@ -242,28 +245,31 @@ async function buildComplaintsReport(rows, filters) {
 
     const topTopic = Object.entries(topicMap).sort((a, b) => b[1] - a[1])[0];
     const insights = [];
-    if (negative.length > 0) insights.push(`ðŸ˜Ÿ ${negative.length} negative feedback(s) detected â€” ${Math.round(negative.length / rows.length * 100)}% of total.`);
-    if (positive.length > 0) insights.push(`ðŸ˜Š ${positive.length} positive feedback(s) received.`);
-    if (topTopic) insights.push(`ðŸ“Œ Most complained topic: "${topTopic[0]}" (${topTopic[1]} mentions).`);
+    if (negative.length > 0) insights.push(`${negative.length} total negative feedback entries logged (${Math.round(negative.length / Math.max(rows.length, 1) * 100)}% of total).`);
+    if (resolved > 0) insights.push(`${resolved} complaint(s) have been successfully resolved by management (${Math.round(resolved / Math.max(negative.length, 1) * 100)}% resolution rate).`);
+    if (positive.length > 0) insights.push(`${positive.length} positive feedback reports recorded.`);
+    if (topTopic) insights.push(`Most prevalent topic: "${topTopic[0]}" (${topTopic[1]} mentions).`);
     const hotUnit = Object.entries(unitMap).sort((a, b) => b[1].negative - a[1].negative)[0];
-    if (hotUnit && hotUnit[1].negative > 1) insights.push(`ðŸ  Unit ${hotUnit[0]} has the most complaints (${hotUnit[1].negative} negative).`);
+    if (hotUnit && hotUnit[1].negative > 1) insights.push(`Unit ${hotUnit[0]} logged the highest volume of concerns (${hotUnit[1].negative} negative, ${hotUnit[1].resolved || 0} resolved).`);
 
     const recs = [];
-    if (needsAttn.length > 0) recs.push(`Follow up on ${needsAttn.length} feedback(s) flagged as needing attention.`);
-    if (hotUnit && hotUnit[1].negative > 1) recs.push(`Conduct unit inspection for ${hotUnit[0]}.`);
-    if (topTopic) recs.push(`Address recurring "${topTopic[0]}" issues proactively.`);
-    recs.push('Acknowledge all negative feedback within 24 hours.');
+    if (pendingNegative > 0) recs.push(`Address the remaining ${pendingNegative} active feedback item(s) in the attention queue.`);
+    if (resolved > 0) recs.push(`Review the ${resolved} resolved cases to verify lasting resident satisfaction.`);
+    if (hotUnit && hotUnit[1].negative > 1) recs.push(`Conduct scheduled inspection for unit ${hotUnit[0]}.`);
+    if (topTopic) recs.push(`Maintain preventive measures for recurring "${topTopic[0]}" reports.`);
+    recs.push('Maintain standard 24-hour acknowledgment for all tenant submissions.');
 
-    const summaryPrompt = `Write a 3-sentence tenant complaint report summary: ${rows.length} total feedback, ${negative.length} negative, ${positive.length} positive, top topic: ${topTopic?.[0] || 'N/A'}. Professional tone.`;
+    const summaryPrompt = `Write a 3-sentence tenant complaint report summary: ${rows.length} total feedback, ${negative.length} negative (${resolved} resolved, ${pendingNegative} active), ${positive.length} positive, top topic: ${topTopic?.[0] || 'N/A'}. Professional tone.`;
     const aiSummary = await geminiSummary(summaryPrompt);
-    const summary = aiSummary || `A total of ${rows.length} tenant feedback entries were analyzed, with ${negative.length} classified as negative (${Math.round(negative.length / Math.max(rows.length, 1) * 100)}%). The most prevalent complaint topic is "${topTopic?.[0] || 'N/A'}". ${needsAttn.length} feedback entries have been flagged as requiring immediate attention.`;
+    const summary = aiSummary || `A total of ${rows.length} tenant feedback records were analyzed, including ${negative.length} negative concerns. Management has resolved ${resolved} issues (${Math.round(resolved / Math.max(negative.length, 1) * 100)}% resolution rate), with ${pendingNegative} active items currently requiring attention. The leading concern category is "${topTopic?.[0] || 'N/A'}".`;
 
-    const ranked = [...negative]
-        .slice(0, 5)
+    const ranked = [...rows]
+        .filter(r => r.ai_sentiment === 'Negative' || r.ai_needs_attention)
+        .slice(0, 8)
         .map((r, i) => ({
             rank: i + 1,
-            item: `Negative â€” ${r.tenant_name || 'Unknown'} (${r.room_number || 'â€”'}): "${(r.feedback_text || '').slice(0, 80)}..."`,
-            emergency: false
+            item: `[${r.is_resolved ? 'RESOLVED' : 'ACTIVE'}] ${r.tenant_name || 'Resident'} (Unit ${r.room_number || 'N/A'}): "${(r.feedback_text || '').slice(0, 80)}..."`,
+            emergency: !r.is_resolved && r.ai_needs_attention
         }));
 
     return {
@@ -272,14 +278,20 @@ async function buildComplaintsReport(rows, filters) {
         generatedAt: new Date().toISOString(),
         filters,
         executiveSummary: summary,
-        keyInformation: { totalFeedback: rows.length, negative: negative.length, positive: positive.length, needsAttention: needsAttn.length },
+        keyInformation: {
+            totalFeedback: rows.length,
+            negativeComplaints: negative.length,
+            resolvedComplaints: resolved,
+            activeActionNeeded: pendingNegative,
+            positiveReports: positive.length
+        },
         detailedFindings: { topicFrequency: topicMap, unitSummary: unitMap },
         priorityRisk: { priority, risk, confidence },
         insights,
         recommendations: recs,
         topCriticalItems: ranked,
         dataQualityNotes: { missingSentiment: rows.filter(r => !r.ai_sentiment).length, totalRecordsAnalyzed: rows.length },
-        conclusion: `Tenant sentiment is at ${priority.toLowerCase()} concern level. ${recs[0] || 'Continue engagement.'}`
+        conclusion: `Tenant feedback shows ${resolved} resolved issues and ${pendingNegative} pending items. Current concern priority is ${priority.toLowerCase()}.`
     };
 }
 

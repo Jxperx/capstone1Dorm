@@ -201,7 +201,7 @@ router.post('/complaints', async (req, res) => {
         const result = await dataReq.query(`
             SELECT f.id, f.feedback_text, f.ai_sentiment, f.ai_sentiment_score,
                    f.ai_topics, f.ai_keywords, f.ai_summary, f.ai_needs_attention,
-                   f.ai_confidence, f.created_at,
+                   f.ai_confidence, f.is_resolved, f.resolved_at, f.created_at,
                    u.full_name as tenant_name, r.room_number
             FROM tenant_feedback f
             JOIN tenants t    ON f.tenant_id = t.id
