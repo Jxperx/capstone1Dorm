@@ -9,71 +9,35 @@ async function ensureFeedbackTables() {
     try {
         const pool = await poolPromise;
         await pool.request().query(`
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='tenant_feedback' and xtype='U')
-            BEGIN
-                CREATE TABLE tenant_feedback (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    tenant_id INT NOT NULL FOREIGN KEY REFERENCES tenants(id),
-                    survey_id INT NULL,
-                    feedback_text NVARCHAR(MAX) NOT NULL,
-                    ai_sentiment NVARCHAR(20) DEFAULT 'Neutral',
-                    ai_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
-                    ai_topics NVARCHAR(MAX) NULL,
-                    ai_keywords NVARCHAR(MAX) NULL,
-                    ai_summary NVARCHAR(MAX) NULL,
-                    ai_needs_attention BIT DEFAULT 0,
-                    ai_confidence DECIMAL(5,2) DEFAULT 0.00,
-                    created_at DATETIME DEFAULT GETDATE()
-                );
-            END
+            CREATE TABLE IF NOT EXISTS tenant_feedback (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL REFERENCES tenants(id),
+                survey_id INT NULL,
+                feedback_text TEXT NOT NULL,
+                ai_sentiment VARCHAR(20) DEFAULT 'Neutral',
+                ai_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
+                ai_topics TEXT NULL,
+                ai_keywords TEXT NULL,
+                ai_summary TEXT NULL,
+                ai_needs_attention BOOLEAN DEFAULT FALSE,
+                ai_confidence DECIMAL(5,2) DEFAULT 0.00,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
 
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='feedback_alerts' and xtype='U')
-            BEGIN
-                CREATE TABLE feedback_alerts (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    issue_topic NVARCHAR(100) NOT NULL,
-                    negative_count INT DEFAULT 0,
-                    avg_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
-                    period_type NVARCHAR(20) NOT NULL,
-                    alert_severity NVARCHAR(20) NOT NULL,
-                    recommended_action NVARCHAR(MAX) NULL,
-                    is_resolved BIT DEFAULT 0,
-                    resolved_at DATETIME NULL,
-                    created_at DATETIME DEFAULT GETDATE()
-                );
-            END
+            CREATE TABLE IF NOT EXISTS feedback_alerts (
+                id SERIAL PRIMARY KEY,
+                issue_topic VARCHAR(100) NOT NULL,
+                negative_count INT DEFAULT 0,
+                avg_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
+                period_type VARCHAR(20) NOT NULL,
+                alert_severity VARCHAR(20) NOT NULL,
+                recommended_action TEXT NULL,
+                is_resolved BOOLEAN DEFAULT FALSE,
+                resolved_at TIMESTAMPTZ NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
 
-            -- Add resolved_at column if missing from existing feedback_alerts table
-            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('feedback_alerts') AND name = 'resolved_at')
-            BEGIN
-                ALTER TABLE feedback_alerts ADD resolved_at DATETIME NULL;
-            END
-
-            -- Auto-seed realistic sample tenant feedback if table is empty
-            DECLARE @fbCount INT;
-            SELECT @fbCount = COUNT(*) FROM tenant_feedback;
-            IF @fbCount = 0
-            BEGIN
-                DECLARE @tId INT;
-                SELECT TOP 1 @tId = id FROM tenants WHERE status = 'active';
-                IF @tId IS NULL SELECT TOP 1 @tId = id FROM tenants;
-
-                IF @tId IS NOT NULL
-                BEGIN
-                    INSERT INTO tenant_feedback (tenant_id, feedback_text, ai_sentiment, ai_sentiment_score, ai_topics, ai_keywords, ai_summary, ai_needs_attention, ai_confidence)
-                    VALUES 
-                    (@tId, 'The WiFi in Dorm A has been disconnecting frequently every evening around 8 PM. It makes studying very difficult.', 'Negative', -0.75, '["Internet / WiFi"]', '["wifi","disconnecting","slow"]', 'Tenant reports frequent evening WiFi disconnections affecting study hours.', 1, 0.90),
-                    (@tId, 'Loud music from the 3rd floor hallway late at night past midnight. Please enforce quiet hours.', 'Negative', -0.80, '["Noise"]', '["loud","music","night"]', 'Tenant complains about late-night noise violations near 3rd floor.', 1, 0.88),
-                    (@tId, 'Bathroom sink drain is slow and leaking slightly under the cabinet in Room 204.', 'Negative', -0.60, '["Bathroom / Plumbing"]', '["bathroom","sink","leak"]', 'Tenant reports leaking bathroom sink drain requiring plumbing repair.', 1, 0.85),
-                    (@tId, 'The new study lounge air conditioning is working great and common areas are clean!', 'Positive', 0.85, '["Air Conditioning","Cleanliness"]', '["clean","great","ac"]', 'Tenant expresses appreciation for clean study lounge and functional air conditioning.', 0, 0.92);
-
-                    INSERT INTO feedback_alerts (issue_topic, negative_count, avg_sentiment_score, period_type, alert_severity, recommended_action)
-                    VALUES
-                    ('Internet / WiFi', 5, -0.75, '7_days', 'High', 'Inspect Dorm A main router 2.4/5GHz channel congestion. Restart router daily at 4 AM or upgrade access point.'),
-                    ('Noise', 3, -0.80, '7_days', 'High', 'Issue quiet hours policy notice (10 PM - 6 AM) to 3rd-floor units and schedule night warden walk-throughs.'),
-                    ('Bathroom / Plumbing', 2, -0.60, '7_days', 'Medium', 'Dispatch plumbing maintenance to inspect Room 204 sink cabinet trap and seal joints.');
-                END
-            END
+            ALTER TABLE feedback_alerts ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ NULL;
         `);
         feedbackTablesReady = true;
     } catch (err) {
@@ -105,7 +69,9 @@ router.get('/all', async (req, res) => {
                 f.ai_needs_attention, 
                 f.ai_confidence, 
                 f.created_at,
-                ISNULL(u.full_name, 'Resident Tenant') as tenant_name,
+                COALESCE(u.full_name, 'Resident Tenant') as tenant_name,
+                u.email,
+                u.phone_number,
                 r.room_number
             FROM tenant_feedback f
             LEFT JOIN tenants t ON f.tenant_id = t.id
@@ -201,7 +167,7 @@ router.get('/executive-summary', async (req, res) => {
                 COUNT(*) as total_feedback,
                 SUM(CASE WHEN ai_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_count,
                 SUM(CASE WHEN ai_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
-                AVG(CAST(ISNULL(ai_sentiment_score, 0) AS FLOAT)) as avg_score
+                AVG(CAST(COALESCE(ai_sentiment_score, 0) AS FLOAT)) as avg_score
             FROM tenant_feedback
         `);
 
@@ -239,20 +205,20 @@ router.get('/executive-summary', async (req, res) => {
         // AI Executive Summary Bullet points based on real stats
         const summaryBullets = [];
         if (resolvedCount > 0) {
-            summaryBullets.push(`✅ ${resolvedCount} AI trend alert(s) successfully resolved by management, boosting Health Score.`);
+            summaryBullets.push(`${resolvedCount} AI trend alert(s) successfully resolved by management, improving Dorm Health.`);
         }
         if (neg > pos) {
-            summaryBullets.push(`⚠️ Negative feedback (${neg}) exceeds positive reports (${pos}). Focus on active trend alerts.`);
+            summaryBullets.push(`Negative feedback (${neg}) exceeds positive reports (${pos}). Focus on active trend alerts.`);
         } else if (pos > 0) {
-            summaryBullets.push(`🟢 Positive resident feedback (${pos}) reflects good tenant satisfaction.`);
+            summaryBullets.push(`Positive resident feedback (${pos}) reflects favorable tenant satisfaction.`);
         } else {
             summaryBullets.push(`Overall resident feedback is baseline stable with ${total} total submission(s).`);
         }
 
         if (alertCount > 0) {
-            summaryBullets.push(`🔴 ${alertCount} active AI trend alert(s) requiring action.`);
+            summaryBullets.push(`${alertCount} active AI trend alert(s) currently requiring management attention.`);
         } else {
-            summaryBullets.push(`🟢 All quiet: No critical active trend alerts in the dormitory.`);
+            summaryBullets.push(`All quiet: No unresolved trend alerts detected in the dormitory.`);
         }
 
         res.json({
@@ -288,7 +254,7 @@ router.get('/churn-risk', async (req, res) => {
         const result = await pool.request().query(`
             SELECT 
                 t.id as tenant_id,
-                ISNULL(u.full_name, 'Resident Tenant') as tenant_name,
+                COALESCE(u.full_name, 'Resident Tenant') as tenant_name,
                 u.email,
                 r.room_number,
                 COUNT(f.id) as negative_feedback_count,
@@ -376,7 +342,7 @@ router.post('/create-work-order', async (req, res) => {
 
         let complaintContext = '';
         if (snippets.length > 0) {
-            complaintContext = '\n\n🔍 AI Root Cause Evidence (Recent Tenant Reports):\n' + 
+            complaintContext = '\n\n[AI Root Cause Evidence] Recent Resident Reports:\n' + 
                 snippets.map((s, idx) => `${idx + 1}. "${s.ai_summary || s.feedback_text}"`).join('\n');
         }
 
@@ -441,7 +407,7 @@ router.post('/send-notice', async (req, res) => {
             subject: `[Management Notice] Regarding ${topic}`,
             html: `
                 <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #eee;border-radius:12px;">
-                    <h3 style="color:#1a1a2e;margin-top:0;">📢 Property Management Notice</h3>
+                    <h3 style="color:#1a1a2e;margin-top:0;">Property Management Notice</h3>
                     <p style="color:#555;">Dear EliteStay Residents,</p>
                     <div style="background:#f8f9fa;padding:16px;border-left:4px solid #c5a059;border-radius:6px;margin:16px 0;line-height:1.5;color:#333;">
                         ${message_body.replace(/\n/g, '<br>')}
@@ -477,7 +443,7 @@ router.post('/resolve-alert', async (req, res) => {
 
         await pool.request()
             .input('id', sql.Int, alert_id)
-            .query("UPDATE feedback_alerts SET is_resolved = 1, resolved_at = GETDATE() WHERE id = @id");
+            .query("UPDATE feedback_alerts SET is_resolved = 1, resolved_at = NOW() WHERE id = @id");
 
         res.json({ success: true, message: 'AI Trend Alert marked as resolved! Health Score updated.' });
     } catch (err) {
@@ -504,7 +470,7 @@ router.post('/ask-ai', async (req, res) => {
         const result = await pool.request().query(`
             SELECT TOP 30
                 f.feedback_text, f.ai_sentiment, f.ai_sentiment_score, f.ai_topics, f.ai_summary, f.created_at,
-                ISNULL(u.full_name, 'Resident Tenant') as tenant_name, r.room_number
+                COALESCE(u.full_name, 'Resident Tenant') as tenant_name, r.room_number
             FROM tenant_feedback f
             LEFT JOIN tenants t ON f.tenant_id = t.id
             LEFT JOIN users u ON t.user_id = u.id
