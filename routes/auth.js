@@ -94,12 +94,13 @@ router.post('/register', registerLimiter, async (req, res) => {
 // API: Login
 router.post('/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
 
     try {
         const pool = await poolPromise;
         const result = await pool.request()
-            .input('email', sql.NVarChar, email)
-            .query('SELECT * FROM users WHERE email = @email');
+            .input('email', sql.NVarChar, cleanEmail)
+            .query('SELECT * FROM users WHERE LOWER(TRIM(email)) = @email');
 
         if (result.recordset.length === 0) {
              return res.status(401).json({ error: 'Invalid credentials' });
@@ -113,6 +114,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             if (user.role === 'tenant') {
                 // Generate OTP
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                console.log(`[Auth] Tenant login OTP generated for ${user.email}: ${otp}`);
                 
                 // Store in session temporarily
                 req.session.otp = {
@@ -190,6 +192,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 // API: Verify OTP
 router.post('/verify-otp', otpLimiter, async (req, res) => {
     const { otp } = req.body;
+    const cleanOtp = (otp || '').trim();
 
     if (!req.session.otp) {
         return res.status(400).json({ error: 'No OTP request found. Please login again.' });
@@ -202,7 +205,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
         return res.status(400).json({ error: 'OTP expired. Please login again.' });
     }
 
-    if (otp !== code) {
+    if (cleanOtp !== code) {
         return res.status(400).json({ error: 'Invalid OTP.' });
     }
 

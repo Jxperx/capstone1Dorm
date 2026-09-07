@@ -156,7 +156,7 @@ const loginForm = document.getElementById('login-form');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email    = document.getElementById('login-email').value;
+        const email    = (document.getElementById('login-email').value || '').trim();
         const password = document.getElementById('login-password').value;
         const btn      = document.getElementById('login-submit-btn');
 
@@ -194,7 +194,7 @@ const otpForm = document.getElementById('otp-form');
 if (otpForm) {
     otpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const otp = otpForm.querySelector('input[name="otp"]').value;
+        const otp = (otpForm.querySelector('input[name="otp"]').value || '').trim();
         const btn = otpForm.querySelector('button[type="submit"]');
 
         setButtonLoading(btn, true);

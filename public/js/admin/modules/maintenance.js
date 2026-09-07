@@ -198,6 +198,14 @@ function updateMaintenanceStats(requests) {
 async function loadMaintenance() {
     try {
         const res = await fetch('/api/admin/maintenance', { credentials: 'include' });
+        if (res.status === 401) {
+            const authMsg = '<tr><td colspan="4" class="text-center py-4 text-danger" style="font-size: 0.85rem;"><i class="fas fa-lock me-2"></i>Not authorized as Admin. Please log in with an Admin account.</td></tr>';
+            ['maint-emergency-body', 'maint-high-body', 'maint-routine-body'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = authMsg;
+            });
+            return;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         allMaintenanceRequests = await res.json();
         
@@ -205,6 +213,11 @@ async function loadMaintenance() {
         updateMaintenanceStats(allMaintenanceRequests);
     } catch (err) {
         console.error('[loadMaintenance] Error loading maintenance requests:', err);
+        const errMsg = '<tr><td colspan="4" class="text-center py-4 text-danger" style="font-size: 0.85rem;"><i class="fas fa-exclamation-circle me-2"></i>Failed to load requests. Please refresh.</td></tr>';
+        ['maint-emergency-body', 'maint-high-body', 'maint-routine-body'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = errMsg;
+        });
     }
 }
 
