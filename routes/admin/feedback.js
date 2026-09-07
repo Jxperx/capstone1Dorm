@@ -568,15 +568,17 @@ router.post('/send-notice', async (req, res) => {
 
 /**
  * POST /api/admin/feedback/resolve-alert
- * Closed-loop resolution: Marks an AI Trend Alert and/or individual feedback as resolved.
- * When an alert or topic is resolved, updates correlated complaints in tenant_feedback.
+ * POST /api/admin/feedback/resolve-item
+ * POST /api/admin/feedback/reopen-item
+ * Safe granular resolution: Resolves only the targeted feedback item or alert,
+ * without wiping out or mutating unrelated tenant records.
  */
 async function handleResolveFeedbackOrAlert(req, res) {
     if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { alert_id, feedback_id, topic } = req.body;
+    const { alert_id, feedback_id, reopen } = req.body;
     if (!alert_id && !feedback_id) {
         return res.status(400).json({ error: 'Alert ID or Feedback ID is required.' });
     }
@@ -585,9 +587,19 @@ async function handleResolveFeedbackOrAlert(req, res) {
         const pool = await poolPromise;
         await ensureFeedbackTables();
 
-        let resolvedTopic = topic;
+        // 1. Reopen feedback item if requested
+        if (reopen && feedback_id) {
+            await pool.request()
+                .input('fId', sql.Int, feedback_id)
+                .query(`
+                    UPDATE tenant_feedback 
+                    SET is_resolved = FALSE, ai_needs_attention = TRUE, resolved_at = NULL 
+                    WHERE id = @fId
+                `);
+            return res.json({ success: true, message: 'Feedback reopened successfully.' });
+        }
 
-        // 1. Mark individual feedback as resolved if feedback_id provided
+        // 2. Mark individual feedback as resolved (STRICTLY TARGETS ONLY THIS SPECIFIC FEEDBACK)
         if (feedback_id) {
             await pool.request()
                 .input('fId', sql.Int, feedback_id)
@@ -596,40 +608,18 @@ async function handleResolveFeedbackOrAlert(req, res) {
                     SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
                     WHERE id = @fId
                 `);
+            return res.json({ success: true, message: 'Feedback marked as resolved. Dorm Health Score updated.' });
         }
 
-        // 2. Mark trend alert as resolved if alert_id provided
+        // 3. Mark trend alert as resolved if alert_id provided (STRICTLY TARGETS ONLY THIS ALERT)
         if (alert_id) {
-            const alertRes = await pool.request()
-                .input('id', sql.Int, alert_id)
-                .query("SELECT id, issue_topic FROM feedback_alerts WHERE id = @id");
-
-            if (alertRes.recordset.length > 0 && !resolvedTopic) {
-                resolvedTopic = alertRes.recordset[0].issue_topic;
-            }
-
             await pool.request()
                 .input('id', sql.Int, alert_id)
                 .query("UPDATE feedback_alerts SET is_resolved = TRUE, resolved_at = NOW() WHERE id = @id");
+            return res.json({ success: true, message: 'Trend alert marked as resolved.' });
         }
 
-        // 3. If an alert or topic was resolved, mark open negative feedbacks on that topic as resolved
-        if (resolvedTopic) {
-            await pool.request()
-                .input('pattern', sql.NVarChar, `%${resolvedTopic}%`)
-                .query(`
-                    UPDATE tenant_feedback 
-                    SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
-                    WHERE (ai_topics ILIKE @pattern OR feedback_text ILIKE @pattern)
-                      AND (is_resolved IS NULL OR is_resolved = FALSE)
-                `);
-        }
-
-        const msg = resolvedTopic
-            ? `Resolved "${resolvedTopic}" and related feedback! Dorm Health Score boosted.`
-            : 'Feedback marked as resolved! Dorm Health Score boosted.';
-
-        res.json({ success: true, message: msg });
+        res.json({ success: true, message: 'Operation completed.' });
     } catch (err) {
         console.error('[Resolve Alert Error]', err);
         res.status(500).json({ error: 'Failed to resolve alert or feedback.' });
@@ -638,6 +628,7 @@ async function handleResolveFeedbackOrAlert(req, res) {
 
 router.post('/resolve-alert', handleResolveFeedbackOrAlert);
 router.post('/resolve-item', handleResolveFeedbackOrAlert);
+router.post('/reopen-item', handleResolveFeedbackOrAlert);
 
 /**
  * POST /api/admin/feedback/ask-ai

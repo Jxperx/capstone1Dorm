@@ -276,16 +276,44 @@ function applyFiltersAndRender() {
     });
 
     // Partition into 3 columns
-    let attentionList, neutralList, positiveList;
-    if (currentFeedbackFilter === 'resolved') {
-        attentionList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention);
-        neutralList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'neutral');
-        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
-    } else {
+    let attentionList = [];
+    let neutralList = [];
+    let positiveList = [];
+
+    if (currentFeedbackFilter === 'needs_attention') {
         attentionList = filtered.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
+    } else if (currentFeedbackFilter === 'neutral') {
         neutralList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
+    } else if (currentFeedbackFilter === 'positive') {
+        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
+    } else if (currentFeedbackFilter === 'resolved') {
+        attentionList = filtered.filter(f => f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
+        neutralList = filtered.filter(f => f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral');
+        positiveList = filtered.filter(f => f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'positive');
+    } else {
+        // 'all' or topic filters ('wifi', 'noise', 'clean')
+        // Preserves all records so data never disappears. Active items sort on top.
+        attentionList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention);
+        neutralList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
         positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
     }
+
+    // Sort attentionList: Active (unresolved) on top, then resolved. Both descending by date.
+    attentionList.sort((a, b) => {
+        if (!a.is_resolved && b.is_resolved) return -1;
+        if (a.is_resolved && !b.is_resolved) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // Sort neutralList: Active on top, then resolved. Both descending by date.
+    neutralList.sort((a, b) => {
+        if (!a.is_resolved && b.is_resolved) return -1;
+        if (a.is_resolved && !b.is_resolved) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // Sort positiveList descending by date.
+    positiveList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Render each column table
     renderColumnTable('fb-attention-body', attentionList, 'attention');
@@ -297,7 +325,9 @@ function applyFiltersAndRender() {
     const cNeutral = document.getElementById('fb-count-neutral');
     const cPositive = document.getElementById('fb-count-positive');
 
-    if (cAttention) cAttention.textContent = attentionList.length;
+    // Column 1 badge indicates how many currently require active administrative action
+    const unresolvedCount = attentionList.filter(f => !f.is_resolved).length;
+    if (cAttention) cAttention.textContent = unresolvedCount;
     if (cNeutral) cNeutral.textContent = neutralList.length;
     if (cPositive) cPositive.textContent = positiveList.length;
 }
@@ -308,10 +338,20 @@ function renderColumnTable(tbodyId, list, type) {
     if (!tbody) return;
 
     if (list.length === 0) {
+        let emptyLabel = 'No feedback records in this category.';
+        if (type === 'attention') {
+            emptyLabel = currentFeedbackFilter === 'needs_attention'
+                ? 'No unresolved issues requiring attention.'
+                : 'No feedback records requiring attention.';
+        } else if (type === 'neutral') {
+            emptyLabel = 'No neutral feedback records.';
+        } else if (type === 'positive') {
+            emptyLabel = 'No positive commendations yet.';
+        }
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.83rem;">
-                    No feedback records in this category.
+                    <i class="fas fa-search me-2"></i>${emptyLabel}
                 </td>
             </tr>
         `;
@@ -466,6 +506,7 @@ function openFeedbackDetailModal(id) {
     const actionPlan = document.getElementById('feedbackDetailActionPlan');
     const impactEl = document.getElementById('feedbackDetailImpact');
     const resolveBtn = document.getElementById('feedbackDetailResolveBtn');
+    const reopenBtn = document.getElementById('feedbackDetailReopenBtn');
 
     if (item.is_resolved) {
         if (trendBadge) {
@@ -481,9 +522,8 @@ function openFeedbackDetailModal(id) {
         if (impactEl) {
             impactEl.textContent = 'Resolution logged in the dormitory management register.';
         }
-        if (resolveBtn) {
-            resolveBtn.style.display = 'none';
-        }
+        if (resolveBtn) resolveBtn.style.display = 'none';
+        if (reopenBtn) reopenBtn.style.display = 'inline-block';
     } else if (item._correlatedAlert) {
         const a = item._correlatedAlert;
         if (trendBadge) {
@@ -499,6 +539,7 @@ function openFeedbackDetailModal(id) {
         if (impactEl) {
             impactEl.textContent = `Resolving this action item closes the '${a.issue_topic}' active trend alert and directly boosts the Dorm Health Index.`;
         }
+        if (reopenBtn) reopenBtn.style.display = 'none';
         if (resolveBtn) {
             resolveBtn.style.display = 'inline-block';
             resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
@@ -517,6 +558,7 @@ function openFeedbackDetailModal(id) {
         if (impactEl) {
             impactEl.textContent = 'Addressing resident inquiries preserves high retention and community satisfaction.';
         }
+        if (reopenBtn) reopenBtn.style.display = 'none';
         if (resolveBtn) {
             const needsAction = item.ai_needs_attention || (item.ai_sentiment || '').toLowerCase() === 'negative';
             resolveBtn.style.display = needsAction ? 'inline-block' : 'none';
@@ -592,7 +634,6 @@ function openNoticeFromDetail() {
 
 async function resolveTrendFromDetail() {
     if (!selectedFeedbackRecord) return;
-    const alertId = selectedFeedbackRecord._correlatedAlert?.id || null;
     const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Resident Feedback';
     const feedbackId = selectedFeedbackRecord.id;
 
@@ -603,32 +644,26 @@ async function resolveTrendFromDetail() {
 
     const executeResolve = async () => {
         try {
-            const res = await fetch('/api/admin/feedback/resolve-alert', {
+            const res = await fetch('/api/admin/feedback/resolve-item', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    feedback_id: feedbackId,
-                    alert_id: alertId,
-                    topic: topic
+                    feedback_id: feedbackId
                 }),
                 credentials: 'include'
             });
             const data = await res.json();
 
             if (res.ok) {
-                // Instantly update local state
+                // Strictly update only this specific feedback record in local state
                 selectedFeedbackRecord.is_resolved = true;
                 selectedFeedbackRecord.ai_needs_attention = false;
-                allFeedbackRecords.forEach(r => {
-                    if (r.id === feedbackId || (alertId && r._correlatedAlert && r._correlatedAlert.id === alertId)) {
-                        r.is_resolved = true;
-                        r.ai_needs_attention = false;
-                    }
-                });
-                if (alertId) {
-                    activeAlertsData = activeAlertsData.filter(a => a.id !== alertId);
+                const rec = allFeedbackRecords.find(r => r.id === feedbackId);
+                if (rec) {
+                    rec.is_resolved = true;
+                    rec.ai_needs_attention = false;
                 }
-                showFeedbackToast(data.message || `Resolved "${topic}"! Dorm Health Score boosted.`);
+                showFeedbackToast(data.message || 'Feedback marked as resolved.');
                 applyFiltersAndRender();
                 loadAdminFeedback(false);
             } else {
@@ -643,7 +678,7 @@ async function resolveTrendFromDetail() {
     if (window.showEnterpriseConfirm) {
         window.showEnterpriseConfirm({
             title: 'Mark Issue as Resolved',
-            message: `Mark this feedback for "${topic}" as resolved? This will clear it from Needs Attention and boost Dorm Health.`,
+            message: `Mark this feedback item as resolved? Its status badge will update to Resolved.`,
             confirmText: 'Mark Resolved',
             confirmClass: 'btn-success',
             iconClass: 'fas fa-check-circle text-success',
@@ -652,6 +687,65 @@ async function resolveTrendFromDetail() {
     } else {
         if (confirm(`Mark this feedback for "${topic}" as resolved?`)) {
             executeResolve();
+        }
+    }
+}
+
+async function reopenTrendFromDetail() {
+    if (!selectedFeedbackRecord) return;
+    const feedbackId = selectedFeedbackRecord.id;
+
+    const modalEl = document.getElementById('feedbackDetailModal');
+    if (modalEl && window.bootstrap) {
+        bootstrap.Modal.getInstance(modalEl)?.hide();
+    }
+
+    const executeReopen = async () => {
+        try {
+            const res = await fetch('/api/admin/feedback/reopen-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback_id: feedbackId,
+                    reopen: true
+                }),
+                credentials: 'include'
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Strictly update only this specific feedback record in local state
+                selectedFeedbackRecord.is_resolved = false;
+                selectedFeedbackRecord.ai_needs_attention = true;
+                const rec = allFeedbackRecords.find(r => r.id === feedbackId);
+                if (rec) {
+                    rec.is_resolved = false;
+                    rec.ai_needs_attention = true;
+                }
+                showFeedbackToast(data.message || 'Feedback moved back to active status.');
+                applyFiltersAndRender();
+                loadAdminFeedback(false);
+            } else {
+                showFeedbackToast(data.error || 'Failed to reopen feedback', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showFeedbackToast('Error reopening feedback', 'error');
+        }
+    };
+
+    if (window.showEnterpriseConfirm) {
+        window.showEnterpriseConfirm({
+            title: 'Reopen Feedback Issue',
+            message: 'Move this feedback back to active attention status?',
+            confirmText: 'Reopen Issue',
+            confirmClass: 'btn-warning',
+            iconClass: 'fas fa-undo text-warning',
+            onConfirm: executeReopen
+        });
+    } else {
+        if (confirm('Move this feedback back to active attention status?')) {
+            executeReopen();
         }
     }
 }
@@ -861,6 +955,7 @@ window.openFeedbackDetailModal = openFeedbackDetailModal;
 window.createWorkOrderFromDetail = createWorkOrderFromDetail;
 window.openNoticeFromDetail = openNoticeFromDetail;
 window.resolveTrendFromDetail = resolveTrendFromDetail;
+window.reopenTrendFromDetail = reopenTrendFromDetail;
 window.createWorkOrderFromAlert = createWorkOrderFromAlert;
 window.openTenantNoticeModal = openTenantNoticeModal;
 window.submitSendTenantNotice = submitSendTenantNotice;
