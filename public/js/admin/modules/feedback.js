@@ -838,6 +838,12 @@ async function submitSendTenantNotice() {
         return;
     }
 
+    const sendBtn = document.getElementById('submitSendNoticeBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+    }
+
     try {
         const res = await fetch('/api/admin/feedback/send-notice', {
             method: 'POST',
@@ -859,6 +865,11 @@ async function submitSendTenantNotice() {
     } catch (err) {
         console.error(err);
         showFeedbackToast('Error sending notice', 'error');
+    } finally {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send Notice';
+        }
     }
 }
 
