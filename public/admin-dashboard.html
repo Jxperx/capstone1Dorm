@@ -663,7 +663,7 @@
                                 Tenant Feedback &amp; AI Insights
                             </h2>
                             <p class="text-muted mb-0" style="font-size: 0.9rem;">
-                                Monitor resident sentiment, track proactive maintenance alerts, and mitigate move-out risks.
+                                Categorized resident intelligence stream with automated trend correlation and proactive action plans.
                             </p>
                         </div>
                         <button class="btn rounded-pill px-4 py-2 text-white fw-semibold shadow-sm" style="background-color: #c5a059; border: none; font-size: 0.85rem; letter-spacing: 0.5px;" onclick="loadAdminFeedback(true)">
@@ -680,7 +680,7 @@
                                     <div>
                                         <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">DORM HEALTH INDEX</span>
                                         <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;"><span id="feedbackHealthScore">--</span><small class="fs-6 text-muted">/100</small></h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #047857;" id="feedbackHealthCaption">Overall Satisfaction</div>
+                                        <div class="small" style="font-size: 0.75rem; color: #047857;" id="feedbackHealthCaption">High Resident Satisfaction</div>
                                     </div>
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.15);">
                                         <i class="fas fa-heartbeat" style="color: #10b981; font-size: 1.25rem;"></i>
@@ -696,7 +696,7 @@
                                     <div>
                                         <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">POSITIVE SENTIMENT</span>
                                         <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackPositiveRate">--%</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #0369a1;" id="feedbackNetRatio">-- Pos / -- Neg</div>
+                                        <div class="small" style="font-size: 0.75rem; color: #0369a1;" id="feedbackNetRatio">-- Pos / -- Action Required</div>
                                     </div>
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(2, 132, 199, 0.15);">
                                         <i class="fas fa-smile" style="color: #0284c7; font-size: 1.25rem;"></i>
@@ -712,7 +712,7 @@
                                     <div>
                                         <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">ACTIVE TREND ALERTS</span>
                                         <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackActiveAlertsCount">0</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #b45309;">Requiring Attention</div>
+                                        <div class="small" style="font-size: 0.75rem; color: #b45309;" id="feedbackActiveAlertsCaption">Correlated Patterns</div>
                                     </div>
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.15);">
                                         <i class="fas fa-chart-line" style="color: #f59e0b; font-size: 1.25rem;"></i>
@@ -727,8 +727,8 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div>
                                         <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">CHURN RADAR</span>
-                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackChurnCount">0</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #b91c1c;">Move-Out Risk Flagged</div>
+                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackChurnCount">0 Flagged</h3>
+                                        <div class="small" style="font-size: 0.75rem; color: #b91c1c;">Move-Out Risk Alert</div>
                                     </div>
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(239, 68, 68, 0.15);">
                                         <i class="fas fa-user-shield" style="color: #ef4444; font-size: 1.25rem;"></i>
@@ -738,56 +738,10 @@
                         </div>
                     </div>
 
-                    <!-- Integrated AI Executive Summary & Ask AI Intelligence Card -->
-                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important; border-left: 5px solid #c5a059 !important;">
-                        <div class="row g-4 align-items-center">
-                            <div class="col-lg-7">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-robot me-2" style="color: #c5a059; font-size: 1.2rem;"></i>
-                                    <h5 class="fw-bold mb-0" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">AI Weekly Intelligence Summary</h5>
-                                </div>
-                                <ul id="feedbackExecSummary" class="text-secondary small mb-0 ps-3" style="line-height: 1.7;">
-                                    <li>Loading AI executive insights...</li>
-                                </ul>
-                            </div>
-                            <div class="col-lg-5 border-start-lg ps-lg-4">
-                                <label class="form-label fw-bold text-uppercase text-secondary" style="font-size: 0.72rem; letter-spacing: 0.8px;">ASK RESIDENT INTELLIGENCE</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text bg-light border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="askAiQueryInput" class="form-control bg-light border-0 shadow-none" placeholder="e.g., 'WiFi complaints', 'Room 204'..." style="font-size: 0.85rem;" onkeydown="if(event.key==='Enter')askAiAboutFeedback()">
-                                    <button class="btn px-3 text-white fw-semibold" style="background: #1a1a2e; border: none; font-size: 0.85rem;" onclick="askAiAboutFeedback()">
-                                        Ask AI
-                                    </button>
-                                </div>
-                                <div class="d-flex gap-1 flex-wrap">
-                                    <span class="text-muted small me-1" style="font-size: 0.75rem;">Quick queries:</span>
-                                    <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="setAiQuery('WiFi and internet stability')">WiFi</button>
-                                    <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="setAiQuery('Noise violations at night')">Noise</button>
-                                    <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="setAiQuery('Cleanliness and sanitation')">Cleanliness</button>
-                                    <button type="button" class="btn btn-sm btn-light border rounded-pill py-0 px-2" style="font-size: 0.72rem;" onclick="setAiQuery('Plumbing and bathroom leaks')">Plumbing</button>
-                                </div>
-                                <div id="askAiResponseBox" class="mt-3 p-3 rounded-3 bg-light border" style="display: none; font-size: 0.85rem; line-height: 1.5; color: #1a1a2e;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active AI Trend Alerts & Proactive Action Plans -->
-                    <div id="ai-alerts-container" class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">
-                                Active Trend Alerts &amp; Proactive Action Plans
-                            </h5>
-                            <span class="badge rounded-pill" style="background: #fef3c7; color: #92400e; font-weight: 600; font-size: 0.75rem; padding: 6px 14px;" id="activeAlertsPill">0 Active</span>
-                        </div>
-                        <div class="row g-3" id="alertsList">
-                            <div class="col-12"><div class="alert alert-light border shadow-sm text-center py-3 text-muted">Searching for trends...</div></div>
-                        </div>
-                    </div>
-
-                    <!-- Search & Filter Control Bar (Room Management Style) -->
-                    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-12 col-md-5">
+                    <!-- Search & Filter Control Bar (Matching Maintenance) -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                        <div class="row align-items-center g-3">
+                            <div class="col-12 col-md-4">
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0 ps-3">
                                         <i class="fas fa-search text-muted" style="font-size: 0.85rem;"></i>
@@ -795,18 +749,18 @@
                                     <input type="text"
                                            id="feedbackSearchInput"
                                            class="form-control bg-light border-0 shadow-none"
-                                           placeholder="Search tenant, unit, feedback text, or topic..."
+                                           placeholder="Search unit, feedback, or resident..."
                                            style="font-size: 0.85rem;"
                                            oninput="filterFeedbackBySearch()">
                                 </div>
                             </div>
-                            <div class="col-12 col-md-7">
+                            <div class="col-12 col-md-8">
                                 <div class="d-flex align-items-center gap-1 flex-wrap justify-content-md-end" id="feedbackFilters">
                                     <span class="text-muted fw-bold text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Filter:</span>
-                                    <button class="btn btn-sm fb-filter-btn active rounded-pill px-3 fw-semibold" style="background: #1a1a2e; color: #fff; border: none; font-size: 0.75rem;" onclick="filterFeedback('all', this)">All</button>
-                                    <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('needs_attention', this)">Needs Attention</button>
-                                    <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('Positive', this)">Positive</button>
-                                    <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('Negative', this)">Negative</button>
+                                    <button class="btn btn-sm fb-filter-btn active rounded-pill px-3 fw-semibold" style="background: #1a1a2e; color: #fff; border: none; font-size: 0.75rem;" onclick="filterFeedback('all', this)">ALL</button>
+                                    <button class="btn btn-sm fb-filter-btn btn-outline-danger rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('needs_attention', this)">Needs Attention</button>
+                                    <button class="btn btn-sm fb-filter-btn btn-outline-warning rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('neutral', this)">Neutral &amp; Inquiries</button>
+                                    <button class="btn btn-sm fb-filter-btn btn-outline-success rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('positive', this)">Positive</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('wifi', this)">WiFi</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('noise', this)">Noise</button>
                                     <button class="btn btn-sm fb-filter-btn btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.75rem;" onclick="filterFeedback('clean', this)">Cleanliness</button>
@@ -815,83 +769,86 @@
                         </div>
                     </div>
 
-                    <!-- Resident Feedback Table (Room Management Table Aesthetics) -->
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">
-                                Resident Feedback Log
-                            </h5>
-                            <span class="badge rounded-pill" style="background: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">
-                                Total Submissions (<span id="feedbackTableCount">0</span>)
-                            </span>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
-                                <thead>
-                                    <tr style="border-bottom: 2px solid #d4a373;">
-                                        <th style="width: 14%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
-                                        <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">TENANT &amp; UNIT</th>
-                                        <th style="width: 36%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">FEEDBACK QUOTE</th>
-                                        <th style="width: 16%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">SENTIMENT</th>
-                                        <th style="width: 14%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">ACTION</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adminFeedbackTableBody">
-                                    <tr><td colspan="5" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading resident feedback...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Tenant Move-Out Radar & Resolved Interventions Log -->
-                    <div class="row g-4 mb-4">
-                        <!-- Churn Risk Radar -->
-                        <div class="col-12 col-xl-6">
+                    <!-- Tri-Column Urgency / Sentiment Board (Matching Maintenance Requests) -->
+                    <div class="row g-4 mb-4" id="feedbackUrgencyBoard">
+                        <!-- Column 1: Needs Attention -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-feedback-attention">
                             <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="fw-bold mb-0" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">
-                                        Tenants At-Risk (Churn Radar)
-                                    </h5>
-                                    <span class="badge rounded-pill" style="background: #fee2e2; color: #ef4444; font-weight: 600; font-size: 0.75rem; padding: 6px 14px;" id="churnRiskBadge">0 Flagged</span>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-exclamation-circle me-2" style="color: #ef4444; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Needs Attention</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Action Required (<span id="fb-count-attention">0</span>)</span>
                                 </div>
                                 <div class="table-responsive">
-                                    <table class="table align-middle mb-0" style="border-collapse: collapse; font-size: 0.82rem;">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid #d4a373;">
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373;">TENANT / ROOM</th>
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373; text-align: center;">COMPLAINTS</th>
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373; text-align: center;">RISK</th>
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373;">AI RECOMMENDATION</th>
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 24%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 34%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">FEEDBACK</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="churnRiskTableBody">
-                                            <tr><td colspan="4" class="text-center py-3 text-muted">Checking churn risk...</td></tr>
+                                        <tbody id="fb-attention-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading resident feedback...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Resolved Impact Log -->
-                        <div class="col-12 col-xl-6">
+                        <!-- Column 2: Neutral & Inquiries -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-feedback-neutral">
                             <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="fw-bold mb-0" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">
-                                        Resolved Interventions Log
-                                    </h5>
-                                    <span class="badge rounded-pill" style="background: #e8f8f0; color: #10b981; font-weight: 600; font-size: 0.75rem; padding: 6px 14px;" id="resolvedAlertsBadge">0 Resolved</span>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-comment-dots me-2" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Neutral &amp; Inquiries</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #fef3c7; color: #92400e; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Observational (<span id="fb-count-neutral">0</span>)</span>
                                 </div>
                                 <div class="table-responsive">
-                                    <table class="table align-middle mb-0" style="border-collapse: collapse; font-size: 0.82rem;">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid #d4a373;">
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373;">TOPIC</th>
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373;">RESOLVED ACTION</th>
-                                                <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; border-bottom: 2px solid #d4a373; text-align: center;">DATE</th>
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 24%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 34%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">FEEDBACK</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="resolvedAlertsTableBody">
-                                            <tr><td colspan="3" class="text-center py-3 text-muted">No resolved interventions logged yet.</td></tr>
+                                        <tbody id="fb-neutral-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading resident feedback...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Positive & Commendations -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-feedback-positive">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-smile me-2" style="color: #10b981; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Positive &amp; Commendations</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #e8f8f0; color: #10b981; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Satisfied (<span id="fb-count-positive">0</span>)</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 22%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">DATE</th>
+                                                <th style="width: 24%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 34%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">FEEDBACK</th>
+                                                <th style="width: 20%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fb-positive-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading resident feedback...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -1536,6 +1493,7 @@
                                 <h5 class="modal-title fw-bold text-white mb-0" id="feedbackDetailModalLabel">Resident Feedback Inspection</h5>
                                 <span class="badge" id="feedbackDetailSentimentBadge">Sentiment</span>
                                 <span class="badge" id="feedbackDetailAttentionBadge" style="display: none;">Needs Attention</span>
+                                <span class="badge" id="feedbackDetailChurnBadge" style="display: none; background: #fee2e2; color: #ef4444; font-weight: 600;">Churn Risk</span>
                             </div>
                             <div class="small text-light opacity-75 mt-1" id="feedbackDetailMeta">Submitted on —</div>
                         </div>
@@ -1575,18 +1533,29 @@
                         </div>
                     </div>
 
-                    <!-- AI Diagnostic & Sentiment Analysis Card -->
-                    <div class="p-3 mb-4 rounded border" style="background: #fdfbf7; border-color: #f0e6d2 !important;">
+                    <!-- EMBEDDED ACTIVE TREND ALERT & AI ACTION PLAN BOX -->
+                    <div class="p-3 mb-4 rounded border" style="background: #fdfbf7; border-color: #f0e6d2 !important;" id="feedbackDetailAiBox">
                         <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                            <span class="fw-semibold small text-uppercase" style="color: #a67c1e; letter-spacing: 0.5px; font-size: 0.72rem;">
-                                <i class="fas fa-robot me-1"></i>AI Intelligence &amp; Diagnostics
+                            <span class="fw-semibold small text-uppercase" style="color: #a67c1e; letter-spacing: 0.5px; font-size: 0.75rem;">
+                                <i class="fas fa-robot me-1"></i>AI Trend Alert &amp; Diagnostics
                             </span>
                             <div class="d-flex gap-2 align-items-center">
+                                <span class="badge bg-warning text-dark border fw-bold" id="feedbackDetailTrendBadge">Pattern Analysis</span>
                                 <span class="badge bg-light text-dark border" id="feedbackDetailScoreBadge">Score: --</span>
-                                <span class="badge bg-light text-dark border" id="feedbackDetailConfidenceBadge">Confidence: --%</span>
                             </div>
                         </div>
-                        <div class="small text-dark fst-italic mb-3" id="feedbackDetailAiSummary">—</div>
+                        <div class="small text-dark mb-3" style="line-height: 1.5;" id="feedbackDetailTrendDesc">—</div>
+
+                        <!-- Embedded Proactive Action Plan Box -->
+                        <div class="p-3 rounded-3 bg-white border mb-2 shadow-sm" style="border-color: rgba(0,0,0,0.06) !important;">
+                            <div class="small fw-bold text-uppercase mb-1" style="color: #c5a059; font-size: 0.72rem; letter-spacing: 0.5px;">
+                                <i class="fas fa-bolt me-1"></i>Recommended Proactive Action Plan
+                            </div>
+                            <div class="small text-dark fw-semibold mb-1" id="feedbackDetailActionPlan">—</div>
+                            <div class="small text-muted fst-italic" style="font-size: 0.75rem;" id="feedbackDetailImpact">
+                                Resolving this action item closes the correlated trend and improves the Dorm Health Index.
+                            </div>
+                        </div>
 
                         <!-- Topics & Keywords Badges -->
                         <div class="row g-2 pt-2 border-top" style="border-color: rgba(212,163,115,0.2) !important;">
@@ -1605,18 +1574,24 @@
                         </div>
                     </div>
 
-                    <!-- Administrative Action Panel -->
+                    <!-- 1-Click Proactive Administrative Action Panel -->
                     <div class="p-3 rounded border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                        <h6 class="fw-bold text-dark mb-2" style="font-size: 0.85rem;">
-                            <i class="fas fa-bolt me-1" style="color: #d4a373;"></i>Proactive Administrative Actions
-                        </h6>
-                        <p class="text-muted small mb-3" style="font-size: 0.78rem;">Quickly escalate this resident report into an actionable maintenance work order or broadcast a tenant communication notice.</p>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.85rem;">
+                                <i class="fas fa-magic me-1" style="color: #d4a373;"></i>Proactive Administrative Actions
+                            </h6>
+                            <span class="small text-muted" style="font-size: 0.75rem;">Action directly linked to resident report</span>
+                        </div>
+                        <p class="text-muted small mb-3" style="font-size: 0.78rem;">Quickly escalate this report into a building work order, broadcast a resident notice, or resolve the issue.</p>
                         <div class="d-flex gap-2 flex-wrap" id="feedbackDetailActions">
-                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" id="feedbackDetailWorkOrderBtn" onclick="createWorkOrderFromDetail()">
-                                <i class="fas fa-tools me-1"></i>Create Work Order
+                            <button type="button" class="btn btn-sm text-white rounded-pill px-3 shadow-sm flex-fill" style="background:#1a1a2e; font-size: 0.8rem; font-weight: 600;" id="feedbackDetailWorkOrderBtn" onclick="createWorkOrderFromDetail()">
+                                <i class="fas fa-tools me-1"></i>Dispatch Work Order
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm" id="feedbackDetailNoticeBtn" onclick="openNoticeFromDetail()">
+                            <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm flex-fill" style="font-size: 0.8rem; font-weight: 600;" id="feedbackDetailNoticeBtn" onclick="openNoticeFromDetail()">
                                 <i class="fas fa-bullhorn me-1"></i>Send Notice to Tenants
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm flex-fill" style="display: none; font-size: 0.8rem; font-weight: 600;" id="feedbackDetailResolveBtn" onclick="resolveTrendFromDetail()">
+                                <i class="fas fa-check-circle me-1"></i>Mark Resolved
                             </button>
                         </div>
                     </div>
@@ -2216,7 +2191,7 @@
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=2.4"></script>
-    <script src="js/admin/modules/feedback.js?v=2.0"></script>
+    <script src="js/admin/modules/feedback.js?v=2.1"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>
