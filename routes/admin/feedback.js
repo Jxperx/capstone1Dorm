@@ -98,6 +98,137 @@ router.get('/all', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/feedback/bundle
+ * High-performance consolidated endpoint fetching all feedback data in one round-trip.
+ * Prevents connection pool starvation and handles transient latency gracefully.
+ */
+router.get('/bundle', async (req, res) => {
+    if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+
+    try {
+        const pool = await poolPromise;
+        await ensureFeedbackTables();
+
+        // 1. Fetch feedbacks with tenant and room info
+        const feedbackRes = await pool.request().query(`
+            SELECT 
+                f.id, 
+                f.feedback_text, 
+                f.ai_sentiment, 
+                f.ai_sentiment_score, 
+                f.ai_topics, 
+                f.ai_keywords, 
+                f.ai_summary, 
+                f.ai_needs_attention, 
+                f.ai_confidence, 
+                f.is_resolved,
+                f.resolved_at,
+                f.created_at,
+                COALESCE(u.full_name, 'Resident Tenant') as tenant_name,
+                u.email,
+                u.phone_number,
+                r.room_number
+            FROM tenant_feedback f
+            LEFT JOIN tenants t ON f.tenant_id = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN rooms r ON t.room_id = r.id
+            ORDER BY f.created_at DESC
+        `);
+
+        const feedbacks = feedbackRes.recordset.map(row => ({
+            ...row,
+            ai_topics: row.ai_topics ? (typeof row.ai_topics === 'string' ? JSON.parse(row.ai_topics) : row.ai_topics) : [],
+            ai_keywords: row.ai_keywords ? (typeof row.ai_keywords === 'string' ? JSON.parse(row.ai_keywords) : row.ai_keywords) : []
+        }));
+
+        // 2. Fetch active alerts
+        const alertsRes = await pool.request().query(`
+            SELECT * FROM feedback_alerts 
+            WHERE (is_resolved IS NULL OR is_resolved = FALSE)
+            ORDER BY created_at DESC
+        `);
+        const alerts = alertsRes.recordset;
+
+        // 3. Fetch churn risk
+        const churnRes = await pool.request().query(`
+            SELECT 
+                t.id as tenant_id,
+                COALESCE(u.full_name, 'Resident Tenant') as tenant_name,
+                u.email,
+                r.room_number,
+                COUNT(f.id) as negative_feedback_count,
+                MIN(f.ai_sentiment_score) as worst_score,
+                MAX(f.created_at) as latest_complaint_date,
+                MAX(f.ai_summary) as latest_issue_summary
+            FROM tenant_feedback f
+            LEFT JOIN tenants t ON f.tenant_id = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN rooms r ON t.room_id = r.id
+            WHERE f.ai_sentiment = 'Negative' AND (f.is_resolved IS NULL OR f.is_resolved = FALSE)
+            GROUP BY t.id, u.full_name, u.email, r.room_number
+            HAVING COUNT(f.id) >= 2 OR MIN(f.ai_sentiment_score) <= -0.60
+            ORDER BY COUNT(f.id) DESC, MIN(f.ai_sentiment_score) ASC
+        `);
+
+        const churnRisk = churnRes.recordset.map(item => {
+            const count = item.negative_feedback_count;
+            const worst = item.worst_score || 0;
+            const riskLevel = (count >= 3 || worst <= -0.8) ? 'HIGH' : 'MEDIUM';
+            const riskPct = (count >= 3 || worst <= -0.8) ? 85 : 60;
+            let recommendation = 'Schedule a brief check-in to confirm satisfaction.';
+            const summaryLower = (item.latest_issue_summary || '').toLowerCase();
+            if (summaryLower.includes('wifi') || summaryLower.includes('internet')) {
+                recommendation = 'Offer priority IT inspection or access point check for unit.';
+            } else if (summaryLower.includes('plumb') || summaryLower.includes('water') || summaryLower.includes('leak')) {
+                recommendation = 'Dispatch maintenance for urgent plumbing check + follow-up call.';
+            } else if (summaryLower.includes('noise')) {
+                recommendation = 'Issue quiet hours reminder to neighboring units + review noise log.';
+            } else if (riskLevel === 'HIGH') {
+                recommendation = 'High renewal risk: Direct manager check-in & priority complaint resolution.';
+            }
+            return { ...item, riskLevel, riskPct, recommendation };
+        });
+
+        // 4. Compute executive summary metrics
+        const total = feedbacks.length;
+        const neg = feedbacks.filter(f => (f.ai_sentiment || '').toLowerCase() === 'negative' && !f.is_resolved).length;
+        const pos = feedbacks.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive').length;
+        const resolvedFb = feedbacks.filter(f => f.is_resolved).length;
+        const totalScores = feedbacks.reduce((acc, f) => acc + (parseFloat(f.ai_sentiment_score) || 0), 0);
+        const avgScore = total > 0 ? totalScores / total : 0;
+        const alertCount = alerts.length;
+
+        let healthScore = 100;
+        if (total > 0) {
+            const negRatio = neg / total;
+            healthScore = Math.max(20, Math.min(100, Math.round(100 - (negRatio * 50) + (avgScore * 20) + (resolvedFb * 2))));
+        }
+
+        const summary = {
+            healthScore,
+            totalFeedback: total,
+            positiveCount: pos,
+            negativeCount: neg,
+            avgSentimentScore: Number(avgScore).toFixed(2),
+            activeAlerts: alertCount,
+            atRiskTenants: churnRisk.length
+        };
+
+        res.json({
+            feedbacks,
+            alerts,
+            churnRisk,
+            summary
+        });
+    } catch (err) {
+        console.error('[Admin Feedback Bundle Error]', err);
+        res.status(500).json({ error: 'Database error occurred while fetching feedback bundle.' });
+    }
+});
+
+/**
  * GET /api/admin/feedback/alerts
  * Fetches recent AI-generated trend alerts.
  */
@@ -110,13 +241,15 @@ router.get('/alerts', async (req, res) => {
         const pool = await poolPromise;
         await ensureFeedbackTables();
 
-        // Run automatic trend detection on alerts fetch
-        const { detectTrendsAndAlert } = require('../../utils/feedbackTrendDetector');
-        await detectTrendsAndAlert().catch(e => console.warn('[Trend Detection Error]', e.message));
+        // Non-blocking background trend check
+        setImmediate(() => {
+            const { detectTrendsAndAlert } = require('../../utils/feedbackTrendDetector');
+            detectTrendsAndAlert().catch(e => console.warn('[Trend Detection Error]', e.message));
+        });
 
         const result = await pool.request().query(`
             SELECT * FROM feedback_alerts 
-            WHERE is_resolved = 0
+            WHERE (is_resolved IS NULL OR is_resolved = FALSE)
             ORDER BY created_at DESC
         `);
 

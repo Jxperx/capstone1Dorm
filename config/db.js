@@ -11,9 +11,9 @@ if (!connectionString) {
 const pgPool = new Pool({
     connectionString: connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 15,
+    max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000
+    connectionTimeoutMillis: 15000
 });
 
 pgPool.on('error', (err) => {

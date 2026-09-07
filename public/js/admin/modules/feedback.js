@@ -39,7 +39,7 @@ function escapeAttr(str) {
 }
 
 // ── Main Data Loader ──
-async function loadAdminFeedback(isUserRefresh = false) {
+async function loadAdminFeedback(isUserRefresh = false, retryCount = 0) {
     const boardEl = document.getElementById('feedbackUrgencyBoard');
     if (!boardEl) return;
 
@@ -48,20 +48,42 @@ async function loadAdminFeedback(isUserRefresh = false) {
     }
 
     try {
-        // Fetch all companion data concurrently
-        const [feedbackRes, alertsRes, churnRes, summaryRes] = await Promise.all([
-            fetch('/api/admin/feedback/all', { credentials: 'include' }),
-            fetch('/api/admin/feedback/alerts', { credentials: 'include' }),
-            fetch('/api/admin/feedback/churn-risk', { credentials: 'include' }),
-            fetch('/api/admin/feedback/executive-summary', { credentials: 'include' })
-        ]);
+        let feedbackJson = [];
+        let alertsJson = [];
+        let churnJson = [];
+        let summaryJson = null;
 
-        if (!feedbackRes.ok) throw new Error('Failed to fetch feedback records');
+        // Try single bundled request first (fastest, prevents connection pool starvation)
+        let bundleSuccess = false;
+        try {
+            const bundleRes = await fetch('/api/admin/feedback/bundle', { credentials: 'include' });
+            if (bundleRes.ok) {
+                const bundleData = await bundleRes.json();
+                feedbackJson = bundleData.feedbacks || [];
+                alertsJson = bundleData.alerts || [];
+                churnJson = bundleData.churnRisk || [];
+                summaryJson = bundleData.summary || null;
+                bundleSuccess = true;
+            }
+        } catch (e) {
+            console.warn('[Feedback Module] Bundle fetch failed, falling back to separate calls:', e.message);
+        }
 
-        const feedbackJson = await feedbackRes.json();
-        const alertsJson = alertsRes.ok ? await alertsRes.json() : [];
-        const churnJson = churnRes.ok ? await churnRes.json() : [];
-        const summaryJson = summaryRes.ok ? await summaryRes.json() : null;
+        if (!bundleSuccess) {
+            const [feedbackRes, alertsRes, churnRes, summaryRes] = await Promise.all([
+                fetch('/api/admin/feedback/all', { credentials: 'include' }),
+                fetch('/api/admin/feedback/alerts', { credentials: 'include' }),
+                fetch('/api/admin/feedback/churn-risk', { credentials: 'include' }),
+                fetch('/api/admin/feedback/executive-summary', { credentials: 'include' })
+            ]);
+
+            if (!feedbackRes.ok) throw new Error('Failed to fetch feedback records');
+
+            feedbackJson = await feedbackRes.json();
+            alertsJson = alertsRes.ok ? await alertsRes.json() : [];
+            churnJson = churnRes.ok ? await churnRes.json() : [];
+            summaryJson = summaryRes.ok ? await summaryRes.json() : null;
+        }
 
         activeAlertsData = Array.isArray(alertsJson) ? alertsJson : [];
         churnRiskData = Array.isArray(churnJson) ? churnJson : [];
@@ -113,6 +135,19 @@ async function loadAdminFeedback(isUserRefresh = false) {
 
     } catch (err) {
         console.error('[Feedback Module] Error loading feedback:', err);
+        // Automatic retry once after 1.2 seconds on transient error
+        if (retryCount === 0) {
+            console.log('[Feedback Module] Retrying load in 1.2s...');
+            setTimeout(() => loadAdminFeedback(false, 1), 1200);
+            return;
+        }
+
+        // If we already have loaded records, keep displaying them
+        if (allFeedbackRecords && allFeedbackRecords.length > 0) {
+            applyFiltersAndRender();
+            return;
+        }
+
         const errHtml = `<tr><td colspan="4" class="text-center py-4 text-danger">Error loading data: ${escapeHtml(err.message)}</td></tr>`;
         const b1 = document.getElementById('fb-attention-body');
         const b2 = document.getElementById('fb-neutral-body');

@@ -279,6 +279,7 @@ app.use((err, req, res, next) => {
     if (!isProduction) logger.error(err.stack);
 
     // Send a safe response — never expose err.message in production
+    if (res.headersSent) return next(err);
     const statusCode = err.status || err.statusCode || 500;
     res.status(statusCode).json({
         error: isProduction
