@@ -242,7 +242,7 @@ function applyFiltersAndRender() {
         } else if (currentFeedbackFilter === 'neutral') {
             if (item.is_resolved || (item.ai_sentiment || '').toLowerCase() !== 'neutral' || item.ai_needs_attention) return false;
         } else if (currentFeedbackFilter === 'positive') {
-            if ((item.ai_sentiment || '').toLowerCase() !== 'positive') return false;
+            if (item.is_resolved || (item.ai_sentiment || '').toLowerCase() !== 'positive') return false;
         } else if (currentFeedbackFilter === 'resolved') {
             if (!item.is_resolved) return false;
         } else if (currentFeedbackFilter === 'wifi') {
@@ -290,7 +290,7 @@ function applyFiltersAndRender() {
         // Resolved items disappear from active queue and are archived to Reports & Analytics.
         attentionList = filtered.filter(f => !f.is_resolved && ((f.ai_sentiment || '').toLowerCase() === 'negative' || f.ai_needs_attention));
         neutralList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'neutral' && !f.ai_needs_attention);
-        positiveList = filtered.filter(f => (f.ai_sentiment || '').toLowerCase() === 'positive');
+        positiveList = filtered.filter(f => !f.is_resolved && (f.ai_sentiment || '').toLowerCase() === 'positive');
     }
 
     // Sort by date descending
@@ -513,7 +513,11 @@ function openFeedbackDetailModal(id) {
             impactEl.textContent = 'Resolution logged in the dormitory management register.';
         }
         if (resolveBtn) resolveBtn.style.display = 'none';
-        if (reopenBtn) reopenBtn.style.display = 'inline-block';
+        if (reopenBtn) {
+            reopenBtn.style.display = 'inline-block';
+            reopenBtn.disabled = false;
+            reopenBtn.innerHTML = '<i class="fas fa-undo me-1"></i>Reopen Issue';
+        }
     } else if (item._correlatedAlert) {
         const a = item._correlatedAlert;
         if (trendBadge) {
@@ -532,6 +536,7 @@ function openFeedbackDetailModal(id) {
         if (reopenBtn) reopenBtn.style.display = 'none';
         if (resolveBtn) {
             resolveBtn.style.display = 'inline-block';
+            resolveBtn.disabled = false;
             resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
         }
     } else {
@@ -550,10 +555,16 @@ function openFeedbackDetailModal(id) {
         }
         if (reopenBtn) reopenBtn.style.display = 'none';
         if (resolveBtn) {
-            const needsAction = item.ai_needs_attention || (item.ai_sentiment || '').toLowerCase() === 'negative';
-            resolveBtn.style.display = needsAction ? 'inline-block' : 'none';
+            resolveBtn.style.display = 'inline-block';
+            resolveBtn.disabled = false;
             resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
         }
+    }
+
+    const workOrderBtn = document.getElementById('feedbackDetailWorkOrderBtn');
+    if (workOrderBtn) {
+        workOrderBtn.disabled = false;
+        workOrderBtn.innerHTML = '<i class="fas fa-tools me-1"></i>Dispatch Work Order';
     }
 
     const scoreVal = typeof item.ai_sentiment_score === 'number' ? item.ai_sentiment_score.toFixed(2) : (item.ai_sentiment_score || '0.00');
@@ -595,88 +606,113 @@ function openFeedbackDetailModal(id) {
     }
 }
 
-// ── 1-Click Action Handlers ──
+// ── 1-Click Action Handlers (Direct, Fast Execution, Zero Modal Clashes) ──
 async function createWorkOrderFromDetail() {
     if (!selectedFeedbackRecord) return;
     const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Resident Feedback Issue';
     const action = selectedFeedbackRecord._correlatedAlert?.recommended_action ||
                    `Inspect issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'} in unit ${selectedFeedbackRecord.room_number || 'N/A'}: ${selectedFeedbackRecord.ai_summary || selectedFeedbackRecord.feedback_text}`;
 
-    const modalEl = document.getElementById('feedbackDetailModal');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
+    const workOrderBtn = document.getElementById('feedbackDetailWorkOrderBtn');
+    if (workOrderBtn) {
+        workOrderBtn.disabled = true;
+        workOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Dispatching...';
     }
 
-    await createWorkOrderFromAlert(topic, action);
+    try {
+        const res = await fetch('/api/admin/feedback/create-work-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ issue_topic: topic, recommended_action: action }),
+            credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            const modalEl = document.getElementById('feedbackDetailModal');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+            showFeedbackToast(data.message || 'Building Work Order created successfully!');
+            if (typeof loadMaintenance === 'function') loadMaintenance();
+        } else {
+            showFeedbackToast(data.error || 'Failed to create work order', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showFeedbackToast('Error creating work order', 'error');
+    } finally {
+        if (workOrderBtn) {
+            workOrderBtn.disabled = false;
+            workOrderBtn.innerHTML = '<i class="fas fa-tools me-1"></i>Dispatch Work Order';
+        }
+    }
 }
 
 function openNoticeFromDetail() {
     if (!selectedFeedbackRecord) return;
     const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Facility Service';
 
-    const modalEl = document.getElementById('feedbackDetailModal');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
+    const detailModalEl = document.getElementById('feedbackDetailModal');
+    if (detailModalEl && window.bootstrap) {
+        bootstrap.Modal.getInstance(detailModalEl)?.hide();
     }
 
-    openTenantNoticeModal(topic);
+    // Small delay ensures previous modal backdrop cleanly closes before notice modal opens
+    setTimeout(() => {
+        openTenantNoticeModal(topic);
+    }, 250);
 }
 
 async function resolveTrendFromDetail() {
     if (!selectedFeedbackRecord) return;
-    const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Resident Feedback';
     const feedbackId = selectedFeedbackRecord.id;
+    const resolveBtn = document.getElementById('feedbackDetailResolveBtn');
 
-    const modalEl = document.getElementById('feedbackDetailModal');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
+    if (resolveBtn) {
+        resolveBtn.disabled = true;
+        resolveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Resolving...';
     }
 
-    const executeResolve = async () => {
-        try {
-            const res = await fetch('/api/admin/feedback/resolve-item', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    feedback_id: feedbackId
-                }),
-                credentials: 'include'
-            });
-            const data = await res.json();
-
-            if (res.ok) {
-                // Strictly update only this specific feedback record in local state
-                selectedFeedbackRecord.is_resolved = true;
-                selectedFeedbackRecord.ai_needs_attention = false;
-                const rec = allFeedbackRecords.find(r => r.id === feedbackId);
-                if (rec) {
-                    rec.is_resolved = true;
-                    rec.ai_needs_attention = false;
-                }
-                showFeedbackToast(data.message || 'Issue resolved and archived. Retrievable in Reports & Analytics.');
-                applyFiltersAndRender();
-                loadAdminFeedback(false);
-            } else {
-                showFeedbackToast(data.error || 'Failed to resolve feedback', 'error');
-            }
-        } catch (err) {
-            console.error(err);
-            showFeedbackToast('Error resolving feedback', 'error');
-        }
-    };
-
-    if (window.showEnterpriseConfirm) {
-        window.showEnterpriseConfirm({
-            title: 'Mark Issue as Resolved',
-            message: `Mark this feedback item as resolved? It will clear from the active board and remain safely archived for Reports & Analytics.`,
-            confirmText: 'Mark Resolved',
-            confirmClass: 'btn-success',
-            iconClass: 'fas fa-check-circle text-success',
-            onConfirm: executeResolve
+    try {
+        const res = await fetch('/api/admin/feedback/resolve-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                feedback_id: feedbackId
+            }),
+            credentials: 'include'
         });
-    } else {
-        if (confirm(`Mark this feedback for "${topic}" as resolved? It will be archived for Reports & Analytics.`)) {
-            executeResolve();
+        const data = await res.json();
+
+        if (res.ok) {
+            // Strictly update only this specific feedback record in local state
+            selectedFeedbackRecord.is_resolved = true;
+            selectedFeedbackRecord.ai_needs_attention = false;
+            const rec = allFeedbackRecords.find(r => r.id === feedbackId);
+            if (rec) {
+                rec.is_resolved = true;
+                rec.ai_needs_attention = false;
+            }
+
+            const modalEl = document.getElementById('feedbackDetailModal');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+
+            showFeedbackToast(data.message || 'Issue resolved and archived. Retrievable in Reports & Analytics.');
+            applyFiltersAndRender();
+            loadAdminFeedback(false);
+        } else {
+            showFeedbackToast(data.error || 'Failed to resolve feedback', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showFeedbackToast('Error resolving feedback', 'error');
+    } finally {
+        if (resolveBtn) {
+            resolveBtn.disabled = false;
+            resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
         }
     }
 }
@@ -684,58 +720,53 @@ async function resolveTrendFromDetail() {
 async function reopenTrendFromDetail() {
     if (!selectedFeedbackRecord) return;
     const feedbackId = selectedFeedbackRecord.id;
+    const reopenBtn = document.getElementById('feedbackDetailReopenBtn');
 
-    const modalEl = document.getElementById('feedbackDetailModal');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
+    if (reopenBtn) {
+        reopenBtn.disabled = true;
+        reopenBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Reopening...';
     }
 
-    const executeReopen = async () => {
-        try {
-            const res = await fetch('/api/admin/feedback/reopen-item', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    feedback_id: feedbackId,
-                    reopen: true
-                }),
-                credentials: 'include'
-            });
-            const data = await res.json();
-
-            if (res.ok) {
-                // Strictly update only this specific feedback record in local state
-                selectedFeedbackRecord.is_resolved = false;
-                selectedFeedbackRecord.ai_needs_attention = true;
-                const rec = allFeedbackRecords.find(r => r.id === feedbackId);
-                if (rec) {
-                    rec.is_resolved = false;
-                    rec.ai_needs_attention = true;
-                }
-                showFeedbackToast(data.message || 'Feedback moved back to active status.');
-                applyFiltersAndRender();
-                loadAdminFeedback(false);
-            } else {
-                showFeedbackToast(data.error || 'Failed to reopen feedback', 'error');
-            }
-        } catch (err) {
-            console.error(err);
-            showFeedbackToast('Error reopening feedback', 'error');
-        }
-    };
-
-    if (window.showEnterpriseConfirm) {
-        window.showEnterpriseConfirm({
-            title: 'Reopen Feedback Issue',
-            message: 'Move this feedback back to active attention status?',
-            confirmText: 'Reopen Issue',
-            confirmClass: 'btn-warning',
-            iconClass: 'fas fa-undo text-warning',
-            onConfirm: executeReopen
+    try {
+        const res = await fetch('/api/admin/feedback/reopen-item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                feedback_id: feedbackId,
+                reopen: true
+            }),
+            credentials: 'include'
         });
-    } else {
-        if (confirm('Move this feedback back to active attention status?')) {
-            executeReopen();
+        const data = await res.json();
+
+        if (res.ok) {
+            // Strictly update only this specific feedback record in local state
+            selectedFeedbackRecord.is_resolved = false;
+            selectedFeedbackRecord.ai_needs_attention = true;
+            const rec = allFeedbackRecords.find(r => r.id === feedbackId);
+            if (rec) {
+                rec.is_resolved = false;
+                rec.ai_needs_attention = true;
+            }
+
+            const modalEl = document.getElementById('feedbackDetailModal');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+
+            showFeedbackToast(data.message || 'Feedback moved back to active status.');
+            applyFiltersAndRender();
+            loadAdminFeedback(false);
+        } else {
+            showFeedbackToast(data.error || 'Failed to reopen feedback', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showFeedbackToast('Error reopening feedback', 'error');
+    } finally {
+        if (reopenBtn) {
+            reopenBtn.disabled = false;
+            reopenBtn.innerHTML = '<i class="fas fa-undo me-1"></i>Reopen Issue';
         }
     }
 }
