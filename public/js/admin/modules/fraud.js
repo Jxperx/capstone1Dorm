@@ -69,11 +69,15 @@ async function loadFraudAnalytics() {
         const data = await res.json();
         const s = data.summary || {};
 
-        document.getElementById('fd-total').textContent = s.total_analyzed ?? 0;
-        document.getElementById('fd-flagged').textContent = (s.high_risk_count ?? 0) + (s.medium_count ?? 0);
-        document.getElementById('fd-blocked').textContent = s.blocked_count ?? 0;
-        document.getElementById('fd-review').textContent = s.pending_review_count ?? 0;
-        document.getElementById('fd-safe').textContent = s.safe_count ?? 0;
+        const setEl = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setEl('fd-total', s.total_analyzed ?? 0);
+        setEl('fd-flagged', (s.high_risk_count ?? 0) + (s.medium_count ?? 0));
+        setEl('fd-blocked', s.blocked_count ?? 0);
+        setEl('fd-review', s.pending_review_count ?? 0);
+        setEl('fd-safe', s.safe_count ?? 0);
 
         // Top fraud reasons
         const topList = document.getElementById('fd-top-reasons');
@@ -101,18 +105,18 @@ async function loadFraudDashboard(page = 1) {
     const tbody = document.getElementById('fraud-tbody');
     if (!tbody) return;
 
-    // Show skeletons
+    // Show skeletons (8 columns)
     tbody.innerHTML = Array(5).fill(0).map(() => `
         <tr class="skeleton-row">
-            ${Array(11).fill('<td><div class="skeleton-line" style="width:${Math.random()*40+50}%"></div></td>').join('')}
+            ${Array(8).fill('<td><div class="skeleton-line" style="width:70%"></div></td>').join('')}
         </tr>`).join('');
 
     const f = FraudDashboard.filters;
     const params = new URLSearchParams({
         page, limit: FraudDashboard.limit,
-        riskLevel: f.riskLevel, method: f.method,
-        flagged: f.flagged, dateFrom: f.dateFrom,
-        dateTo: f.dateTo, search: f.search
+        riskLevel: f.riskLevel || 'ALL', method: f.method || 'ALL',
+        flagged: f.flagged || '', dateFrom: f.dateFrom || '',
+        dateTo: f.dateTo || '', search: f.search || ''
     });
 
     try {
@@ -123,45 +127,52 @@ async function loadFraudDashboard(page = 1) {
         renderFraudPagination(json.total, json.page, json.limit);
     } catch (err) {
         console.error('[FraudTable]', err);
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${err.message}</td></tr>`;
     }
 }
 
 function renderFraudTable(rows) {
     const tbody = document.getElementById('fraud-tbody');
     if (!rows || rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-5" style="color:#64748b">
-            <i class="fas fa-shield-alt fa-2x mb-3 d-block"></i>No fraud records found for these filters.
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5" style="color:#64748b">
+            <i class="fas fa-shield-alt fa-2x mb-3 d-block"></i>No fraud records found.
         </td></tr>`;
         return;
     }
-    tbody.innerHTML = rows.map(r => `
-        <tr onclick="openFraudDetail(${r.payment_id})" style="cursor:pointer">
-            <td>
-                <div style="font-weight:600;color:#1a1a1a">${r.tenant_name || '—'}</div>
-                <div style="font-size:0.72rem;color:#888">${r.tenant_email || ''}</div>
+    tbody.innerHTML = rows.map(r => {
+        const unitText = r.room_number ? r.room_number : '<span class="text-muted">Unassigned</span>';
+        return `
+        <tr onclick="openFraudDetail(${r.payment_id})" style="cursor:pointer" class="align-middle">
+            <td style="padding: 12px 10px; font-weight: 700; color: #1a1a2e; font-size: 0.88rem; white-space: nowrap;">
+                <strong>${unitText}</strong>
+                ${r.tenant_name ? `<div style="font-size: 0.72rem; color: #6b7280; font-weight: 500;">${r.tenant_name}</div>` : ''}
             </td>
-            <td>
-                <div style="font-size:0.8rem;color:#555">#${r.payment_id}</div>
-                ${r.booking_id ? `<div style="font-size:0.72rem;color:#888">Booking: ${r.booking_id}</div>` : ''}
-            </td>
-            <td style="color:#666;font-size:0.8rem">${r.payment_method || 'Manual Upload'}</td>
-            <td>
-                <div style="color:#1a1a1a;font-weight:600">${fmtMoney(r.amount_paid)}</div>
+            <td style="padding: 12px 10px;">
+                <div style="color: #1a1a2e; font-weight: 700; font-size: 0.88rem;">${fmtMoney(r.amount_paid)}</div>
                 ${r.expected_amount ? `<div style="font-size:0.72rem;color:#888">Exp: ${fmtMoney(r.expected_amount)}</div>` : ''}
             </td>
-            <td>
-                <span class="badge ${r.payment_status === 'approved' ? 'bg-success' : r.payment_status === 'rejected' ? 'bg-danger' : 'bg-warning text-dark'}" style="font-size:0.7rem">
+            <td style="padding: 12px 10px; text-align: center;">
+                <span class="badge rounded-pill ${r.payment_status === 'approved' ? 'bg-success-subtle text-success border border-success-subtle' : r.payment_status === 'rejected' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'}" style="font-size: 0.72rem; font-weight: 600; padding: 5px 12px;">
                     ${(r.payment_status || 'pending').toUpperCase()}
                 </span>
             </td>
-            <td>${r.receipt_path ? `<img src="${r.receipt_path}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,0,0,0.1);cursor:zoom-in" onclick="event.stopPropagation();openReceiptPreview('${r.receipt_path}')" title="Click to preview">` : '<span style="color:#888;font-size:0.75rem">—</span>'}</td>
-            <td>${scoreBar(r.risk_score, r.risk_level)}</td>
-            <td>${riskBadge(r.risk_level)}</td>
-            <td><div style="max-width:180px;white-space:normal">${flagChips(r.flags)}</div></td>
-            <td>${decisionBadge(r.decision)}</td>
-            <td style="font-size:0.75rem;color:#888;white-space:nowrap">${fmtDate(r.created_at)}</td>
-        </tr>`).join('');
+            <td style="padding: 12px 10px; text-align: center;">
+                ${r.receipt_path ? `<img src="${r.receipt_path}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;cursor:zoom-in;box-shadow:0 1px 3px rgba(0,0,0,0.08);" onclick="event.stopPropagation();openReceiptPreview('${r.receipt_path}')" title="Click to preview">` : '<span style="color:#94a3b8;font-size:0.75rem">—</span>'}
+            </td>
+            <td style="padding: 12px 10px;">
+                ${scoreBar(r.risk_score, r.risk_level)}
+            </td>
+            <td style="padding: 12px 10px;">
+                <div style="max-width:200px;white-space:normal">${flagChips(r.flags)}</div>
+            </td>
+            <td style="padding: 12px 10px; text-align: center;">
+                ${decisionBadge(r.decision)}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; font-size: 0.78rem; color: #64748b; white-space: nowrap;">
+                ${fmtDate(r.created_at)}
+            </td>
+        </tr>`;
+    }).join('');
 }
 
 function renderFraudPagination(total, page, limit) {
