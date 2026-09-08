@@ -644,9 +644,15 @@ function openFeedbackDetailModal(id) {
 // ── 1-Click Action Handlers (Direct, Fast Execution, Zero Modal Clashes) ──
 async function createWorkOrderFromDetail() {
     if (!selectedFeedbackRecord) return;
-    const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category || 'Resident Feedback Issue';
+    let topic = selectedFeedbackRecord._correlatedAlert?.issue_topic;
+    if (!topic && Array.isArray(selectedFeedbackRecord.ai_topics) && selectedFeedbackRecord.ai_topics.length > 0) {
+        topic = selectedFeedbackRecord.ai_topics[0];
+    }
+    if (!topic) topic = selectedFeedbackRecord.category || 'Resident Feedback Issue';
+
     const action = selectedFeedbackRecord._correlatedAlert?.recommended_action ||
-                   `Inspect issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'} in unit ${selectedFeedbackRecord.room_number || 'N/A'}: ${selectedFeedbackRecord.ai_summary || selectedFeedbackRecord.feedback_text}`;
+                   selectedFeedbackRecord.ai_summary ||
+                   `Inspect issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'} in unit ${selectedFeedbackRecord.room_number || 'N/A'}: ${selectedFeedbackRecord.feedback_text}`;
 
     const workOrderBtn = document.getElementById('feedbackDetailWorkOrderBtn');
     if (workOrderBtn) {

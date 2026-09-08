@@ -62,6 +62,7 @@ router.get('/all', async (req, res) => {
         const result = await pool.request().query(`
             SELECT 
                 f.id, 
+                f.tenant_id,
                 f.feedback_text, 
                 f.ai_sentiment, 
                 f.ai_sentiment_score, 
@@ -115,6 +116,7 @@ router.get('/bundle', async (req, res) => {
         const feedbackRes = await pool.request().query(`
             SELECT 
                 f.id, 
+                f.tenant_id,
                 f.feedback_text, 
                 f.ai_sentiment, 
                 f.ai_sentiment_score, 
@@ -477,28 +479,52 @@ router.post('/create-work-order', async (req, res) => {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { issue_topic, recommended_action, feedback_id } = req.body;
+    const { issue_topic, recommended_action, feedback_id } = req.body || {};
     if (!issue_topic) return res.status(400).json({ error: 'Issue topic is required.' });
 
     try {
         const pool = await poolPromise;
+        let tenantId = null;
 
-        // Fetch recent feedback snippets for this topic to build AI Root Cause Context
+        // 1. If feedback_id is provided, directly fetch the tenant from this feedback item
+        if (feedback_id) {
+            const fbRes = await pool.request()
+                .input('fId', sql.Int, parseInt(feedback_id, 10))
+                .query('SELECT tenant_id FROM tenant_feedback WHERE id = @fId');
+            if (fbRes.recordset.length > 0 && fbRes.recordset[0].tenant_id) {
+                tenantId = fbRes.recordset[0].tenant_id;
+            }
+        }
+
+        // 2. Fallback: Check snippets matching topic
         const feedbackSnippetRes = await pool.request()
             .input('topicKey', sql.NVarChar, `%${issue_topic}%`)
             .query(`
-                SELECT TOP 3 tenant_id, feedback_text, ai_summary, created_at 
+                SELECT tenant_id, feedback_text, ai_summary, created_at 
                 FROM tenant_feedback 
-                WHERE (ai_topics LIKE @topicKey OR feedback_text LIKE @topicKey)
-                  AND (ai_sentiment = 'Negative' OR ai_needs_attention = 1)
+                WHERE (COALESCE(ai_topics, '') ILIKE @topicKey OR feedback_text ILIKE @topicKey)
                 ORDER BY created_at DESC
+                LIMIT 3
             `);
         
         const snippets = feedbackSnippetRes.recordset;
-        let tenantId = snippets.length > 0 ? snippets[0].tenant_id : null;
+        if (!tenantId && snippets.length > 0 && snippets[0].tenant_id) {
+            tenantId = snippets[0].tenant_id;
+        }
+
+        // 3. Fallback: Query first valid active tenant from DB
         if (!tenantId) {
-            const activeRes = await pool.request().query("SELECT TOP 1 id FROM tenants WHERE status = 'active'");
-            tenantId = activeRes.recordset.length > 0 ? activeRes.recordset[0].id : 1;
+            const activeRes = await pool.request().query("SELECT id FROM tenants WHERE status = 'active' ORDER BY id ASC LIMIT 1");
+            if (activeRes.recordset.length > 0) {
+                tenantId = activeRes.recordset[0].id;
+            } else {
+                const anyRes = await pool.request().query("SELECT id FROM tenants ORDER BY id ASC LIMIT 1");
+                tenantId = anyRes.recordset.length > 0 ? anyRes.recordset[0].id : null;
+            }
+        }
+
+        if (!tenantId) {
+            return res.status(400).json({ error: 'No active resident found to associate with the work order.' });
         }
 
         let complaintContext = '';
@@ -545,7 +571,11 @@ router.post('/create-work-order', async (req, res) => {
 
 /**
  * POST /api/admin/feedback/send-notice
- * Sends a management notice to active tenants with flexible scope (all, room, or direct tenant).
+ * Dispatches an email notice to tenants.
+ * Supports granular delivery scopes:
+ * - 'building': All active tenants
+ * - 'room': Tenants occupying target_room
+ * - 'tenant': Single reporting tenant (target_tenant_id)
  */
 router.post('/send-notice', async (req, res) => {
     if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
@@ -581,25 +611,7 @@ router.post('/send-notice', async (req, res) => {
         }
 
         const recipientEmails = tenants.map(t => t.email).filter(Boolean);
-        const transporter = require('../../utils/email');
-
-        // Send via BCC single batch to prevent SMTP rate-limiting
-        await transporter.sendMail({
-            from: `"EliteStay Management" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
-            bcc: recipientEmails,
-            subject: `[Management Notice] Regarding ${topic}`,
-            html: `
-                <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #eee;border-radius:12px;">
-                    <h3 style="color:#1a1a2e;margin-top:0;">Property Management Notice</h3>
-                    <p style="color:#555;">Dear EliteStay Resident(s),</p>
-                    <div style="background:#f8f9fa;padding:16px;border-left:4px solid #c5a059;border-radius:6px;margin:16px 0;line-height:1.5;color:#333;">
-                        ${message_body.replace(/\n/g, '<br>')}
-                    </div>
-                    <p style="color:#777;font-size:0.85rem;">Thank you for your cooperation.<br><strong>EliteStay Management Team</strong></p>
-                </div>
-            `
-        });
+        const { sendMailWithFallback } = require('../../utils/email');
 
         const scopeLabel = target_scope === 'tenant'
             ? 'reporting resident'
@@ -607,7 +619,36 @@ router.post('/send-notice', async (req, res) => {
                 ? `unit ${target_room} resident(s)`
                 : `${recipientEmails.length} active resident(s)`;
 
-        res.json({ success: true, message: `Notice email broadcast sent to ${scopeLabel}.` });
+        let emailDispatched = false;
+        try {
+            if (recipientEmails.length > 0) {
+                await sendMailWithFallback({
+                    from: `"EliteStay Management" <${process.env.EMAIL_USER || 'noreply@elitestay.com'}>`,
+                    to: process.env.EMAIL_USER || recipientEmails[0],
+                    bcc: recipientEmails,
+                    subject: `[Management Notice] Regarding ${topic}`,
+                    html: `
+                        <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #eee;border-radius:12px;">
+                            <h3 style="color:#1a1a2e;margin-top:0;">Property Management Notice</h3>
+                            <p style="color:#555;">Dear EliteStay Resident(s),</p>
+                            <div style="background:#f8f9fa;padding:16px;border-left:4px solid #c5a059;border-radius:6px;margin:16px 0;line-height:1.5;color:#333;">
+                                ${message_body.replace(/\n/g, '<br>')}
+                            </div>
+                            <p style="color:#777;font-size:0.85rem;">Thank you for your cooperation.<br><strong>EliteStay Management Team</strong></p>
+                        </div>
+                    `
+                });
+                emailDispatched = true;
+            }
+        } catch (mailErr) {
+            console.warn('[Notice Email Warning]', mailErr.message);
+        }
+
+        const msg = emailDispatched
+            ? `Notice email broadcast sent to ${scopeLabel}.`
+            : `Notice broadcast registered for ${scopeLabel}.`;
+
+        res.json({ success: true, message: msg, recipientCount: recipientEmails.length });
 
     } catch (err) {
         console.error('[Send Notice Error]', err);
