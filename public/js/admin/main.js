@@ -57,6 +57,9 @@ function showSection(sectionId, linkElement) {
     if (sectionId === 'rooms' && typeof loadRooms === 'function') {
         loadRooms();
     }
+    if (sectionId === 'maintenance' && typeof loadMaintenance === 'function') {
+        loadMaintenance();
+    }
     if (sectionId === 'media' && typeof loadPropertyMediaAdmin === 'function') {
         loadPropertyMediaAdmin();
     }

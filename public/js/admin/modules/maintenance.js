@@ -365,7 +365,28 @@ function openMaintenanceDetailModal(id) {
 
     // Complete Description
     const descEl = document.getElementById('maintDetailDescription');
-    if (descEl) descEl.textContent = req.description || 'No description provided by tenant.';
+    if (descEl) {
+        let cleanDesc = req.description || 'No description provided by tenant.';
+
+        // Strip internal system tags from user view
+        cleanDesc = cleanDesc
+            .replace(/\[FEEDBACK_REF:[^\]]*\]/gi, '')
+            .replace(/\[FEEDBACK_TOPIC:[^\]]*\]/gi, '')
+            .trim();
+
+        // Format legacy AI descriptions if present
+        if (cleanDesc.includes('[AI Trend Resolution Task]')) {
+            cleanDesc = cleanDesc
+                .replace(/\[AI Trend Resolution Task\]\s*/gi, '')
+                .replace(/Topic:\s*/gi, 'Issue Topic: ')
+                .replace(/\.?\s*Recommended Strategy:\s*/gi, '\n\nRecommended Action:\n')
+                .replace(/\[AI Root Cause Evidence\]\s*/gi, '\n\n')
+                .replace(/Recent Resident Reports:\s*/gi, 'Recent Reports:\n');
+        }
+
+        descEl.style.whiteSpace = 'pre-wrap';
+        descEl.textContent = cleanDesc;
+    }
 
     // AI Diagnostics
     const aiSection = document.getElementById('maintDetailAiSection');

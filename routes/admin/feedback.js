@@ -486,13 +486,31 @@ router.post('/create-work-order', async (req, res) => {
         const pool = await poolPromise;
         let tenantId = null;
 
-        // 1. If feedback_id is provided, directly fetch the tenant from this feedback item
+        // 1. If feedback_id is provided, directly fetch the tenant and original feedback text
+        let directFbRecord = null;
         if (feedback_id) {
             const fbRes = await pool.request()
                 .input('fId', sql.Int, parseInt(feedback_id, 10))
-                .query('SELECT tenant_id FROM tenant_feedback WHERE id = @fId');
-            if (fbRes.recordset.length > 0 && fbRes.recordset[0].tenant_id) {
-                tenantId = fbRes.recordset[0].tenant_id;
+                .query(`
+                    SELECT 
+                        f.id,
+                        f.tenant_id,
+                        f.feedback_text,
+                        f.ai_summary,
+                        f.ai_topics,
+                        u.full_name as tenant_name,
+                        r.room_number
+                    FROM tenant_feedback f
+                    LEFT JOIN tenants t ON f.tenant_id = t.id
+                    LEFT JOIN users u ON t.user_id = u.id
+                    LEFT JOIN rooms r ON t.room_id = r.id
+                    WHERE f.id = @fId
+                `);
+            if (fbRes.recordset.length > 0) {
+                directFbRecord = fbRes.recordset[0];
+                if (directFbRecord.tenant_id) {
+                    tenantId = directFbRecord.tenant_id;
+                }
             }
         }
 
@@ -500,10 +518,19 @@ router.post('/create-work-order', async (req, res) => {
         const feedbackSnippetRes = await pool.request()
             .input('topicKey', sql.NVarChar, `%${issue_topic}%`)
             .query(`
-                SELECT tenant_id, feedback_text, ai_summary, created_at 
-                FROM tenant_feedback 
-                WHERE (COALESCE(ai_topics, '') ILIKE @topicKey OR feedback_text ILIKE @topicKey)
-                ORDER BY created_at DESC
+                SELECT 
+                    f.tenant_id, 
+                    f.feedback_text, 
+                    f.ai_summary, 
+                    f.created_at,
+                    u.full_name as tenant_name,
+                    r.room_number
+                FROM tenant_feedback f 
+                LEFT JOIN tenants t ON f.tenant_id = t.id
+                LEFT JOIN users u ON t.user_id = u.id
+                LEFT JOIN rooms r ON t.room_id = r.id
+                WHERE (COALESCE(f.ai_topics, '') ILIKE @topicKey OR f.feedback_text ILIKE @topicKey)
+                ORDER BY f.created_at DESC
                 LIMIT 3
             `);
         
@@ -527,41 +554,72 @@ router.post('/create-work-order', async (req, res) => {
             return res.status(400).json({ error: 'No active resident found to associate with the work order.' });
         }
 
-        let complaintContext = '';
-        if (snippets.length > 0) {
-            complaintContext = '\n\n[AI Root Cause Evidence] Recent Resident Reports:\n' + 
-                snippets.map((s, idx) => `${idx + 1}. "${s.ai_summary || s.feedback_text}"`).join('\n');
-        }
-
         const feedbackTag = feedback_id ? `\n\n[FEEDBACK_REF: #${feedback_id}]` : '';
         const topicTag = issue_topic ? `\n[FEEDBACK_TOPIC: ${issue_topic}]` : '';
-        const title = `[Facility / Common Area] ${issue_topic} Maintenance`;
-        const description = `[AI Trend Resolution Task] Topic: ${issue_topic}.\nRecommended Strategy: ${recommended_action || 'Inspect and resolve recurring complaints.'}${complaintContext}${feedbackTag}${topicTag}`;
-        const aiSummary = feedback_id
-            ? `Building-wide work order for AI Trend: ${issue_topic} [FEEDBACK_REF: #${feedback_id}]`
-            : `Building-wide work order for AI Trend: ${issue_topic}`;
+        let title = '';
+        let description = '';
 
-            const insertRes = await pool.request()
-                .input('tenant_id', sql.Int, tenantId)
-                .input('title', sql.NVarChar, title)
-                .input('description', sql.NVarChar, description)
-                .input('status', sql.NVarChar, 'pending')
-                .input('ai_category', sql.NVarChar, issue_topic)
-                .input('ai_priority', sql.NVarChar, 'High')
-                .input('ai_summary', sql.NVarChar, aiSummary)
-                .query(`
-                    INSERT INTO maintenance_requests (tenant_id, title, description, status, ai_category, ai_priority, ai_summary)
-                    VALUES (@tenant_id, @title, @description, @status, @ai_category, @ai_priority, @ai_summary)
-                    RETURNING id
-                `);
+        if (directFbRecord) {
+            const tenantName = directFbRecord.tenant_name || 'Resident';
+            const roomUnit = directFbRecord.room_number ? `Unit ${directFbRecord.room_number}` : 'Building Resident';
+            const residentInfo = `${tenantName} (${roomUnit})`;
+            const tenantText = (directFbRecord.feedback_text || '').trim();
 
-            const createdId = insertRes.recordset?.[0]?.id || null;
+            title = directFbRecord.room_number 
+                ? `[Unit ${directFbRecord.room_number}] ${issue_topic} Maintenance` 
+                : `[Resident Feedback] ${issue_topic} Maintenance`;
 
-            res.json({
-                success: true,
-                maintenanceId: createdId,
-                message: `Building Work Order created for "${issue_topic}" in Maintenance section.`
-            });
+            description = `Feedback Topic: ${issue_topic}\n` +
+                          `Reported by: ${residentInfo}\n\n` +
+                          `Tenant Feedback:\n"${tenantText || 'No detailed text provided.'}"\n\n` +
+                          `Action Required:\n${recommended_action || 'Inspect and resolve the issue reported by resident.'}` +
+                          `${feedbackTag}${topicTag}`;
+        } else {
+            title = `[Facility / Common Area] ${issue_topic} Maintenance`;
+
+            const reports = snippets
+                .filter(s => (s.feedback_text || '').trim())
+                .map((s, idx) => {
+                    const unit = s.room_number ? ` (Unit ${s.room_number})` : '';
+                    return `${idx + 1}. "${s.feedback_text.trim()}"${unit}`;
+                });
+
+            description = `Feedback Topic: ${issue_topic}\n` +
+                          `Source: Resident Feedback Trend\n\n`;
+
+            if (reports.length > 0) {
+                description += `Recent Resident Reports:\n` + reports.join('\n') + `\n\n`;
+            }
+
+            description += `Action Required:\n${recommended_action || 'Inspect and resolve recurring resident complaints.'}` +
+                           `${feedbackTag}${topicTag}`;
+        }
+
+        const aiSummary = directFbRecord
+            ? `Resident feedback work order: ${issue_topic} [FEEDBACK_REF: #${feedback_id}] [FEEDBACK_TOPIC: ${issue_topic}]`
+            : `Building work order for trend: ${issue_topic} [FEEDBACK_TOPIC: ${issue_topic}]`;
+
+        const insertRes = await pool.request()
+            .input('tenant_id', sql.Int, tenantId)
+            .input('title', sql.NVarChar, title)
+            .input('description', sql.NVarChar, description)
+            .input('status', sql.NVarChar, 'pending')
+            .input('ai_category', sql.NVarChar, issue_topic)
+            .input('ai_priority', sql.NVarChar, 'High')
+            .input('ai_summary', sql.NVarChar, aiSummary)
+            .query(`
+                INSERT INTO maintenance_requests (tenant_id, title, description, status, ai_category, ai_priority, ai_summary)
+                VALUES (@tenant_id, @title, @description, @status, @ai_category, @ai_priority, @ai_summary)
+                RETURNING id
+            `);
+
+        const createdId = insertRes.recordset?.[0]?.id || null;
+
+        res.json({
+            success: true,
+            maintenanceId: createdId,
+            message: `Building Work Order created for "${issue_topic}" in Maintenance section.`
+        });
 
     } catch (err) {
         console.error('[Create Work Order Error]', err);

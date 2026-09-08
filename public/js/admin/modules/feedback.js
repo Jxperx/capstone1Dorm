@@ -650,9 +650,11 @@ async function createWorkOrderFromDetail() {
     }
     if (!topic) topic = selectedFeedbackRecord.category || 'Resident Feedback Issue';
 
+    const cleanTenantText = (selectedFeedbackRecord.feedback_text || '').trim();
     const action = selectedFeedbackRecord._correlatedAlert?.recommended_action ||
-                   selectedFeedbackRecord.ai_summary ||
-                   `Inspect issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'} in unit ${selectedFeedbackRecord.room_number || 'N/A'}: ${selectedFeedbackRecord.feedback_text}`;
+                   (cleanTenantText 
+                       ? `Inspect and resolve issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'}: "${cleanTenantText.length > 70 ? cleanTenantText.substring(0, 70) + '...' : cleanTenantText}"`
+                       : `Inspect and resolve issue reported by ${selectedFeedbackRecord.tenant_name || 'resident'}.`);
 
     const workOrderBtn = document.getElementById('feedbackDetailWorkOrderBtn');
     if (workOrderBtn) {
