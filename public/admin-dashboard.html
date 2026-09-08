@@ -718,31 +718,85 @@
                         </div>
                     </div>
 
-                    <!-- Fraud Payments Table -->
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Payment Transactions</h5>
+                    <!-- Fraud Triage Columns (3-Column Layout: High Risk, Pending Review, Safe) -->
+                    <div class="row g-4 mb-4" id="fraud-columns-container">
+                        <!-- Column 1: High Risk & Blocked -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-fraud-high-risk">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-exclamation-triangle me-2" style="color: #dc2626; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">High Risk &amp; Blocked</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #fde8e8; color: #991b1b; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Action Required (<span id="fd-count-high">0</span>)</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 55%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 45%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: right;">DATE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fd-high-body">
+                                            <tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading transactions...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="border-collapse: collapse; width: 100%;">
-                                <thead>
-                                    <tr style="border-bottom: 2px solid #d4a373;">
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373;">UNIT</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373;">AMOUNT</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373; text-align: center;">STATUS</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373; text-align: center;">RECEIPT</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373;">RISK SCORE</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373;">FRAUD FLAGS</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373; text-align: center;">DECISION</th>
-                                        <th style="font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 12px 10px; border-bottom: 2px solid #d4a373; text-align: right;">DATE</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fraud-tbody">
-                                    <tr><td colspan="8" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading fraud data...</td></tr>
-                                </tbody>
-                            </table>
+
+                        <!-- Column 2: Suspect & Under Review -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-fraud-pending">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-clock me-2" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Suspect &amp; Under Review</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #fef3c7; color: #92400e; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Needs Review (<span id="fd-count-pending">0</span>)</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 55%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 45%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: right;">DATE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fd-pending-body">
+                                            <tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading transactions...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div id="fraud-pagination" class="fraud-pagination mt-3"></div>
+
+                        <!-- Column 3: Safe & Verified -->
+                        <div class="col-12 col-xl-4 mb-4" id="col-fraud-safe">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 bg-white" style="box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle me-2" style="color: #10b981; font-size: 1.1rem;"></i>
+                                        <h5 class="mb-0 fw-bold" style="font-family: 'Playfair Display', Georgia, serif; color: #1a1a2e;">Safe &amp; Verified</h5>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: #e8f8f0; color: #10b981; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Cleared (<span id="fd-count-safe">0</span>)</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #d4a373;">
+                                                <th style="width: 55%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373;">UNIT</th>
+                                                <th style="width: 45%; font-size: 0.72rem; font-weight: 700; color: #374151; letter-spacing: 0.8px; text-transform: uppercase; padding: 10px 6px; border-bottom: 2px solid #d4a373; text-align: right;">DATE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fd-safe-body">
+                                            <tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.85rem;">Loading transactions...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div> <!-- /#section-fraud -->

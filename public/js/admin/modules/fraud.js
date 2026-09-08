@@ -99,95 +99,109 @@ async function loadFraudAnalytics() {
     }
 }
 
-// ─── Load Fraud Table ───────────────────────────────────────────
+// ─── Load Fraud Triage Columns ──────────────────────────────────
 async function loadFraudDashboard(page = 1) {
     FraudDashboard.currentPage = page;
-    const tbody = document.getElementById('fraud-tbody');
-    if (!tbody) return;
+    const bHigh = document.getElementById('fd-high-body');
+    const bPending = document.getElementById('fd-pending-body');
+    const bSafe = document.getElementById('fd-safe-body');
 
-    // Show skeletons (8 columns)
-    tbody.innerHTML = Array(5).fill(0).map(() => `
+    // Show 2-column skeleton rows (UNIT and DATE)
+    const skeletonHtml = Array(3).fill(0).map(() => `
         <tr class="skeleton-row">
-            ${Array(8).fill('<td><div class="skeleton-line" style="width:70%"></div></td>').join('')}
+            <td style="padding: 12px 8px; width: 55%;"><div class="skeleton-line" style="width:75%"></div></td>
+            <td style="padding: 12px 8px; text-align: right; width: 45%;"><div class="skeleton-line ms-auto" style="width:55%"></div></td>
         </tr>`).join('');
 
-    const f = FraudDashboard.filters;
-    const params = new URLSearchParams({
-        page, limit: FraudDashboard.limit,
-        riskLevel: f.riskLevel || 'ALL', method: f.method || 'ALL',
-        flagged: f.flagged || '', dateFrom: f.dateFrom || '',
-        dateTo: f.dateTo || '', search: f.search || ''
-    });
+    if (bHigh) bHigh.innerHTML = skeletonHtml;
+    if (bPending) bPending.innerHTML = skeletonHtml;
+    if (bSafe) bSafe.innerHTML = skeletonHtml;
 
     try {
-        const res = await fetch(`/api/admin/fraud?${params}`, { credentials: 'include' });
+        const res = await fetch('/api/admin/fraud?limit=100', { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load fraud data');
         const json = await res.json();
-        renderFraudTable(json.data);
-        renderFraudPagination(json.total, json.page, json.limit);
+        const records = json.data || [];
+
+        const highRiskList = [];
+        const pendingList = [];
+        const safeList = [];
+
+        records.forEach(r => {
+            const isHighRisk = r.decision === 'BLOCKED' ||
+                               r.decision === 'MANUAL_REJECTED' ||
+                               r.risk_level === 'HIGH' ||
+                               r.risk_level === 'CRITICAL' ||
+                               (r.risk_score !== null && r.risk_score !== undefined && Number(r.risk_score) >= 75) ||
+                               (r.flags && (r.flags.includes('DUPLICATE') || r.flags.includes('MISMATCH')));
+
+            const isSafe = (r.decision === 'AUTO_APPROVED' || r.decision === 'MANUAL_APPROVED') ||
+                           ((r.risk_level === 'SAFE' || r.risk_level === 'LOW' || (r.risk_score !== null && Number(r.risk_score) < 30)) && r.payment_status === 'approved');
+
+            if (isHighRisk) {
+                highRiskList.push(r);
+            } else if (isSafe) {
+                safeList.push(r);
+            } else {
+                pendingList.push(r);
+            }
+        });
+
+        // Update badge counters
+        const cHigh = document.getElementById('fd-count-high');
+        const cPending = document.getElementById('fd-count-pending');
+        const cSafe = document.getElementById('fd-count-safe');
+        if (cHigh) cHigh.textContent = highRiskList.length;
+        if (cPending) cPending.textContent = pendingList.length;
+        if (cSafe) cSafe.textContent = safeList.length;
+
+        // Render each column
+        renderFraudColumn('fd-high-body', highRiskList, 'high');
+        renderFraudColumn('fd-pending-body', pendingList, 'pending');
+        renderFraudColumn('fd-safe-body', safeList, 'safe');
+
     } catch (err) {
-        console.error('[FraudTable]', err);
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${err.message}</td></tr>`;
+        console.error('[FraudDashboard]', err);
+        const errHtml = `<tr><td colspan="2" class="text-center text-danger py-4" style="font-size: 0.85rem;"><i class="fas fa-exclamation-triangle me-1"></i>${err.message}</td></tr>`;
+        if (bHigh) bHigh.innerHTML = errHtml;
+        if (bPending) bPending.innerHTML = errHtml;
+        if (bSafe) bSafe.innerHTML = errHtml;
     }
 }
 
-function renderFraudTable(rows) {
-    const tbody = document.getElementById('fraud-tbody');
+function renderFraudColumn(tbodyId, rows, type) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
     if (!rows || rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5" style="color:#64748b">
-            <i class="fas fa-shield-alt fa-2x mb-3 d-block"></i>No fraud records found.
-        </td></tr>`;
+        let emptyMsg = 'No transactions recorded.';
+        if (type === 'high') {
+            emptyMsg = '<i class="fas fa-check-circle me-1" style="color: #10b981;"></i>All clear. No high-risk transactions.';
+        } else if (type === 'pending') {
+            emptyMsg = '<i class="fas fa-check-circle me-1" style="color: #10b981;"></i>No pending reviews required.';
+        } else if (type === 'safe') {
+            emptyMsg = 'No cleared transactions yet.';
+        }
+        tbody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.85rem;">${emptyMsg}</td></tr>`;
         return;
     }
+
     tbody.innerHTML = rows.map(r => {
-        const unitText = r.room_number ? r.room_number : '<span class="text-muted">Unassigned</span>';
+        const unitText = r.room_number ? `Unit ${r.room_number}` : 'Unassigned';
         return `
-        <tr onclick="openFraudDetail(${r.payment_id})" style="cursor:pointer" class="align-middle">
-            <td style="padding: 12px 10px; font-weight: 700; color: #1a1a2e; font-size: 0.88rem; white-space: nowrap;">
-                <strong>${unitText}</strong>
+        <tr onclick="openFraudDetail(${r.payment_id})" class="fraud-triage-row align-middle" style="cursor: pointer;">
+            <td style="padding: 12px 8px; width: 55%;">
+                <div style="font-weight: 700; color: #1a1a2e; font-size: 0.88rem;">${unitText}</div>
                 ${r.tenant_name ? `<div style="font-size: 0.72rem; color: #6b7280; font-weight: 500;">${r.tenant_name}</div>` : ''}
             </td>
-            <td style="padding: 12px 10px;">
-                <div style="color: #1a1a2e; font-weight: 700; font-size: 0.88rem;">${fmtMoney(r.amount_paid)}</div>
-                ${r.expected_amount ? `<div style="font-size:0.72rem;color:#888">Exp: ${fmtMoney(r.expected_amount)}</div>` : ''}
-            </td>
-            <td style="padding: 12px 10px; text-align: center;">
-                <span class="badge rounded-pill ${r.payment_status === 'approved' ? 'bg-success-subtle text-success border border-success-subtle' : r.payment_status === 'rejected' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'}" style="font-size: 0.72rem; font-weight: 600; padding: 5px 12px;">
-                    ${(r.payment_status || 'pending').toUpperCase()}
-                </span>
-            </td>
-            <td style="padding: 12px 10px; text-align: center;">
-                ${r.receipt_path ? `<img src="${r.receipt_path}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;cursor:zoom-in;box-shadow:0 1px 3px rgba(0,0,0,0.08);" onclick="event.stopPropagation();openReceiptPreview('${r.receipt_path}')" title="Click to preview">` : '<span style="color:#94a3b8;font-size:0.75rem">—</span>'}
-            </td>
-            <td style="padding: 12px 10px;">
-                ${scoreBar(r.risk_score, r.risk_level)}
-            </td>
-            <td style="padding: 12px 10px;">
-                <div style="max-width:200px;white-space:normal">${flagChips(r.flags)}</div>
-            </td>
-            <td style="padding: 12px 10px; text-align: center;">
-                ${decisionBadge(r.decision)}
-            </td>
-            <td style="padding: 12px 10px; text-align: right; font-size: 0.78rem; color: #64748b; white-space: nowrap;">
-                ${fmtDate(r.created_at)}
+            <td style="padding: 12px 8px; text-align: right; width: 45%;">
+                <div class="d-inline-flex align-items-center justify-content-end">
+                    <span style="font-size: 0.78rem; color: #64748b; font-weight: 500;">${fmtDate(r.created_at)}</span>
+                    <i class="fas fa-chevron-right text-muted ms-2" style="font-size: 0.68rem;"></i>
+                </div>
             </td>
         </tr>`;
     }).join('');
-}
-
-function renderFraudPagination(total, page, limit) {
-    const container = document.getElementById('fraud-pagination');
-    if (!container) return;
-    const totalPages = Math.ceil(total / limit);
-    if (totalPages <= 1) { container.innerHTML = ''; return; }
-
-    let html = `<button class="fraud-page-btn" onclick="loadFraudDashboard(${page - 1})" ${page <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-    for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
-        html += `<button class="fraud-page-btn ${p === page ? 'active' : ''}" onclick="loadFraudDashboard(${p})">${p}</button>`;
-    }
-    html += `<button class="fraud-page-btn" onclick="loadFraudDashboard(${page + 1})" ${page >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-    html += `<span style="color:#64748b;font-size:0.8rem;margin-left:8px">Page ${page} of ${totalPages} (${total} records)</span>`;
-    container.innerHTML = html;
 }
 
 // ─── Filters ────────────────────────────────────────────────────

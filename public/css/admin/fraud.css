@@ -613,3 +613,15 @@
     }
 }
 
+/* ── Fraud Triage Columns ────────────────────────────────────── */
+.fraud-triage-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.fraud-triage-row:hover {
+    background-color: #f8fafc;
+}
+.fraud-triage-row:active {
+    background-color: #f1f5f9;
+}
+
