@@ -275,13 +275,13 @@ function buildFraudDrawerContent(d) {
 
     const isAmountValid = !hasAmountMismatch && (ourPrice > 0 ? Math.abs(claimedAmt - ourPrice) <= 1.0 && (ocrPaid === null || Math.abs(ocrPaid - ourPrice) <= 1.0) : true);
 
-    let refBadge = `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
+    let refBadge = `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
     if (hasDupRef) {
-        refBadge = `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Duplicate Ref #</span>`;
+        refBadge = `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-times me-1"></i>Duplicate Ref #</span>`;
     } else if (hasOcrRefMismatch) {
-        refBadge = `<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>OCR Mismatch (${receipt?.ocr_ref_number || 'Differs'})</span>`;
+        refBadge = `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-exclamation-triangle me-1"></i>OCR Mismatch (${receipt?.ocr_ref_number || 'Differs'})</span>`;
     } else if (!p.reference_number) {
-        refBadge = `<span class="badge bg-secondary">No Ref #</span>`;
+        refBadge = `<span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;">No Ref #</span>`;
     }
 
     return `
@@ -299,45 +299,45 @@ function buildFraudDrawerContent(d) {
         </div>
         <div class="score-ring-info">
             <div class="risk-label" style="color:${color}">${level}</div>
-            <div style="font-size:0.85rem;color:#666;margin-top:3px">${DECISION_LABELS[p.decision] || '—'}</div>
-            <div style="font-size:0.75rem;color:#999;margin-top:2px">Analyzed: ${fmtDate(p.analyzed_at)}</div>
+            <div style="font-size:0.85rem;color:#4b5563;margin-top:3px;font-weight:500;">${DECISION_LABELS[p.decision] || '—'}</div>
+            <div style="font-size:0.75rem;color:#6b7280;margin-top:2px">Analyzed: ${fmtDate(p.analyzed_at)}</div>
         </div>
     </div>
 
     <!-- AI Parameter Verification Checklist -->
-    <div class="drawer-section" style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-        <div class="drawer-section-title" style="color: #c5a059; margin-bottom: 12px; font-weight: 600;">
-            <i class="fas fa-robot me-2"></i>AI Verification Checklist
+    <div class="drawer-section" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+        <div class="drawer-section-title" style="color: #1a1a2e; margin-bottom: 14px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+            <i class="fas fa-robot me-2 text-primary"></i>AI Verification Checklist
         </div>
         
         <!-- 1. Amount Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Payment Amount:</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-money-bill-wave me-2 text-muted"></i>Payment Amount:</span>
             ${isAmountValid 
-                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Match (${fmtMoney(claimedAmt)})</span>` 
-                : `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Mismatch (OCR: ${ocrPaid !== null ? fmtMoney(ocrPaid) : 'N/A'} vs Price: ${fmtMoney(ourPrice)})</span>`}
+                ? `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Match (${fmtMoney(claimedAmt)})</span>` 
+                : `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-times me-1"></i>Mismatch (OCR: ${ocrPaid !== null ? fmtMoney(ocrPaid) : 'N/A'} vs Price: ${fmtMoney(ourPrice)})</span>`}
         </div>
 
         <!-- 2. Reference Number Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-hashtag me-2 text-info"></i>Reference Number:</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-hashtag me-2 text-muted"></i>Reference Number:</span>
             ${refBadge}
         </div>
 
         <!-- 3. Time / Submission Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-clock me-2 text-primary"></i>Submission Date/Time:</span>
-            <span class="badge bg-info text-dark"><i class="fas fa-calendar-alt me-1"></i>${fmtDate(p.created_at)}</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-clock me-2 text-muted"></i>Submission Date/Time:</span>
+            <span class="badge rounded-pill bg-light text-dark border px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-calendar-alt me-1 text-muted"></i>${fmtDate(p.created_at)}</span>
         </div>
 
         <!-- 4. Receipt Image Integrity -->
-        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-file-image me-2 text-secondary"></i>Receipt Image Check:</span>
+        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-file-image me-2 text-muted"></i>Receipt Image Check:</span>
             ${imgUrl && !hasUnreadable && !hasDupHash
-                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Valid & Unique Receipt</span>`
+                ? `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Valid &amp; Unique Receipt</span>`
                 : hasDupHash 
-                    ? `<span class="badge bg-danger"><i class="fas fa-copy me-1"></i>Duplicate Image Hash</span>`
-                    : `<span class="badge bg-warning text-dark"><i class="fas fa-eye-slash me-1"></i>Unreadable / Missing</span>`}
+                    ? `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-copy me-1"></i>Duplicate Image Hash</span>`
+                    : `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-eye-slash me-1"></i>Unreadable / Missing</span>`}
         </div>
     </div>
 
