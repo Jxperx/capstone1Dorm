@@ -160,7 +160,7 @@ async function loadAdminFeedback(isUserRefresh = false, retryCount = 0) {
 
 // ── Update 4-Card Luxury KPI Strip ──
 function updateKpiRibbon(feedbacks, alerts, churnList, summary) {
-    // 1. Dorm Health Index
+    // 1. Dorm Health Index & SLA
     const healthScore = summary && summary.healthScore !== undefined ? summary.healthScore : 88;
     const scoreEl = document.getElementById('feedbackHealthScore');
     if (scoreEl) scoreEl.textContent = healthScore;
@@ -170,6 +170,12 @@ function updateKpiRibbon(feedbacks, alerts, churnList, summary) {
         if (healthScore >= 75) captionEl.textContent = 'High Resident Satisfaction';
         else if (healthScore >= 50) captionEl.textContent = 'Moderate Satisfaction';
         else captionEl.textContent = 'Attention Required';
+    }
+
+    const slaEl = document.getElementById('feedbackResolutionSla');
+    if (slaEl) {
+        const slaVal = summary?.avgResolutionHours && summary.avgResolutionHours !== 'N/A' ? summary.avgResolutionHours : '< 24 hrs';
+        slaEl.textContent = `Avg Resolution: ${slaVal}`;
     }
 
     // 2. Positive Sentiment Ratio
@@ -600,6 +606,35 @@ function openFeedbackDetailModal(id) {
         }
     }
 
+    // Configure Resolution Email Checkbox
+    const notifyWrapper = document.getElementById('feedbackNotifyResidentWrapper');
+    const notifyCheck = document.getElementById('feedbackNotifyResidentCheck');
+    const notifyName = document.getElementById('feedbackNotifyResidentName');
+    const notifyEmail = document.getElementById('feedbackNotifyResidentEmail');
+    if (notifyWrapper) {
+        if (!item.is_resolved && item.email) {
+            notifyWrapper.style.display = 'flex';
+            if (notifyCheck) notifyCheck.checked = true;
+            if (notifyName) notifyName.textContent = item.tenant_name || 'Resident';
+            if (notifyEmail) notifyEmail.textContent = item.email;
+        } else {
+            notifyWrapper.style.display = 'none';
+            if (notifyCheck) notifyCheck.checked = false;
+        }
+    }
+
+    // Configure Trend Batch Resolve Button
+    const batchBtn = document.getElementById('feedbackDetailBatchResolveBtn');
+    const batchCountEl = document.getElementById('feedbackBatchCount');
+    if (batchBtn) {
+        const hasTrendBatch = !item.is_resolved && item._correlatedAlert && (item._correlatedAlert.negative_count > 1);
+        batchBtn.style.display = hasTrendBatch ? 'inline-block' : 'none';
+        batchBtn.disabled = false;
+        const count = item._correlatedAlert?.negative_count || 0;
+        if (batchCountEl) batchCountEl.textContent = count;
+        batchBtn.innerHTML = `<i class="fas fa-check-double me-1"></i>Resolve All for Trend (${count})`;
+    }
+
     const modalEl = document.getElementById('feedbackDetailModal');
     if (modalEl && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
@@ -623,7 +658,11 @@ async function createWorkOrderFromDetail() {
         const res = await fetch('/api/admin/feedback/create-work-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ issue_topic: topic, recommended_action: action }),
+            body: JSON.stringify({
+                issue_topic: topic,
+                recommended_action: action,
+                feedback_id: selectedFeedbackRecord.id
+            }),
             credentials: 'include'
         });
         const data = await res.json();
@@ -658,9 +697,16 @@ function openNoticeFromDetail() {
         bootstrap.Modal.getInstance(detailModalEl)?.hide();
     }
 
+    const context = {
+        tenant_id: selectedFeedbackRecord.tenant_id,
+        tenant_name: selectedFeedbackRecord.tenant_name,
+        room_number: selectedFeedbackRecord.room_number,
+        is_trend: Boolean(selectedFeedbackRecord._correlatedAlert)
+    };
+
     // Small delay ensures previous modal backdrop cleanly closes before notice modal opens
     setTimeout(() => {
-        openTenantNoticeModal(topic);
+        openTenantNoticeModal(topic, context);
     }, 250);
 }
 
@@ -668,6 +714,8 @@ async function resolveTrendFromDetail() {
     if (!selectedFeedbackRecord) return;
     const feedbackId = selectedFeedbackRecord.id;
     const resolveBtn = document.getElementById('feedbackDetailResolveBtn');
+    const notifyCheck = document.getElementById('feedbackNotifyResidentCheck');
+    const notify = notifyCheck ? notifyCheck.checked : false;
 
     if (resolveBtn) {
         resolveBtn.disabled = true;
@@ -679,7 +727,8 @@ async function resolveTrendFromDetail() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                feedback_id: feedbackId
+                feedback_id: feedbackId,
+                notify_tenant: notify
             }),
             credentials: 'include'
         });
@@ -713,6 +762,68 @@ async function resolveTrendFromDetail() {
         if (resolveBtn) {
             resolveBtn.disabled = false;
             resolveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Mark Resolved';
+        }
+    }
+}
+
+async function resolveTrendBatchFromDetail() {
+    if (!selectedFeedbackRecord) return;
+    const topic = selectedFeedbackRecord._correlatedAlert?.issue_topic || selectedFeedbackRecord.category;
+    const alertId = selectedFeedbackRecord._correlatedAlert?.id;
+    const batchBtn = document.getElementById('feedbackDetailBatchResolveBtn');
+
+    if (!topic && !alertId) {
+        showFeedbackToast('No active trend topic detected.', 'error');
+        return;
+    }
+
+    if (batchBtn) {
+        batchBtn.disabled = true;
+        batchBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Resolving Trend...';
+    }
+
+    try {
+        const res = await fetch('/api/admin/feedback/resolve-trend-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                issue_topic: topic,
+                alert_id: alertId
+            }),
+            credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            const topicLower = (topic || '').toLowerCase();
+            allFeedbackRecords.forEach(rec => {
+                const text = `${rec.feedback_text || ''} ${rec.category || ''} ${rec.ai_summary || ''} ${JSON.stringify(rec.ai_topics || '')}`.toLowerCase();
+                if (text.includes(topicLower) || (rec._correlatedAlert && rec._correlatedAlert.id === alertId)) {
+                    rec.is_resolved = true;
+                    rec.ai_needs_attention = false;
+                }
+            });
+            selectedFeedbackRecord.is_resolved = true;
+            selectedFeedbackRecord.ai_needs_attention = false;
+
+            const modalEl = document.getElementById('feedbackDetailModal');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+            }
+
+            showFeedbackToast(data.message || `Resolved all issues for "${topic}".`);
+            applyFiltersAndRender();
+            loadAdminFeedback(false);
+        } else {
+            showFeedbackToast(data.error || 'Failed to resolve trend batch', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showFeedbackToast('Error executing batch resolution', 'error');
+    } finally {
+        if (batchBtn) {
+            batchBtn.disabled = false;
+            batchBtn.innerHTML = '<i class="fas fa-check-double me-1"></i>Resolve All for Trend';
         }
     }
 }
@@ -811,17 +922,51 @@ function createWorkOrderFromAlert(topic, action) {
     }
 }
 
-// ── 1-Click Tenant Notice Modal ──
-function openTenantNoticeModal(topic) {
+// ── 1-Click Tenant Notice Modal (With Multi-Scope Targeting) ──
+function openTenantNoticeModal(topic, context = null) {
     const topicInput = document.getElementById('noticeTopic');
     const topicDisplay = document.getElementById('noticeTopicDisplay');
-    const messageBody = document.getElementById('noticeMessageBody');
+    const scopeSelect = document.getElementById('noticeDeliveryScope');
+    const roomOption = document.getElementById('noticeScopeRoomOption');
+    const tenantOption = document.getElementById('noticeScopeTenantOption');
+    const tenantIdInput = document.getElementById('noticeTargetTenantId');
+    const roomInput = document.getElementById('noticeTargetRoom');
 
     if (topicInput) topicInput.value = topic;
     if (topicDisplay) topicDisplay.value = topic;
-    if (messageBody) {
-        messageBody.value = `Dear Residents,\n\nWe have received resident feedback regarding ${topic}. Our management and facilities team are actively addressing this matter to ensure a comfortable and secure living environment for everyone.\n\nThank you for your cooperation and patience.`;
+
+    if (tenantIdInput) tenantIdInput.value = context?.tenant_id || '';
+    if (roomInput) roomInput.value = context?.room_number || '';
+
+    if (roomOption) {
+        if (context?.room_number) {
+            roomOption.style.display = 'block';
+            roomOption.textContent = `Unit ${context.room_number} Only`;
+        } else {
+            roomOption.style.display = 'none';
+        }
     }
+
+    if (tenantOption) {
+        if (context?.tenant_name) {
+            tenantOption.style.display = 'block';
+            tenantOption.textContent = `${context.tenant_name} (Direct Reply)`;
+        } else {
+            tenantOption.style.display = 'none';
+        }
+    }
+
+    if (scopeSelect) {
+        if (context?.is_trend) {
+            scopeSelect.value = 'all';
+        } else if (context?.tenant_name) {
+            scopeSelect.value = 'tenant';
+        } else {
+            scopeSelect.value = 'all';
+        }
+    }
+
+    handleNoticeScopeChange();
 
     const modalEl = document.getElementById('sendNoticeModal');
     if (modalEl && window.bootstrap) {
@@ -829,9 +974,44 @@ function openTenantNoticeModal(topic) {
     }
 }
 
+function handleNoticeScopeChange() {
+    const scope = document.getElementById('noticeDeliveryScope')?.value || 'all';
+    const topic = document.getElementById('noticeTopic')?.value || 'Facility Service';
+    const messageBody = document.getElementById('noticeMessageBody');
+    const hintEl = document.getElementById('noticeScopeHint');
+    const footerEl = document.getElementById('noticeDeliveryFooter');
+    const roomOption = document.getElementById('noticeScopeRoomOption');
+    const tenantOption = document.getElementById('noticeScopeTenantOption');
+
+    if (scope === 'tenant') {
+        const tName = tenantOption ? tenantOption.textContent.replace(' (Direct Reply)', '') : 'Resident';
+        if (hintEl) hintEl.textContent = `Direct private message will be sent exclusively to ${tName}.`;
+        if (footerEl) footerEl.textContent = `Direct email will be sent exclusively to ${tName}.`;
+        if (messageBody) {
+            messageBody.value = `Dear ${tName},\n\nThank you for reaching out regarding ${topic}. Our management team has reviewed your report and is actively looking into the matter.\n\nWe will follow up shortly with further updates. If you have any additional details, please reply to this notice.`;
+        }
+    } else if (scope === 'room') {
+        const roomName = roomOption ? roomOption.textContent.replace(' Only', '') : 'your unit';
+        if (hintEl) hintEl.textContent = `Notice will be sent to all residents registered in ${roomName}.`;
+        if (footerEl) footerEl.textContent = `Notice will be sent to all residents registered in ${roomName}.`;
+        if (messageBody) {
+            messageBody.value = `Dear Residents of ${roomName},\n\nWe are addressing reported maintenance/facility concerns regarding ${topic} in your unit. Our technician is scheduling an inspection to ensure everything is in proper working order.\n\nThank you for your cooperation and patience.`;
+        }
+    } else {
+        if (hintEl) hintEl.textContent = 'Broadcast will be sent to all active dormitory residents.';
+        if (footerEl) footerEl.textContent = 'This notice will be emailed directly to all active residents.';
+        if (messageBody) {
+            messageBody.value = `Dear Residents,\n\nWe have received resident feedback regarding ${topic}. Our management and facilities team are actively addressing this matter to ensure a comfortable and secure living environment for everyone.\n\nThank you for your cooperation and patience.`;
+        }
+    }
+}
+
 async function submitSendTenantNotice() {
     const topic = document.getElementById('noticeTopic')?.value;
     const body = document.getElementById('noticeMessageBody')?.value;
+    const scope = document.getElementById('noticeDeliveryScope')?.value || 'all';
+    const tenantId = document.getElementById('noticeTargetTenantId')?.value || '';
+    const room = document.getElementById('noticeTargetRoom')?.value || '';
 
     if (!body || !body.trim()) {
         showFeedbackToast('Please enter a notice message before sending.', 'error');
@@ -848,7 +1028,13 @@ async function submitSendTenantNotice() {
         const res = await fetch('/api/admin/feedback/send-notice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ topic, message_body: body }),
+            body: JSON.stringify({
+                topic,
+                message_body: body,
+                target_scope: scope,
+                target_tenant_id: tenantId,
+                target_room: room
+            }),
             credentials: 'include'
         });
         const data = await res.json();
@@ -858,7 +1044,7 @@ async function submitSendTenantNotice() {
             if (modalEl && window.bootstrap) {
                 bootstrap.Modal.getInstance(modalEl)?.hide();
             }
-            showFeedbackToast(data.message || 'Notice broadcasted to active tenants via email.');
+            showFeedbackToast(data.message || 'Notice dispatched successfully.');
         } else {
             showFeedbackToast(data.error || 'Failed to send notice', 'error');
         }

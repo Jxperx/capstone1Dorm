@@ -681,6 +681,7 @@
                                         <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">DORM HEALTH INDEX</span>
                                         <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;"><span id="feedbackHealthScore">--</span><small class="fs-6 text-muted">/100</small></h3>
                                         <div class="small" style="font-size: 0.75rem; color: #047857;" id="feedbackHealthCaption">High Resident Satisfaction</div>
+                                        <div class="small text-muted mt-1" style="font-size: 0.72rem;" id="feedbackResolutionSla">Avg Resolution: -- hrs</div>
                                     </div>
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.15);">
                                         <i class="fas fa-heartbeat" style="color: #10b981; font-size: 1.25rem;"></i>
@@ -1464,15 +1465,26 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="noticeTopic">
+                    <input type="hidden" id="noticeTargetTenantId">
+                    <input type="hidden" id="noticeTargetRoom">
                     <div class="mb-3">
                         <label class="form-label fw-bold" style="font-size:0.85rem;">Issue Topic</label>
                         <input type="text" id="noticeTopicDisplay" class="form-control" readonly style="background:#f8f9fa;">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:0.85rem;">Message to Active Tenants</label>
+                        <label class="form-label fw-bold" style="font-size:0.85rem;">Delivery Scope</label>
+                        <select id="noticeDeliveryScope" class="form-select" style="font-size:0.85rem;" onchange="handleNoticeScopeChange()">
+                            <option value="all">All Active Residents (Building-Wide)</option>
+                            <option value="room" id="noticeScopeRoomOption">Same Unit / Room Only</option>
+                            <option value="tenant" id="noticeScopeTenantOption">Reporting Resident Only</option>
+                        </select>
+                        <small class="text-muted" id="noticeScopeHint" style="font-size: 0.72rem;">Broadcast will be sent to all active dormitory residents.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:0.85rem;">Message to Tenants</label>
                         <textarea id="noticeMessageBody" class="form-control" rows="4" style="font-size:0.9rem;"></textarea>
                     </div>
-                    <div style="font-size:0.75rem;color:#888;"><i class="fas fa-envelope me-1"></i>This notice will be emailed directly to all active tenants.</div>
+                    <div style="font-size:0.75rem;color:#888;"><i class="fas fa-envelope me-1"></i><span id="noticeDeliveryFooter">This notice will be emailed directly to all active tenants.</span></div>
                 </div>
                 <div class="modal-footer" style="border-top:1px solid #eee;">
                     <button type="button" class="btn btn-sm btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
@@ -1584,13 +1596,24 @@
                             </h6>
                             <span class="small text-muted" style="font-size: 0.75rem;">Action directly linked to resident report</span>
                         </div>
-                        <p class="text-muted small mb-3" style="font-size: 0.78rem;">Quickly escalate this report into a building work order, broadcast a resident notice, or resolve the issue.</p>
+                        <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded bg-white border" id="feedbackNotifyResidentWrapper" style="border-color: #e2e8f0 !important;">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="feedbackNotifyResidentCheck" checked style="cursor: pointer;">
+                                <label class="form-check-label small fw-semibold text-dark" for="feedbackNotifyResidentCheck" style="cursor: pointer; font-size: 0.78rem;">
+                                    Send resolution confirmation email to resident (<span id="feedbackNotifyResidentName">Tenant</span>)
+                                </label>
+                            </div>
+                            <span class="badge bg-light text-secondary border px-2 py-1" style="font-size:0.68rem;" id="feedbackNotifyResidentEmail">email</span>
+                        </div>
                         <div class="d-flex gap-2 flex-wrap" id="feedbackDetailActions">
                             <button type="button" class="btn btn-sm text-white rounded-pill px-3 shadow-sm flex-fill" style="background:#1a1a2e; font-size: 0.8rem; font-weight: 600;" id="feedbackDetailWorkOrderBtn" onclick="createWorkOrderFromDetail()">
                                 <i class="fas fa-tools me-1"></i>Dispatch Work Order
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm flex-fill" style="font-size: 0.8rem; font-weight: 600;" id="feedbackDetailNoticeBtn" onclick="openNoticeFromDetail()">
                                 <i class="fas fa-bullhorn me-1"></i>Send Notice to Tenants
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm flex-fill" style="display: none; font-size: 0.8rem; font-weight: 600;" id="feedbackDetailBatchResolveBtn" onclick="resolveTrendBatchFromDetail()">
+                                <i class="fas fa-check-double me-1"></i>Resolve All for Trend (<span id="feedbackBatchCount">0</span>)
                             </button>
                             <button type="button" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm flex-fill" style="font-size: 0.8rem; font-weight: 600;" id="feedbackDetailResolveBtn" onclick="resolveTrendFromDetail()">
                                 <i class="fas fa-check-circle me-1"></i>Mark Resolved
@@ -2196,7 +2219,7 @@
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=2.4"></script>
-    <script src="js/admin/modules/feedback.js?v=2.6"></script>
+    <script src="js/admin/modules/feedback.js?v=2.7"></script>
     <script src="js/admin/modules/profile.js"></script>
     <script src="js/admin/modules/fraud.js"></script>
     <script src="js/admin/modules/inquiries.js"></script>

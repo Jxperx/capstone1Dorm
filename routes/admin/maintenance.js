@@ -99,6 +99,40 @@ router.post('/:id/update', async (req, res) => {
             .input('admin_note', sql.NVarChar, admin_note || null)
             .query(`UPDATE maintenance_requests SET status = @status, admin_note = @admin_note${resolvedClause} WHERE id = @id`);
 
+        // Two-Way Feedback Synchronization: Automatically resolve linked resident feedback and trend alert
+        if (status === 'resolved') {
+            try {
+                const reqDetails = await pool.request()
+                    .input('mid', sql.Int, id)
+                    .query('SELECT description, ai_summary, ai_category FROM maintenance_requests WHERE id = @mid');
+                
+                if (reqDetails.recordset.length > 0) {
+                    const row = reqDetails.recordset[0];
+                    const fullText = `${row.description || ''} ${row.ai_summary || ''}`;
+                    
+                    // 1. Direct feedback ID match: [FEEDBACK_REF: #123]
+                    const matchId = fullText.match(/\[FEEDBACK_REF:\s*#(\d+)\]/i);
+                    if (matchId && matchId[1]) {
+                        const fbId = parseInt(matchId[1], 10);
+                        await pool.request()
+                            .input('fbId', sql.Int, fbId)
+                            .query('UPDATE tenant_feedback SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() WHERE id = @fbId AND (is_resolved IS NULL OR is_resolved = FALSE)');
+                    }
+
+                    // 2. Correlated trend topic match: [FEEDBACK_TOPIC: <Topic>]
+                    const matchTopic = fullText.match(/\[FEEDBACK_TOPIC:\s*([^\]]+)\]/i);
+                    const topicStr = matchTopic ? matchTopic[1].trim() : (row.ai_category || null);
+                    if (topicStr) {
+                        await pool.request()
+                            .input('topic', sql.NVarChar, topicStr)
+                            .query('UPDATE feedback_alerts SET is_resolved = TRUE, resolved_at = NOW() WHERE issue_topic = @topic AND (is_resolved IS NULL OR is_resolved = FALSE)');
+                    }
+                }
+            } catch (syncErr) {
+                console.warn('[Maintenance-Feedback Sync Warning]', syncErr.message);
+            }
+        }
+
         // Fetch tenant info for email notification
         const tenantInfo = await pool.request()
             .input('mid', sql.Int, id)

@@ -206,6 +206,18 @@ router.get('/bundle', async (req, res) => {
             healthScore = Math.max(20, Math.min(100, Math.round(100 - (negRatio * 50) + (avgScore * 20) + (resolvedFb * 2))));
         }
 
+        // Compute average resolution turnaround time
+        const resolvedWithDates = feedbacks.filter(f => f.is_resolved && f.resolved_at && f.created_at);
+        let avgResolutionHours = 'N/A';
+        if (resolvedWithDates.length > 0) {
+            const totalHours = resolvedWithDates.reduce((acc, f) => {
+                const diffMs = new Date(f.resolved_at) - new Date(f.created_at);
+                return acc + Math.max(0, diffMs / (1000 * 60 * 60));
+            }, 0);
+            const avgH = totalHours / resolvedWithDates.length;
+            avgResolutionHours = avgH < 1 ? `${Math.max(1, Math.round(avgH * 60))} mins` : `${avgH.toFixed(1)} hrs`;
+        }
+
         const summary = {
             healthScore,
             totalFeedback: total,
@@ -213,7 +225,8 @@ router.get('/bundle', async (req, res) => {
             negativeCount: neg,
             avgSentimentScore: Number(avgScore).toFixed(2),
             activeAlerts: alertCount,
-            atRiskTenants: churnRisk.length
+            atRiskTenants: churnRisk.length,
+            avgResolutionHours
         };
 
         res.json({
@@ -298,14 +311,15 @@ router.get('/executive-summary', async (req, res) => {
         const pool = await poolPromise;
         await ensureFeedbackTables();
 
-        // Total feedback, negative count, average sentiment
+        // Total feedback, negative count, average sentiment, SLA turnaround
         const statsRes = await pool.request().query(`
             SELECT 
                 COUNT(*) as total_feedback,
                 SUM(CASE WHEN ai_sentiment = 'Negative' AND (is_resolved IS NULL OR is_resolved = FALSE) THEN 1 ELSE 0 END) as negative_count,
                 SUM(CASE WHEN ai_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
                 SUM(CASE WHEN is_resolved = TRUE THEN 1 ELSE 0 END) as resolved_feedback_count,
-                AVG(CAST(COALESCE(ai_sentiment_score, 0) AS FLOAT)) as avg_score
+                AVG(CAST(COALESCE(ai_sentiment_score, 0) AS FLOAT)) as avg_score,
+                AVG(CASE WHEN is_resolved = TRUE AND resolved_at IS NOT NULL AND created_at IS NOT NULL THEN EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0 ELSE NULL END) as avg_resolution_hours
             FROM tenant_feedback
         `);
 
@@ -315,6 +329,8 @@ router.get('/executive-summary', async (req, res) => {
         const pos = stats.positive_count || 0;
         const resolvedFb = stats.resolved_feedback_count || 0;
         const avgScore = stats.avg_score || 0;
+        const rawAvgHours = stats.avg_resolution_hours ? parseFloat(stats.avg_resolution_hours) : null;
+        const avgResolutionHours = rawAvgHours !== null ? (rawAvgHours < 1 ? `${Math.max(1, Math.round(rawAvgHours * 60))} mins` : `${rawAvgHours.toFixed(1)} hrs`) : 'N/A';
 
         // Active & Resolved Alerts count
         const alertRes = await pool.request().query(`
@@ -348,6 +364,9 @@ router.get('/executive-summary', async (req, res) => {
         if (resolvedCount > 0) {
             summaryBullets.push(`${resolvedCount} AI trend alert(s) successfully resolved by management, improving Dorm Health.`);
         }
+        if (rawAvgHours !== null) {
+            summaryBullets.push(`Average turnaround resolution time: ${avgResolutionHours}.`);
+        }
         if (neg > pos) {
             summaryBullets.push(`Negative feedback (${neg}) exceeds positive reports (${pos}). Focus on active trend alerts.`);
         } else if (pos > 0) {
@@ -371,6 +390,7 @@ router.get('/executive-summary', async (req, res) => {
             activeAlerts: alertCount,
             resolvedAlerts: resolvedCount,
             atRiskTenants: churnCount,
+            avgResolutionHours,
             executiveSummary: summaryBullets
         });
 
@@ -457,7 +477,7 @@ router.post('/create-work-order', async (req, res) => {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { issue_topic, recommended_action } = req.body;
+    const { issue_topic, recommended_action, feedback_id } = req.body;
     if (!issue_topic) return res.status(400).json({ error: 'Issue topic is required.' });
 
     try {
@@ -487,8 +507,13 @@ router.post('/create-work-order', async (req, res) => {
                 snippets.map((s, idx) => `${idx + 1}. "${s.ai_summary || s.feedback_text}"`).join('\n');
         }
 
+        const feedbackTag = feedback_id ? `\n\n[FEEDBACK_REF: #${feedback_id}]` : '';
+        const topicTag = issue_topic ? `\n[FEEDBACK_TOPIC: ${issue_topic}]` : '';
         const title = `[Facility / Common Area] ${issue_topic} Maintenance`;
-        const description = `[AI Trend Resolution Task] Topic: ${issue_topic}.\nRecommended Strategy: ${recommended_action || 'Inspect and resolve recurring complaints.'}${complaintContext}`;
+        const description = `[AI Trend Resolution Task] Topic: ${issue_topic}.\nRecommended Strategy: ${recommended_action || 'Inspect and resolve recurring complaints.'}${complaintContext}${feedbackTag}${topicTag}`;
+        const aiSummary = feedback_id
+            ? `Building-wide work order for AI Trend: ${issue_topic} [FEEDBACK_REF: #${feedback_id}]`
+            : `Building-wide work order for AI Trend: ${issue_topic}`;
 
         await pool.request()
             .input('tenant_id', sql.Int, tenantId)
@@ -497,7 +522,7 @@ router.post('/create-work-order', async (req, res) => {
             .input('status', sql.NVarChar, 'pending')
             .input('ai_category', sql.NVarChar, issue_topic)
             .input('ai_priority', sql.NVarChar, 'High')
-            .input('ai_summary', sql.NVarChar, `Building-wide work order for AI Trend: ${issue_topic}`)
+            .input('ai_summary', sql.NVarChar, aiSummary)
             .query(`
                 INSERT INTO maintenance_requests (tenant_id, title, description, status, ai_category, ai_priority, ai_summary)
                 VALUES (@tenant_id, @title, @description, @status, @ai_category, @ai_priority, @ai_summary)
@@ -513,28 +538,39 @@ router.post('/create-work-order', async (req, res) => {
 
 /**
  * POST /api/admin/feedback/send-notice
- * Sends a management notice to active tenants using BCC to prevent SMTP connection throttling.
+ * Sends a management notice to active tenants with flexible scope (all, room, or direct tenant).
  */
 router.post('/send-notice', async (req, res) => {
     if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { topic, message_body } = req.body;
+    const { topic, message_body, target_scope, target_tenant_id, target_room } = req.body;
     if (!topic || !message_body) return res.status(400).json({ error: 'Topic and message body are required.' });
 
     try {
         const pool = await poolPromise;
-        const tenantsRes = await pool.request().query(`
+        let queryStr = `
             SELECT u.email, u.full_name
             FROM tenants t
             JOIN users u ON t.user_id = u.id
+            LEFT JOIN rooms r ON t.room_id = r.id
             WHERE t.status = 'active' AND u.email IS NOT NULL
-        `);
+        `;
+        const reqDb = pool.request();
 
+        if (target_scope === 'tenant' && target_tenant_id) {
+            queryStr += ' AND t.id = @targetTenantId';
+            reqDb.input('targetTenantId', sql.Int, parseInt(target_tenant_id, 10));
+        } else if (target_scope === 'room' && target_room) {
+            queryStr += ' AND r.room_number = @targetRoom';
+            reqDb.input('targetRoom', sql.NVarChar, target_room);
+        }
+
+        const tenantsRes = await reqDb.query(queryStr);
         const tenants = tenantsRes.recordset;
         if (tenants.length === 0) {
-            return res.json({ success: true, message: 'No active tenants with valid email addresses found.' });
+            return res.json({ success: true, message: 'No active tenants found matching the selected scope.' });
         }
 
         const recipientEmails = tenants.map(t => t.email).filter(Boolean);
@@ -549,7 +585,7 @@ router.post('/send-notice', async (req, res) => {
             html: `
                 <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #eee;border-radius:12px;">
                     <h3 style="color:#1a1a2e;margin-top:0;">Property Management Notice</h3>
-                    <p style="color:#555;">Dear EliteStay Residents,</p>
+                    <p style="color:#555;">Dear EliteStay Resident(s),</p>
                     <div style="background:#f8f9fa;padding:16px;border-left:4px solid #c5a059;border-radius:6px;margin:16px 0;line-height:1.5;color:#333;">
                         ${message_body.replace(/\n/g, '<br>')}
                     </div>
@@ -558,7 +594,13 @@ router.post('/send-notice', async (req, res) => {
             `
         });
 
-        res.json({ success: true, message: `Notice email broadcast sent to ${recipientEmails.length} active resident(s).` });
+        const scopeLabel = target_scope === 'tenant'
+            ? 'reporting resident'
+            : target_scope === 'room'
+                ? `unit ${target_room} resident(s)`
+                : `${recipientEmails.length} active resident(s)`;
+
+        res.json({ success: true, message: `Notice email broadcast sent to ${scopeLabel}.` });
 
     } catch (err) {
         console.error('[Send Notice Error]', err);
@@ -570,15 +612,14 @@ router.post('/send-notice', async (req, res) => {
  * POST /api/admin/feedback/resolve-alert
  * POST /api/admin/feedback/resolve-item
  * POST /api/admin/feedback/reopen-item
- * Safe granular resolution: Resolves only the targeted feedback item or alert,
- * without wiping out or mutating unrelated tenant records.
+ * Safe granular resolution: Resolves only the targeted feedback item or alert.
  */
 async function handleResolveFeedbackOrAlert(req, res) {
     if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
-    const { alert_id, feedback_id, reopen } = req.body;
+    const { alert_id, feedback_id, reopen, notify_tenant } = req.body;
     if (!alert_id && !feedback_id) {
         return res.status(400).json({ error: 'Alert ID or Feedback ID is required.' });
     }
@@ -608,7 +649,52 @@ async function handleResolveFeedbackOrAlert(req, res) {
                     SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
                     WHERE id = @fId
                 `);
-            return res.json({ success: true, message: 'Feedback marked as resolved. Dorm Health Score updated.' });
+
+            let emailSent = false;
+            if (notify_tenant) {
+                try {
+                    const tenantInfoRes = await pool.request()
+                        .input('fId', sql.Int, feedback_id)
+                        .query(`
+                            SELECT f.feedback_text, f.category, f.ai_summary,
+                                   COALESCE(u.full_name, 'Resident') as tenant_name, u.email
+                            FROM tenant_feedback f
+                            LEFT JOIN tenants t ON f.tenant_id = t.id
+                            LEFT JOIN users u ON t.user_id = u.id
+                            WHERE f.id = @fId
+                        `);
+                    const info = tenantInfoRes.recordset[0];
+                    if (info && info.email) {
+                        const transporter = require('../../utils/email');
+                        const topicStr = info.category || 'Resident Feedback';
+                        await transporter.sendMail({
+                            from: `"EliteStay Management" <${process.env.EMAIL_USER}>`,
+                            to: info.email,
+                            subject: `[Resolution Confirmation] Regarding your feedback on ${topicStr}`,
+                            html: `
+                                <div style="font-family:'Inter',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #eee;border-radius:12px;">
+                                    <h3 style="color:#1a1a2e;margin-top:0;">Feedback Resolution Confirmation</h3>
+                                    <p style="color:#555;">Dear ${info.tenant_name},</p>
+                                    <p style="color:#555;">Your feedback report regarding <strong>${topicStr}</strong> has been addressed and marked as resolved by dormitory management.</p>
+                                    <div style="background:#f8f9fa;padding:14px;border-left:4px solid #10b981;border-radius:6px;margin:16px 0;font-style:italic;color:#333;">
+                                        "${info.ai_summary || info.feedback_text}"
+                                    </div>
+                                    <p style="color:#555;">We are committed to maintaining safe, comfortable, and responsive living standards. If you continue to experience any difficulties, please let us know or reach out to the management desk.</p>
+                                    <p style="color:#777;font-size:0.85rem;margin-top:20px;">Best regards,<br><strong>EliteStay Property Management</strong></p>
+                                </div>
+                            `
+                        });
+                        emailSent = true;
+                    }
+                } catch (emailErr) {
+                    console.warn('[Resolution Email Error]', emailErr.message);
+                }
+            }
+
+            const msg = emailSent
+                ? 'Feedback marked as resolved and notification email delivered to resident.'
+                : 'Feedback marked as resolved. Dorm Health Score updated.';
+            return res.json({ success: true, message: msg, emailSent });
         }
 
         // 3. Mark trend alert as resolved if alert_id provided (STRICTLY TARGETS ONLY THIS ALERT)
@@ -629,6 +715,67 @@ async function handleResolveFeedbackOrAlert(req, res) {
 router.post('/resolve-alert', handleResolveFeedbackOrAlert);
 router.post('/resolve-item', handleResolveFeedbackOrAlert);
 router.post('/reopen-item', handleResolveFeedbackOrAlert);
+
+/**
+ * POST /api/admin/feedback/resolve-trend-batch
+ * Resolves all active negative feedback items and the companion alert for a given trend.
+ */
+router.post('/resolve-trend-batch', async (req, res) => {
+    if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+
+    const { issue_topic, alert_id } = req.body;
+    if (!issue_topic && !alert_id) {
+        return res.status(400).json({ error: 'Issue topic or alert ID is required.' });
+    }
+
+    try {
+        const pool = await poolPromise;
+        await ensureFeedbackTables();
+
+        let resolvedAlertsCount = 0;
+        if (alert_id) {
+            const aRes = await pool.request()
+                .input('aId', sql.Int, alert_id)
+                .query('UPDATE feedback_alerts SET is_resolved = TRUE, resolved_at = NOW() WHERE id = @aId');
+            resolvedAlertsCount = Array.isArray(aRes.rowsAffected) ? aRes.rowsAffected[0] : (aRes.rowsAffected || 1);
+        } else if (issue_topic) {
+            const aRes = await pool.request()
+                .input('topic', sql.NVarChar, issue_topic)
+                .query('UPDATE feedback_alerts SET is_resolved = TRUE, resolved_at = NOW() WHERE issue_topic = @topic AND (is_resolved IS NULL OR is_resolved = FALSE)');
+            resolvedAlertsCount = Array.isArray(aRes.rowsAffected) ? aRes.rowsAffected[0] : (aRes.rowsAffected || 0);
+        }
+
+        let resolvedFeedbacksCount = 0;
+        if (issue_topic) {
+            const fRes = await pool.request()
+                .input('topicKey', sql.NVarChar, `%${issue_topic}%`)
+                .query(`
+                    UPDATE tenant_feedback 
+                    SET is_resolved = TRUE, ai_needs_attention = FALSE, resolved_at = NOW() 
+                    WHERE (is_resolved IS NULL OR is_resolved = FALSE)
+                      AND (
+                        feedback_text ILIKE @topicKey 
+                        OR COALESCE(ai_summary, '') ILIKE @topicKey 
+                        OR COALESCE(ai_topics, '') ILIKE @topicKey
+                        OR COALESCE(ai_keywords, '') ILIKE @topicKey
+                      )
+                `);
+            resolvedFeedbacksCount = Array.isArray(fRes.rowsAffected) ? fRes.rowsAffected[0] : (fRes.rowsAffected || 0);
+        }
+
+        res.json({
+            success: true,
+            resolvedFeedbacksCount,
+            resolvedAlertsCount,
+            message: `Resolved trend "${issue_topic || 'Alert'}" along with ${resolvedFeedbacksCount} correlated resident feedback report(s).`
+        });
+    } catch (err) {
+        console.error('[Batch Resolve Trend Error]', err);
+        res.status(500).json({ error: 'Failed to batch resolve trend items.' });
+    }
+});
 
 /**
  * POST /api/admin/feedback/ask-ai
