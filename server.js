@@ -422,8 +422,9 @@ function startServer(port, attempt = 1) {
 
     setupSocketIO(io);
 
-    httpServer.listen(port, () => {
-        logger.info(`Server running on http://localhost:${port}`);
+    const HOST = process.env.HOST || '0.0.0.0';
+    httpServer.listen(port, HOST, () => {
+        logger.info(`Server running on http://${HOST}:${port}`);
         logger.info(`Login: http://localhost:${port}/login`);
         logger.info(`Admin Dashboard: http://localhost:${port}/admin`);
         logger.info('Socket.io: Real-time Live Chat enabled.');
