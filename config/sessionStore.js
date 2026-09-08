@@ -1,3 +1,4 @@
+require('dotenv').config();
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
