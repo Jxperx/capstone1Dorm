@@ -515,20 +515,27 @@ router.post('/create-work-order', async (req, res) => {
             ? `Building-wide work order for AI Trend: ${issue_topic} [FEEDBACK_REF: #${feedback_id}]`
             : `Building-wide work order for AI Trend: ${issue_topic}`;
 
-        await pool.request()
-            .input('tenant_id', sql.Int, tenantId)
-            .input('title', sql.NVarChar, title)
-            .input('description', sql.NVarChar, description)
-            .input('status', sql.NVarChar, 'pending')
-            .input('ai_category', sql.NVarChar, issue_topic)
-            .input('ai_priority', sql.NVarChar, 'High')
-            .input('ai_summary', sql.NVarChar, aiSummary)
-            .query(`
-                INSERT INTO maintenance_requests (tenant_id, title, description, status, ai_category, ai_priority, ai_summary)
-                VALUES (@tenant_id, @title, @description, @status, @ai_category, @ai_priority, @ai_summary)
-            `);
+            const insertRes = await pool.request()
+                .input('tenant_id', sql.Int, tenantId)
+                .input('title', sql.NVarChar, title)
+                .input('description', sql.NVarChar, description)
+                .input('status', sql.NVarChar, 'pending')
+                .input('ai_category', sql.NVarChar, issue_topic)
+                .input('ai_priority', sql.NVarChar, 'High')
+                .input('ai_summary', sql.NVarChar, aiSummary)
+                .query(`
+                    INSERT INTO maintenance_requests (tenant_id, title, description, status, ai_category, ai_priority, ai_summary)
+                    VALUES (@tenant_id, @title, @description, @status, @ai_category, @ai_priority, @ai_summary)
+                    RETURNING id
+                `);
 
-        res.json({ success: true, message: `Building Work Order created for "${issue_topic}" in Maintenance section.` });
+            const createdId = insertRes.recordset?.[0]?.id || null;
+
+            res.json({
+                success: true,
+                maintenanceId: createdId,
+                message: `Building Work Order created for "${issue_topic}" in Maintenance section.`
+            });
 
     } catch (err) {
         console.error('[Create Work Order Error]', err);
@@ -656,7 +663,7 @@ async function handleResolveFeedbackOrAlert(req, res) {
                     const tenantInfoRes = await pool.request()
                         .input('fId', sql.Int, feedback_id)
                         .query(`
-                            SELECT f.feedback_text, f.category, f.ai_summary,
+                            SELECT f.feedback_text, f.ai_topics, f.ai_summary,
                                    COALESCE(u.full_name, 'Resident') as tenant_name, u.email
                             FROM tenant_feedback f
                             LEFT JOIN tenants t ON f.tenant_id = t.id
@@ -666,7 +673,16 @@ async function handleResolveFeedbackOrAlert(req, res) {
                     const info = tenantInfoRes.recordset[0];
                     if (info && info.email) {
                         const transporter = require('../../utils/email');
-                        const topicStr = info.category || 'Resident Feedback';
+                        let topicStr = 'Resident Feedback';
+                        if (info.ai_topics) {
+                            try {
+                                const parsed = typeof info.ai_topics === 'string' ? JSON.parse(info.ai_topics) : info.ai_topics;
+                                if (Array.isArray(parsed) && parsed.length > 0) topicStr = parsed[0];
+                                else if (typeof parsed === 'string') topicStr = parsed;
+                            } catch(e) {
+                                topicStr = String(info.ai_topics);
+                            }
+                        }
                         await transporter.sendMail({
                             from: `"EliteStay Management" <${process.env.EMAIL_USER}>`,
                             to: info.email,

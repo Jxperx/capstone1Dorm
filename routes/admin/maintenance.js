@@ -186,7 +186,10 @@ router.post('/:id/update', async (req, res) => {
             });
         }
 
-        res.json({ message: `Status updated to "${status.replace('_', ' ')}"${admin_note ? ' with note' : ''}` });
+        res.json({
+            success: true,
+            message: `Status updated to "${status.replace('_', ' ')}"${admin_note ? ' with note' : ''}`
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Database error' });
