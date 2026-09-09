@@ -7,9 +7,12 @@
 // ─── State ─────────────────────────────────────────────────────
 const FraudDashboard = {
     currentPage: 1,
-    limit: 20,
+    limit: 100,
     filters: { riskLevel: 'ALL', method: 'ALL', flagged: '', dateFrom: '', dateTo: '', search: '' },
-    drawerPaymentId: null
+    drawerPaymentId: null,
+    activeIds: [],
+    currentIndex: -1,
+    records: []
 };
 
 // ─── Risk helpers ───────────────────────────────────────────────
@@ -54,7 +57,22 @@ function flagChips(flagsStr) {
 }
 function fmtDate(dt) {
     if (!dt) return '—';
-    return new Date(dt).toLocaleString('en-PH', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const d = new Date(dt);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+
+    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    if (isToday) {
+        return `Today, ${timeStr}`;
+    } else if (isYesterday) {
+        return `Yesterday, ${timeStr}`;
+    }
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 }
 function fmtMoney(amount) {
     if (amount === null || amount === undefined) return '—';
@@ -99,6 +117,28 @@ async function loadFraudAnalytics() {
     }
 }
 
+// ─── Micro-Reason Badge Helper ──────────────────────────────────
+function getMicroReasonBadge(r, type) {
+    if (type === 'high') {
+        let reason = 'High Risk';
+        if (r.decision === 'BLOCKED' || r.decision === 'MANUAL_BLOCKED') reason = 'Blocked';
+        else if (r.flags && r.flags.includes('DUPLICATE')) reason = 'Duplicate Hash';
+        else if (r.flags && r.flags.includes('MISMATCH')) reason = 'Amount Mismatch';
+        else if (r.risk_score !== null && r.risk_score !== undefined) reason = `Risk: ${r.risk_score}`;
+        return `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    } else if (type === 'pending') {
+        let reason = 'Needs Review';
+        if (r.flags && r.flags.includes('MISMATCH')) reason = 'Amount Mismatch';
+        else if (r.flags && r.flags.includes('UNREADABLE')) reason = 'Unreadable Receipt';
+        else if (r.risk_score !== null && r.risk_score !== undefined) reason = `Score: ${r.risk_score}`;
+        return `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    } else if (type === 'safe') {
+        const reason = r.decision === 'AUTO_APPROVED' ? 'Auto-Approved' : 'Verified Safe';
+        return `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    }
+    return '';
+}
+
 // ─── Load Fraud Triage Columns ──────────────────────────────────
 async function loadFraudDashboard(page = 1) {
     FraudDashboard.currentPage = page;
@@ -122,6 +162,7 @@ async function loadFraudDashboard(page = 1) {
         if (!res.ok) throw new Error('Failed to load fraud data');
         const json = await res.json();
         const records = json.data || [];
+        FraudDashboard.records = records;
 
         const highRiskList = [];
         const pendingList = [];
@@ -147,6 +188,13 @@ async function loadFraudDashboard(page = 1) {
             }
         });
 
+        // Store active queue IDs in sequential display order
+        FraudDashboard.activeIds = [
+            ...highRiskList.map(r => r.payment_id),
+            ...pendingList.map(r => r.payment_id),
+            ...safeList.map(r => r.payment_id)
+        ];
+
         // Update badge counters
         const cHigh = document.getElementById('fd-count-high');
         const cPending = document.getElementById('fd-count-pending');
@@ -159,6 +207,12 @@ async function loadFraudDashboard(page = 1) {
         renderFraudColumn('fd-high-body', highRiskList, 'high');
         renderFraudColumn('fd-pending-body', pendingList, 'pending');
         renderFraudColumn('fd-safe-body', safeList, 'safe');
+
+        // Re-apply client search filter if user already typed a query
+        const searchInput = document.getElementById('fd-quick-search');
+        if (searchInput && searchInput.value) {
+            filterFraudCards(searchInput.value);
+        }
 
     } catch (err) {
         console.error('[FraudDashboard]', err);
@@ -188,11 +242,13 @@ function renderFraudColumn(tbodyId, rows, type) {
 
     tbody.innerHTML = rows.map(r => {
         const unitText = r.room_number ? `Unit ${r.room_number}` : 'Unassigned';
+        const badge = getMicroReasonBadge(r, type);
         return `
-        <tr onclick="openFraudDetail(${r.payment_id})" class="fraud-triage-row align-middle" style="cursor: pointer;">
+        <tr onclick="openFraudDetail(${r.payment_id})" class="fraud-triage-row align-middle" data-payment-id="${r.payment_id}" style="cursor: pointer;">
             <td style="padding: 12px 8px; width: 55%;">
                 <div style="font-weight: 700; color: #1a1a2e; font-size: 0.88rem;">${unitText}</div>
                 ${r.tenant_name ? `<div style="font-size: 0.72rem; color: #6b7280; font-weight: 500;">${r.tenant_name}</div>` : ''}
+                ${badge}
             </td>
             <td style="padding: 12px 8px; text-align: right; width: 45%;">
                 <div class="d-inline-flex align-items-center justify-content-end">
@@ -202,6 +258,62 @@ function renderFraudColumn(tbodyId, rows, type) {
             </td>
         </tr>`;
     }).join('');
+}
+
+// ─── Real-Time Client Search ────────────────────────────────────
+function filterFraudCards(query) {
+    const q = (query || '').trim().toLowerCase();
+    const rowsHigh = document.querySelectorAll('#fd-high-body tr.fraud-triage-row');
+    const rowsPending = document.querySelectorAll('#fd-pending-body tr.fraud-triage-row');
+    const rowsSafe = document.querySelectorAll('#fd-safe-body tr.fraud-triage-row');
+
+    function filterGroup(rows, countElId) {
+        let count = 0;
+        rows.forEach(tr => {
+            const text = tr.textContent.toLowerCase();
+            const matches = !q || text.includes(q);
+            tr.style.display = matches ? '' : 'none';
+            if (matches) count++;
+        });
+        const countEl = document.getElementById(countElId);
+        if (countEl) countEl.textContent = count;
+    }
+
+    filterGroup(rowsHigh, 'fd-count-high');
+    filterGroup(rowsPending, 'fd-count-pending');
+    filterGroup(rowsSafe, 'fd-count-safe');
+}
+
+// ─── Drawer Navigation ──────────────────────────────────────────
+function updateDrawerNavButtons() {
+    const navCont = document.getElementById('fraud-drawer-nav-container');
+    const prevBtn = document.getElementById('fraud-prev-btn');
+    const nextBtn = document.getElementById('fraud-next-btn');
+    const counter = document.getElementById('fraud-drawer-counter');
+
+    if (!navCont || !prevBtn || !nextBtn || !counter) return;
+
+    const total = FraudDashboard.activeIds.length;
+    const idx = FraudDashboard.currentIndex;
+
+    if (total <= 1 || idx === -1) {
+        navCont.style.display = 'none';
+        return;
+    }
+
+    navCont.style.display = 'inline-flex';
+    counter.textContent = `${idx + 1} of ${total}`;
+    prevBtn.disabled = idx <= 0;
+    nextBtn.disabled = idx >= total - 1;
+}
+
+function navigateFraudDrawer(dir) {
+    const total = FraudDashboard.activeIds.length;
+    const newIdx = FraudDashboard.currentIndex + dir;
+    if (newIdx >= 0 && newIdx < total) {
+        const nextId = FraudDashboard.activeIds[newIdx];
+        openFraudDetail(nextId);
+    }
 }
 
 // ─── Filters ────────────────────────────────────────────────────
@@ -218,6 +330,9 @@ function applyFraudFilters() {
 // ─── Detail Drawer ──────────────────────────────────────────────
 async function openFraudDetail(paymentId) {
     FraudDashboard.drawerPaymentId = paymentId;
+    FraudDashboard.currentIndex = FraudDashboard.activeIds.indexOf(Number(paymentId));
+    updateDrawerNavButtons();
+
     const drawer = document.getElementById('fraud-drawer');
     const overlay = document.getElementById('fraud-drawer-overlay');
     const body = document.getElementById('fraud-drawer-body');
@@ -242,6 +357,9 @@ function closeFraudDrawer() {
     document.getElementById('fraud-drawer-overlay')?.classList.remove('show');
     FraudDashboard.drawerPaymentId = null;
     FraudDashboard.currentPayment = null;
+    FraudDashboard.currentIndex = -1;
+    const navCont = document.getElementById('fraud-drawer-nav-container');
+    if (navCont) navCont.style.display = 'none';
 }
 
 function buildFraudDrawerContent(d) {

@@ -613,6 +613,10 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2 style="font-family: 'Playfair Display', Georgia, serif; font-weight: 700; color: #1a1a2e; margin: 0; font-size: 1.75rem;">Intelligent Fraud Detection</h2>
                         <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm rounded-pill shadow-sm bg-white border" style="width: 210px; overflow: hidden;">
+                                <span class="input-group-text bg-transparent border-0 pe-1 text-muted"><i class="fas fa-search" style="font-size: 0.75rem;"></i></span>
+                                <input type="text" id="fd-quick-search" class="form-control border-0 shadow-none ps-1 py-1" placeholder="Filter unit or tenant..." style="font-size: 0.78rem;" oninput="filterFraudCards(this.value)">
+                            </div>
                             <button class="btn btn-sm rounded-pill px-3 py-2 shadow-sm text-white fw-semibold" onclick="triggerRentReminders()" style="background-color: #1a1a2e; border: none; font-size: 0.82rem;">
                                 <i class="fas fa-paper-plane me-1"></i> Send Rent Reminders
                             </button>
@@ -730,7 +734,7 @@
                                     </div>
                                     <span class="badge rounded-pill" style="background: #fde8e8; color: #991b1b; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Action Required (<span id="fd-count-high">0</span>)</span>
                                 </div>
-                                <div class="table-responsive">
+                                <div class="table-responsive fraud-triage-scroll">
                                     <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid #d4a373;">
@@ -756,7 +760,7 @@
                                     </div>
                                     <span class="badge rounded-pill" style="background: #fef3c7; color: #92400e; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Needs Review (<span id="fd-count-pending">0</span>)</span>
                                 </div>
-                                <div class="table-responsive">
+                                <div class="table-responsive fraud-triage-scroll">
                                     <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid #d4a373;">
@@ -782,7 +786,7 @@
                                     </div>
                                     <span class="badge rounded-pill" style="background: #e8f8f0; color: #10b981; font-weight: 500; font-size: 0.75rem; padding: 6px 14px;">Cleared (<span id="fd-count-safe">0</span>)</span>
                                 </div>
-                                <div class="table-responsive">
+                                <div class="table-responsive fraud-triage-scroll">
                                     <table class="table align-middle mb-0" style="border-collapse: collapse; table-layout: fixed; width: 100%;">
                                         <thead>
                                             <tr style="border-bottom: 2px solid #d4a373;">
@@ -1480,8 +1484,19 @@
     ════════════════════════════════════════════════════════════ -->
     <div id="fraud-drawer-overlay" class="fraud-drawer-overlay" onclick="closeFraudDrawer()"></div>
     <div id="fraud-drawer" class="fraud-drawer">
-        <div class="drawer-header">
-            <h5><i class="fas fa-shield-alt me-2" style="color:#c5a059"></i>Payment Fraud Details</h5>
+        <div class="drawer-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2" style="color:#c5a059"></i>Payment Fraud Details</h5>
+                <div class="d-inline-flex align-items-center gap-1 bg-light px-2 py-1 rounded-pill border" id="fraud-drawer-nav-container" style="display: none;">
+                    <button class="btn btn-sm btn-link text-muted p-0 drawer-nav-btn" id="fraud-prev-btn" onclick="navigateFraudDrawer(-1)" title="Previous Payment">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="fraud-drawer-counter" style="font-size: 0.72rem; font-weight: 600; color: #64748b; padding: 0 4px; min-width: 45px; text-align: center;">1 of 1</span>
+                    <button class="btn btn-sm btn-link text-muted p-0 drawer-nav-btn" id="fraud-next-btn" onclick="navigateFraudDrawer(1)" title="Next Payment">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
             <button class="drawer-close" onclick="closeFraudDrawer()" title="Close">
                 <i class="fas fa-times"></i>
             </button>
