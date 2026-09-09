@@ -963,3 +963,33 @@ details[open] .osint-acc-title::before { transform: rotate(90deg); }
     }
 }
 
+/* ── Inquiry Triage Board & Scroll Ergonomics ────────────────── */
+.inq-triage-scroll {
+    max-height: 480px;
+    overflow-y: auto;
+}
+.inq-triage-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.inq-triage-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.inq-triage-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+}
+.inq-triage-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.inq-triage-row {
+    transition: background-color 0.15s ease;
+    cursor: pointer;
+}
+.inq-triage-row:hover {
+    background-color: #faf8f5 !important;
+}
+.inq-triage-row:active {
+    background-color: #f1ede4 !important;
+}
+

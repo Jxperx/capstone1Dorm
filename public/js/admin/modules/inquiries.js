@@ -16,9 +16,13 @@
 // ─── State ───────────────────────────────────────────────────────────────────
 const InquiryDashboard = {
     currentPage: 1,
-    limit: 20,
+    limit: 100,
     filters: { status: 'ALL', search: '', dateFrom: '', dateTo: '', sort: 'newest' },
     drawerInquiryId: null,
+    currentIndex: -1,
+    activeIds: [],
+    allInquiries: [],
+    filterQuery: '',
     charts: {},
     bulkRunning: false
 };
@@ -40,19 +44,21 @@ function escHtml(s) {
 
 function statusBadge(status) {
     const map = {
-        approved:   ['approved',   '✓ Approved'],
-        flagged:    ['flagged',    '⚑ Flagged'],
-        duplicate:  ['duplicate',  '⧉ Duplicate'],
-        suspicious: ['suspicious', '⚠ Suspicious']
+        approved:   ['approved',   '<i class="fas fa-check-circle me-1"></i>Approved'],
+        flagged:    ['flagged',    '<i class="fas fa-flag me-1"></i>Flagged'],
+        duplicate:  ['duplicate',  '<i class="fas fa-copy me-1"></i>Duplicate'],
+        suspicious: ['suspicious', '<i class="fas fa-exclamation-triangle me-1"></i>Suspicious'],
+        pending:    ['pending',    '<i class="fas fa-clock me-1"></i>Pending']
     };
-    const [cls, label] = map[status] || ['approved', status];
+    const [cls, label] = map[status] || ['pending', status || 'Pending'];
     return `<span class="inq-badge ${cls}">${label}</span>`;
 }
 
 function aiBadge(result, confidence) {
     if (!result) return '<span class="text-muted" style="font-size:0.75rem">—</span>';
     const cls = result === 'REAL' ? 'real' : 'spam';
-    return `<span class="ai-badge ${cls}">${result} ${confidence != null ? `<span style="opacity:0.75">${confidence}%</span>` : ''}</span>`;
+    const icon = result === 'REAL' ? '<i class="fas fa-shield-alt me-1"></i>' : '<i class="fas fa-ban me-1"></i>';
+    return `<span class="ai-badge ${cls}">${icon}${result} ${confidence != null ? `<span style="opacity:0.75">${confidence}%</span>` : ''}</span>`;
 }
 
 function trustBadge(trustScore, trustLevel, recommendation, hasOsint) {
@@ -63,8 +69,12 @@ function trustBadge(trustScore, trustLevel, recommendation, hasOsint) {
     const level = trustLevel || (score >= 70 ? 'HIGH' : score >= 40 ? 'MEDIUM' : 'LOW');
     const rec   = recommendation || (level === 'HIGH' ? 'SAFE' : level === 'MEDIUM' ? 'VERIFY' : 'AVOID');
     const cls   = level === 'HIGH' ? 'trust-badge-high' : level === 'MEDIUM' ? 'trust-badge-medium' : 'trust-badge-low';
-    const icon  = level === 'HIGH' ? '🟢' : level === 'MEDIUM' ? '🟡' : '🔴';
-    return `<span class="${cls}" title="${rec} — Trust Score: ${score}/100">${icon} ${score}</span>`;
+    const icon  = level === 'HIGH'
+        ? '<i class="fas fa-check-circle me-1" style="color:#10b981"></i>'
+        : level === 'MEDIUM'
+        ? '<i class="fas fa-exclamation-circle me-1" style="color:#f59e0b"></i>'
+        : '<i class="fas fa-times-circle me-1" style="color:#ef4444"></i>';
+    return `<span class="${cls}" title="${rec} — Trust Score: ${score}/100">${icon}${score}</span>`;
 }
 
 // ─── Load Analytics ───────────────────────────────────────────────────────────
@@ -81,6 +91,7 @@ async function loadInquiryAnalytics() {
         };
         setText('inq-total',      s.total);
         setText('inq-approved',   s.approved);
+        setText('inq-pending',    s.pending);
         setText('inq-flagged',    s.flagged);
         setText('inq-duplicate',  s.duplicate);
         setText('inq-suspicious', s.suspicious);
@@ -215,86 +226,171 @@ function renderTopIps(ips) {
     `).join('');
 }
 
-// ─── Load Inquiries Table ─────────────────────────────────────────────────────
+// ─── Load Inquiries & Triage Board ───────────────────────────────────────────
 async function loadInquiries(page = 1) {
     InquiryDashboard.currentPage = page;
 
-    const tbody = document.getElementById('inq-tbody');
-    if (!tbody) return;
+    const pendingBody = document.getElementById('inq-pending-body');
+    const approvedBody = document.getElementById('inq-approved-body');
+    const flaggedBody = document.getElementById('inq-flagged-body');
 
-    tbody.innerHTML = Array(5).fill(0).map(() => `
+    const skeleton = `
         <tr style="opacity:0.5">
-            ${Array(9).fill('<td><div style="height:12px;background:#f0e8d8;border-radius:4px;animation:pulse 1.2s infinite"></div></td>').join('')}
-        </tr>`).join('');
+            <td><div style="height:14px;background:#f1ede4;border-radius:4px;margin-bottom:6px;width:70%;"></div>
+                <div style="height:10px;background:#f8f5ef;border-radius:4px;width:45%;"></div></td>
+            <td><div style="height:12px;background:#f1ede4;border-radius:4px;width:80%;margin-left:auto;"></div></td>
+        </tr>`;
 
-    const f = InquiryDashboard.filters;
-    const params = new URLSearchParams({
-        page, limit: InquiryDashboard.limit,
-        status: f.status, search: f.search,
-        dateFrom: f.dateFrom, dateTo: f.dateTo,
-        sort: f.sort
-    });
+    if (pendingBody) pendingBody.innerHTML = skeleton.repeat(3);
+    if (approvedBody) approvedBody.innerHTML = skeleton.repeat(3);
+    if (flaggedBody) flaggedBody.innerHTML = skeleton.repeat(3);
 
     try {
-        const res  = await fetch(`/api/admin/inquiries?${params}`, { credentials: 'include' });
+        const res  = await fetch('/api/admin/inquiries?limit=150&sort=newest', { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load inquiries');
         const json = await res.json();
 
-        renderInquiryTable(json.data || []);
-        renderInquiryPagination(json.total || 0, json.page, json.limit);
+        InquiryDashboard.allInquiries = json.data || [];
+        renderInquiryTriage();
     } catch (err) {
-        console.error('[InquiryAdmin] Table error:', err);
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">
-            <i class="fas fa-exclamation-triangle me-2"></i>${err.message}</td></tr>`;
+        console.error('[InquiryAdmin] Load error:', err);
+        const errRow = `<tr><td colspan="2" class="text-center text-danger py-4" style="font-size: 0.85rem;"><i class="fas fa-exclamation-triangle me-1"></i>${escHtml(err.message)}</td></tr>`;
+        if (pendingBody) pendingBody.innerHTML = errRow;
+        if (approvedBody) approvedBody.innerHTML = errRow;
+        if (flaggedBody) flaggedBody.innerHTML = errRow;
     }
 }
 
-function renderInquiryTable(rows) {
-    const tbody = document.getElementById('inq-tbody');
-    if (!tbody) return;
+function filterInquiryCards(query) {
+    InquiryDashboard.filterQuery = query || '';
+    renderInquiryTriage();
+}
 
-    if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5" style="color:#888">
-            <i class="fas fa-inbox fa-2x mb-3 d-block" style="color:#ddd"></i>
-            No inquiries match your filters.</td></tr>`;
+function renderInquiryTriage() {
+    const pendingBody = document.getElementById('inq-pending-body');
+    const approvedBody = document.getElementById('inq-approved-body');
+    const flaggedBody = document.getElementById('inq-flagged-body');
+
+    if (!pendingBody || !approvedBody || !flaggedBody) return;
+
+    const q = (InquiryDashboard.filterQuery || '').trim().toLowerCase();
+    const rows = InquiryDashboard.allInquiries.filter(r => {
+        if (!q) return true;
+        const name = `${r.first_name || ''} ${r.last_name || ''}`.toLowerCase();
+        const email = (r.email || '').toLowerCase();
+        const phone = (r.phone || '').toLowerCase();
+        const unit = (r.preferred_unit || '').toLowerCase();
+        const msg = (r.message || '').toLowerCase();
+        return name.includes(q) || email.includes(q) || phone.includes(q) || unit.includes(q) || msg.includes(q);
+    });
+
+    const pendingList = [];
+    const approvedList = [];
+    const flaggedList = [];
+
+    rows.forEach(r => {
+        const st = (r.status || '').toLowerCase();
+        if (st === 'approved') {
+            approvedList.push(r);
+        } else if (st === 'flagged' || st === 'duplicate' || st === 'suspicious' || r.ai_result === 'SPAM') {
+            flaggedList.push(r);
+        } else {
+            pendingList.push(r);
+        }
+    });
+
+    // Update counters
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    setText('inq-count-pending', pendingList.length);
+    setText('inq-count-approved', approvedList.length);
+    setText('inq-count-flagged', flaggedList.length);
+
+    // Active IDs for sequential drawer navigation
+    InquiryDashboard.activeIds = [...pendingList, ...approvedList, ...flaggedList].map(r => Number(r.id));
+    updateInquiryDrawerNavButtons();
+
+    const emptyRow = (text) => `<tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.82rem;"><i class="fas fa-inbox me-2 opacity-50"></i>${text}</td></tr>`;
+
+    pendingBody.innerHTML = pendingList.length > 0 ? pendingList.map(renderInquiryRow).join('') : emptyRow('No pending inquiries');
+    approvedBody.innerHTML = approvedList.length > 0 ? approvedList.map(renderInquiryRow).join('') : emptyRow('No approved prospects');
+    flaggedBody.innerHTML = flaggedList.length > 0 ? flaggedList.map(renderInquiryRow).join('') : emptyRow('No flagged inquiries');
+}
+
+function renderInquiryRow(r) {
+    const fullName = `${escHtml(r.first_name || '')} ${escHtml(r.last_name || '')}`.trim() || 'Anonymous';
+    const email = escHtml(r.email || 'No email');
+    const phone = escHtml(r.phone || 'No phone');
+    const unit = escHtml(r.preferred_unit || '');
+    const dateFormatted = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+    const unitBadge = unit ? `<span class="badge rounded-pill bg-light text-dark border me-1" style="font-size:0.68rem; font-weight:500;"><i class="fas fa-door-open me-1 text-muted"></i>${unit}</span>` : '';
+
+    let aiPill = '';
+    if (r.ai_result === 'REAL') {
+        aiPill = `<span class="badge rounded-pill me-1" style="background:#e8f8f0; color:#10b981; font-size:0.68rem; font-weight:600;"><i class="fas fa-shield-alt me-1"></i>REAL ${r.ai_confidence ? r.ai_confidence + '%' : ''}</span>`;
+    } else if (r.ai_result === 'SPAM') {
+        aiPill = `<span class="badge rounded-pill me-1" style="background:#fde8e8; color:#e74c3c; font-size:0.68rem; font-weight:600;"><i class="fas fa-ban me-1"></i>SPAM ${r.ai_confidence ? r.ai_confidence + '%' : ''}</span>`;
+    }
+
+    let trustPill = '';
+    if (r.has_osint && r.trust_score != null) {
+        const score = parseInt(r.trust_score) || 0;
+        const scoreColor = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+        const scoreBg = score >= 70 ? '#e8f8f0' : score >= 40 ? '#fef3c7' : '#fde8e8';
+        trustPill = `<span class="badge rounded-pill" style="background:${scoreBg}; color:${scoreColor}; font-size:0.68rem; font-weight:600;"><i class="fas fa-award me-1"></i>Trust ${score}</span>`;
+    }
+
+    return `
+        <tr class="inq-triage-row" onclick="openInquiryDetail(${r.id})" style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 11px 8px; vertical-align: middle;">
+                <div class="fw-semibold text-dark" style="font-size: 0.88rem; line-height: 1.25;">${fullName}</div>
+                <div class="text-muted" style="font-size: 0.74rem; margin-top: 2px;">
+                    <span>${email}</span> &bull; <span>${phone}</span>
+                </div>
+                <div class="mt-1 d-flex flex-wrap align-items-center gap-1">
+                    ${unitBadge}${aiPill}${trustPill}
+                </div>
+            </td>
+            <td style="padding: 11px 8px; vertical-align: middle; text-align: right; white-space: nowrap;">
+                <span class="text-muted" style="font-size: 0.74rem;">${dateFormatted}</span>
+                <i class="fas fa-chevron-right ms-2" style="color: #c5a059; font-size: 0.75rem;"></i>
+            </td>
+        </tr>
+    `;
+}
+
+function updateInquiryDrawerNavButtons() {
+    const navCont = document.getElementById('inq-drawer-nav-container');
+    const prevBtn = document.getElementById('inq-prev-btn');
+    const nextBtn = document.getElementById('inq-next-btn');
+    const counter = document.getElementById('inq-drawer-counter');
+
+    if (!navCont || !prevBtn || !nextBtn || !counter) return;
+
+    const total = InquiryDashboard.activeIds.length;
+    const idx = InquiryDashboard.currentIndex;
+
+    if (total <= 1 || idx === -1) {
+        navCont.style.display = 'none';
         return;
     }
 
-    tbody.innerHTML = rows.map(r => `
-        <tr onclick="openInquiryDetail(${r.id})" style="cursor:pointer">
-            <td>
-                <div style="font-weight:600;color:#1a1a1a">${escHtml(r.first_name)} ${escHtml(r.last_name)}</div>
-                <div style="font-size:0.75rem;color:#888">${escHtml(r.email)}</div>
-            </td>
-            <td style="font-size:0.8rem">${escHtml(r.phone)}</td>
-            <td style="font-size:0.8rem;color:#666">${escHtml(r.preferred_unit) || '<span class="text-muted">—</span>'}</td>
-            <td><div class="inq-msg-preview" title="${escHtml(r.message)}">${escHtml(r.message) || '<em class="text-muted">No message</em>'}</div></td>
-            <td>${statusBadge(r.status)}</td>
-            <td>${aiBadge(r.ai_result, r.ai_confidence)}</td>
-            <td>${trustBadge(r.trust_score, r.trust_level, r.recommendation, r.has_osint)}</td>
-            <td style="font-size:0.75rem;color:#888;white-space:nowrap">${fmtDate(r.created_at)}</td>
-            <td onclick="event.stopPropagation()">
-                <div class="inq-actions d-flex gap-1 flex-wrap">
-                    <button class="btn btn-sm btn-primary" title="Convert Applicant to Tenant" onclick="convertInquiryToTenant('${escHtml(r.first_name)} ${escHtml(r.last_name)}', '${escHtml(r.email)}', '${escHtml(r.phone)}')">
-                        <i class="fas fa-user-plus me-1"></i>Convert
-                    </button>
-                    ${r.status !== 'approved'
-                        ? `<button class="btn btn-sm btn-outline-success" title="Approve Inquiry" onclick="updateInquiryStatus(${r.id},'approved')">
-                               <i class="fas fa-check"></i>
-                           </button>`
-                        : ''}
-                    ${r.status !== 'flagged'
-                        ? `<button class="btn btn-sm btn-outline-danger" title="Flag as Spam" onclick="updateInquiryStatus(${r.id},'flagged')">
-                               <i class="fas fa-flag"></i>
-                           </button>`
-                        : ''}
-                    <button class="btn btn-sm btn-outline-secondary" title="Delete" onclick="deleteInquiry(${r.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+    navCont.style.display = 'inline-flex';
+    counter.textContent = `${idx + 1} of ${total}`;
+    prevBtn.disabled = idx <= 0;
+    nextBtn.disabled = idx >= total - 1;
+}
+
+function navigateInquiryDrawer(dir) {
+    const total = InquiryDashboard.activeIds.length;
+    const newIdx = InquiryDashboard.currentIndex + dir;
+    if (newIdx >= 0 && newIdx < total) {
+        const nextId = InquiryDashboard.activeIds[newIdx];
+        openInquiryDetail(nextId);
+    }
 }
 
 function convertInquiryToTenant(name, email, phone) {
@@ -306,7 +402,7 @@ function convertInquiryToTenant(name, email, phone) {
     if (nameInput) nameInput.value = name || '';
     if (emailInput) emailInput.value = email || '';
     if (phoneInput) phoneInput.value = phone || '';
-    if (passInput) passInput.value = ''; // Optional for password setup link
+    if (passInput) passInput.value = '';
 
     if (typeof prepareAddTenant === 'function') {
         prepareAddTenant();
@@ -331,27 +427,6 @@ function convertCurrentInquiryToTenant() {
         })
         .catch(err => console.error('Error fetching inquiry details:', err));
 }
-
-function renderInquiryPagination(total, page, limit) {
-    const container = document.getElementById('inq-pagination');
-    if (!container) return;
-
-    const totalPages = Math.ceil(total / limit);
-    if (totalPages <= 1) { container.innerHTML = ''; return; }
-
-    let html = `<button class="inq-page-btn" onclick="loadInquiries(${page-1})" ${page<=1?'disabled':''}>
-                    <i class="fas fa-chevron-left"></i></button>`;
-    for (let p = Math.max(1, page-2); p <= Math.min(totalPages, page+2); p++) {
-        html += `<button class="inq-page-btn ${p===page?'active':''}" onclick="loadInquiries(${p})">${p}</button>`;
-    }
-    html += `<button class="inq-page-btn" onclick="loadInquiries(${page+1})" ${page>=totalPages?'disabled':''}>
-                 <i class="fas fa-chevron-right"></i></button>
-             <span style="color:#999;font-size:0.8rem;margin-left:8px">
-                 Page ${page} of ${totalPages} (${total} inquiries)
-             </span>`;
-    container.innerHTML = html;
-}
-
 // ─── Filters ──────────────────────────────────────────────────────────────────
 function applyInquiryFilters() {
     InquiryDashboard.filters.status   = document.getElementById('inq-filter-status')?.value || 'ALL';
@@ -436,7 +511,7 @@ async function checkOsintMissing() {
         const count = data.count || 0;
 
         if (count === 0) {
-            label.innerHTML = '<i class="fas fa-check-circle me-1" style="color:#27ae60"></i>All inquiries have been scanned ✓';
+            label.innerHTML = '<i class="fas fa-check-circle me-1" style="color:#27ae60"></i>All inquiries have been scanned';
             if (btn) btn.style.display = 'none';
         } else {
             label.innerHTML = `<strong style="color:#c5a059">${count}</strong> inquiries still need a background check`;
@@ -504,17 +579,17 @@ async function runBulkOsint() {
                     } else if (evt.type === 'progress') {
                         if (counter) counter.textContent = `${evt.current} / ${total}`;
                         if (fill)    fill.style.width = `${Math.round((evt.current / total) * 100)}%`;
-                        addLog(`<span style="color:#888">🔍 Scanning <strong>${escHtml(evt.name)}</strong>…</span>`);
+                        addLog(`<span style="color:#888"><i class="fas fa-search me-1"></i>Scanning <strong>${escHtml(evt.name)}</strong>…</span>`);
                     } else if (evt.type === 'done') {
-                        const icon  = evt.trustLevel === 'HIGH' ? '🟢' : evt.trustLevel === 'MEDIUM' ? '🟡' : '🔴';
+                        const icon  = evt.trustLevel === 'HIGH' ? '<i class="fas fa-circle me-1" style="color:#10b981"></i>' : evt.trustLevel === 'MEDIUM' ? '<i class="fas fa-circle me-1" style="color:#f59e0b"></i>' : '<i class="fas fa-circle me-1" style="color:#ef4444"></i>';
                         const badge = evt.recommendation || evt.trustLevel;
                         addLog(`<span>${icon} <strong>${escHtml(evt.name)}</strong> — Score: <strong>${evt.trustScore}</strong> / 100 · <em>${badge}</em>${evt.statusChanged ? ' <span style="color:#e74c3c;font-size:0.75rem">[Auto-flagged]</span>' : ''}</span>`);
                     } else if (evt.type === 'error') {
-                        addLog(`<span style="color:#c0392b">⚠ Inquiry #${evt.id} failed: ${escHtml(evt.message)}</span>`);
+                        addLog(`<span style="color:#c0392b"><i class="fas fa-exclamation-triangle me-1"></i>Inquiry #${evt.id} failed: ${escHtml(evt.message)}</span>`);
                     } else if (evt.type === 'complete') {
                         if (fill)    fill.style.width = '100%';
                         if (counter) counter.textContent = `${evt.processed} / ${evt.total} complete`;
-                        addLog(`<span style="color:#27ae60;font-weight:600">✅ Bulk scan complete — ${evt.processed} scanned, ${evt.failed} failed</span>`);
+                        addLog(`<span style="color:#27ae60;font-weight:600"><i class="fas fa-check-circle me-1"></i>Bulk scan complete — ${evt.processed} scanned, ${evt.failed} failed</span>`);
 
                         // Refresh table and missing count
                         loadInquiries(InquiryDashboard.currentPage);
@@ -524,7 +599,7 @@ async function runBulkOsint() {
             }
         }
     } catch (err) {
-        addLog(`<span style="color:#c0392b">❌ Bulk scan error: ${escHtml(err.message)}</span>`);
+        addLog(`<span style="color:#c0392b"><i class="fas fa-times-circle me-1"></i>Bulk scan error: ${escHtml(err.message)}</span>`);
         showInquiryToast('Bulk scan failed: ' + err.message, 'danger');
     } finally {
         InquiryDashboard.bulkRunning = false;
@@ -535,6 +610,9 @@ async function runBulkOsint() {
 // ─── Detail Drawer ─────────────────────────────────────────────────────────────
 async function openInquiryDetail(id) {
     InquiryDashboard.drawerInquiryId = id;
+    InquiryDashboard.currentIndex = InquiryDashboard.activeIds.indexOf(Number(id));
+    updateInquiryDrawerNavButtons();
+
     const drawer  = document.getElementById('inq-drawer');
     const overlay = document.getElementById('inq-drawer-overlay');
     const body    = document.getElementById('inq-drawer-body');
@@ -665,9 +743,9 @@ function buildIdDocSection(r) {
     if (!hasSchool && !hasGovt && !analysis) return '';
 
     const verdictConfig = {
-        PASS:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  icon: '✓', label: 'PASS' },
+        PASS:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  icon: '<i class="fas fa-check me-1"></i>', label: 'PASS' },
         FLAG:  { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: '!', label: 'FLAG' },
-        FAIL:  { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  icon: '✗', label: 'FAIL' },
+        FAIL:  { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  icon: '<i class="fas fa-times me-1"></i>', label: 'FAIL' },
     };
     const idVerifyStatus = r.id_verify_status || (analysis ? analysis.verdict?.toLowerCase() : 'pending');
     const verdictKey = analysis?.verdict || 'FLAG';
@@ -693,7 +771,7 @@ function buildIdDocSection(r) {
                    </span>`
                 : `<span style="margin-left:8px;padding:2px 10px;border-radius:20px;font-size:0.72rem;
                               font-weight:600;background:#f5f5f5;color:#999;border:1px solid #ddd">
-                      ⏳ Pending
+                      <i class="fas fa-clock me-1"></i>Pending
                    </span>`
             }
         </div>
@@ -702,7 +780,7 @@ function buildIdDocSection(r) {
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
             ${hasSchool ? `
             <div style="flex:1;min-width:120px">
-                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600">🎓 SCHOOL ID</div>
+                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600"><i class="fas fa-graduation-cap me-1"></i>SCHOOL ID</div>
                 <a href="${schoolImgSrc}" target="_blank" rel="noopener"
                    style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
                           transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
@@ -715,12 +793,12 @@ function buildIdDocSection(r) {
             </div>` : `
             <div style="flex:1;min-width:120px;border:2px dashed #ddd;border-radius:8px;
                         display:flex;align-items:center;justify-content:center;height:96px;color:#ccc;font-size:0.75rem">
-                🎓 No School ID
+                <i class="fas fa-graduation-cap me-1"></i>No School ID
             </div>`}
 
             ${hasGovt ? `
             <div style="flex:1;min-width:120px">
-                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600">🪪 GOVERNMENT ID</div>
+                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600"><i class="fas fa-id-card me-1"></i>GOVERNMENT ID</div>
                 <a href="${govtImgSrc}" target="_blank" rel="noopener"
                    style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
                           transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
@@ -733,7 +811,7 @@ function buildIdDocSection(r) {
             </div>` : `
             <div style="flex:1;min-width:120px;border:2px dashed #ddd;border-radius:8px;
                         display:flex;align-items:center;justify-content:center;height:96px;color:#ccc;font-size:0.75rem">
-                🪪 No Govt ID
+                <i class="fas fa-id-card me-1"></i>No Govt ID
             </div>`}
         </div>
 
@@ -743,9 +821,9 @@ function buildIdDocSection(r) {
         ${analysis.schoolId?.school   ? dr('School', escHtml(analysis.schoolId.school)) : ''}
         ${analysis.govtId?.nameOnId   ? dr('Name on Govt ID',   `<code style="font-size:0.82rem">${escHtml(analysis.govtId.nameOnId)}</code>`) : ''}
         ${analysis.govtId?.idType     ? dr('ID Type', escHtml(analysis.govtId.idType)) : ''}
-        ${dr('Names Match Form',    analysis.nameMatchesForm   ? '<span style="color:#27ae60;font-weight:700">✓ Yes</span>' : '<span style="color:#e74c3c;font-weight:700">✗ No — mismatch!</span>')}
-        ${dr('IDs Match Each Other', analysis.idsMatchEachOther ? '<span style="color:#27ae60;font-weight:700">✓ Yes</span>' : '<span style="color:#e74c3c;font-weight:700">✗ No — mismatch!</span>')}
-        ${analysis.suspiciousEditing ? dr('Editing Detected', `<span style="color:#e74c3c;font-weight:700">⚠ YES — ${escHtml(analysis.editingReason||'possible tampering')}</span>`) : ''}
+        ${dr('Names Match Form',    analysis.nameMatchesForm   ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No — mismatch!</span>')}
+        ${dr('IDs Match Each Other', analysis.idsMatchEachOther ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No — mismatch!</span>')}
+        ${analysis.suspiciousEditing ? dr('Editing Detected', `<span style="color:#e74c3c;font-weight:700"><i class="fas fa-exclamation-triangle me-1"></i>YES — ${escHtml(analysis.editingReason||'possible tampering')}</span>`) : ''}
         ${dr('AI Confidence', `
             <div style="display:flex;align-items:center;gap:8px">
                 <div style="flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden">
@@ -759,7 +837,7 @@ function buildIdDocSection(r) {
             AI analysis not available — ${escHtml(analysis.reason || 'No API key configured')}.
         </div>` : `
         <div style="font-size:0.82rem;color:#999;padding:10px 0;font-style:italic">
-            ⏳ AI analysis running in background…
+            <i class="fas fa-circle-notch fa-spin me-1"></i>AI analysis running in background…
         </div>`}
     </div>`;
 }
@@ -778,7 +856,7 @@ function buildOsintSection(r) {
         <div class="inq-drawer-section-title">
             <i class="fas fa-search-dollar me-2"></i>Background Check (OSINT)
             ${cached
-                ? `<span class="osint-checked-badge">✓ Checked</span>
+                ? `<span class="osint-checked-badge"><i class="fas fa-check me-1"></i>Checked</span>
                    <button class="osint-rerun-btn" onclick="triggerOsintCheck(${r.id})" title="Re-run background check">
                        <i class="fas fa-redo-alt"></i>
                    </button>`
@@ -788,7 +866,7 @@ function buildOsintSection(r) {
         ${cached ? renderOsintPanel(cached) : `
             <div class="osint-loading">
                 <div class="osint-loading-spinner"></div>
-                <div class="osint-loading-text" id="osint-loading-text">🔍 Running background check…</div>
+                <div class="osint-loading-text" id="osint-loading-text"><i class="fas fa-search me-1"></i>Running background check…</div>
             </div>
         `}
     </div>`;
@@ -799,7 +877,7 @@ function renderOsintPanel(d) {
                      : d.trustLevel === 'MEDIUM' ? 'osint-trust-medium' : 'osint-trust-low';
     const levelColor = d.trustLevel === 'HIGH' ? '#27ae60'
                      : d.trustLevel === 'MEDIUM' ? '#f39c12' : '#e74c3c';
-    const levelIcon  = d.trustLevel === 'HIGH' ? '✓' : d.trustLevel === 'MEDIUM' ? '!' : '✗';
+    const levelIcon  = d.trustLevel === 'HIGH' ? '<i class="fas fa-check me-1"></i>' : d.trustLevel === 'MEDIUM' ? '!' : '<i class="fas fa-times me-1"></i>';
 
     // Trust score ring
     const radius = 28, circ = 2 * Math.PI * radius;
@@ -874,7 +952,7 @@ function renderOsintPanel(d) {
     const phoneHtml = `<div class="osint-detail-row">
                <span class="osint-detail-label">Valid Mobile</span>
                <span class="osint-detail-val ${phone.valid !== false ? 'osint-ok' : 'osint-bad'}">
-                   ${phone.valid ? '✓ Yes' : phone.valid === false ? '✗ No' : '✓ Structurally Valid'}
+                   ${phone.valid ? '<i class="fas fa-check me-1 text-success"></i>Yes' : phone.valid === false ? '<i class="fas fa-times me-1 text-danger"></i>No' : '<i class="fas fa-check me-1 text-success"></i>Structurally Valid'}
                </span>
            </div>
            <div class="osint-detail-row">
@@ -883,7 +961,7 @@ function renderOsintPanel(d) {
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Line Type</span>
-               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType && phone.lineType !== 'N/A' ? phone.lineType : 'mobile')}${phone.isVoip ? ' ⚠ VOIP' : ''}</span>
+               <span class="osint-detail-val ${phone.isVoip ? 'osint-bad' : ''}">${escHtml(phone.lineType && phone.lineType !== 'N/A' ? phone.lineType : 'mobile')}${phone.isVoip ? ' <i class="fas fa-exclamation-triangle me-1 text-danger"></i>VOIP' : ''}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Country</span>
@@ -903,7 +981,7 @@ function renderOsintPanel(d) {
                    <strong>Rate limited by EmailRep.io</strong>
                    <div style="font-size:0.74rem;margin-top:3px;opacity:0.85">
                        Free tier allows 1 request/day. Add <code>EMAILREP_API_KEY</code> to your <code>.env</code> for unlimited access.
-                       ${email.isTempDomain ? '<br><span style="color:#e74c3c">⚠ Temp/disposable domain detected locally.</span>' : ''}
+                       ${email.isTempDomain ? '<br><span style="color:#e74c3c"><i class="fas fa-exclamation-triangle me-1"></i>Temp/disposable domain detected locally.</span>' : ''}
                    </div>
                </div>
            </div>`
@@ -915,15 +993,15 @@ function renderOsintPanel(d) {
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Suspicious</span>
-               <span class="osint-detail-val ${email.suspicious ? 'osint-bad' : 'osint-ok'}">${email.suspicious ? '✗ Yes' : '✓ No'}</span>
+               <span class="osint-detail-val ${email.suspicious ? 'osint-bad' : 'osint-ok'}">${email.suspicious ? '<i class="fas fa-times me-1 text-danger"></i>Yes' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Blacklisted</span>
-               <span class="osint-detail-val ${email.blacklisted ? 'osint-bad' : 'osint-ok'}">${email.blacklisted ? '✗ Yes' : '✓ No'}</span>
+               <span class="osint-detail-val ${email.blacklisted ? 'osint-bad' : 'osint-ok'}">${email.blacklisted ? '<i class="fas fa-times me-1 text-danger"></i>Yes' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
            </div>
            <div class="osint-detail-row">
                <span class="osint-detail-label">Temp Domain</span>
-               <span class="osint-detail-val ${email.isTempDomain ? 'osint-bad' : 'osint-ok'}">${email.isTempDomain ? '✗ Disposable' : '✓ No'}</span>
+               <span class="osint-detail-val ${email.isTempDomain ? 'osint-bad' : 'osint-ok'}">${email.isTempDomain ? '<i class="fas fa-times me-1 text-danger"></i>Disposable' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
            </div>
            ${(email.profiles || []).length > 0 ? `
            <div class="osint-detail-row">
@@ -969,14 +1047,14 @@ function renderOsintPanel(d) {
         const evIsGood    = ev.deliverable === true || evDelivery === 'LIKELY' || evDelivery === 'DELIVERABLE';
         const evIsBad     = evDelivery === 'UNDELIVERABLE' || evDelivery === 'DISPOSABLE';
         const evColor     = evIsGood ? '#27ae60' : evIsBad ? '#e74c3c' : '#f39c12';
-        const evIcon      = evIsGood ? '✓' : evIsBad ? '✗' : '?';
+        const evIcon      = evIsGood ? '<i class="fas fa-check"></i>' : evIsBad ? '<i class="fas fa-times"></i>' : '?';
         const deliveryLabels = {
-            DELIVERABLE:   '✓ Deliverable',
-            LIKELY:        '✓ Likely Deliverable',
-            RISKY:         '⚠ Risky',
+            DELIVERABLE:   '<i class="fas fa-check me-1"></i>Deliverable',
+            LIKELY:        '<i class="fas fa-check me-1"></i>Likely Deliverable',
+            RISKY:         '<i class="fas fa-exclamation-triangle me-1"></i>Risky',
             UNKNOWN:       '? Unknown',
-            UNDELIVERABLE: '✗ Undeliverable',
-            DISPOSABLE:    '✗ Disposable Domain'
+            UNDELIVERABLE: '<i class="fas fa-times me-1"></i>Undeliverable',
+            DISPOSABLE:    '<i class="fas fa-ban me-1"></i>Disposable Domain'
         };
         const qualityPct = ev.qualityScore != null ? Math.round(ev.qualityScore * 100) : null;
 
@@ -989,11 +1067,11 @@ function renderOsintPanel(d) {
             <div class="osint-email-verify-rows">
                 <div class="osint-detail-row">
                     <span class="osint-detail-label">Format Valid</span>
-                    <span class="osint-detail-val ${ev.formatValid ? 'osint-ok' : 'osint-bad'}">${ev.formatValid ? '✓ Yes' : '✗ No'}</span>
+                    <span class="osint-detail-val ${ev.formatValid ? 'osint-ok' : 'osint-bad'}">${ev.formatValid ? '<i class="fas fa-check me-1 text-success"></i>Yes' : '<i class="fas fa-times me-1 text-danger"></i>No'}</span>
                 </div>
                 <div class="osint-detail-row">
                     <span class="osint-detail-label">MX Records</span>
-                    <span class="osint-detail-val ${ev.mxExists ? 'osint-ok' : 'osint-bad'}">${ev.mxExists ? `✓ Found (${ev.mxCount || 1})` : '✗ None'}</span>
+                    <span class="osint-detail-val ${ev.mxExists ? 'osint-ok' : 'osint-bad'}">${ev.mxExists ? `<i class="fas fa-check me-1 text-success"></i>Found (${ev.mxCount || 1})` : '<i class="fas fa-times me-1 text-danger"></i>None'}</span>
                 </div>
                 ${ev.primaryMx ? `
                 <div class="osint-detail-row">
@@ -1008,7 +1086,7 @@ function renderOsintPanel(d) {
                 ${ev.isDisposable ? `
                 <div class="osint-detail-row">
                     <span class="osint-detail-label">Disposable</span>
-                    <span class="osint-detail-val osint-bad">✗ Temp/Disposable</span>
+                    <span class="osint-detail-val osint-bad"><i class="fas fa-times me-1 text-danger"></i>Temp/Disposable</span>
                 </div>` : ''}
                 ${qualityPct != null ? `
                 <div class="osint-detail-row">
@@ -1024,17 +1102,17 @@ function renderOsintPanel(d) {
 
     const socialHtml = `
         <div class="osint-social-group">
-            <div class="osint-social-group-label">📧 Email Verification</div>
+            <div class="osint-social-group-label"><i class="fas fa-envelope-open-text me-2"></i>Email Verification</div>
             ${emailVerifyHtml}
         </div>
         <div class="osint-social-group">
-            <div class="osint-social-group-label">📱 Social Platforms</div>
+            <div class="osint-social-group-label"><i class="fas fa-share-alt me-2"></i>Social Platforms</div>
             <div class="osint-social-links">
                 ${sl.facebook  ? `<a href="${sl.facebook}"  target="_blank" class="osint-social-btn osint-social-fb"><i class="fab fa-facebook me-1"></i>Facebook</a>` : ''}
             </div>
         </div>
         <div class="osint-social-group">
-            <div class="osint-social-group-label">💬 Message</div>
+            <div class="osint-social-group-label"><i class="fas fa-comment-dots me-2"></i>Message</div>
             <div class="osint-social-links">
                 ${sl.whatsapp  ? `<a href="${sl.whatsapp}"  target="_blank" class="osint-social-btn osint-social-wa"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>` : ''}
                 ${sl.viber     ? `<a href="${sl.viber}"     target="_blank" class="osint-social-btn osint-social-vb"><i class="fab fa-viber me-1"></i>Viber</a>` : ''}
@@ -1111,11 +1189,11 @@ async function triggerOsintCheck(id) {
     if (!section) return;
 
     const steps = [
-        '🔍 Searching the web…',
-        '📱 Validating phone number…',
-        '📧 Checking email reputation…',
-        '🤖 Consulting AI for trust score…',
-        '🇵🇭 Detecting PH carrier…'
+        'Searching the web…',
+        'Validating phone number…',
+        'Checking email reputation…',
+        'Consulting AI for trust score…',
+        'Detecting PH carrier…'
     ];
     let stepIdx = 0;
     const loadingEl = document.createElement('div');
@@ -1148,14 +1226,14 @@ async function triggerOsintCheck(id) {
 
         const title = section.querySelector('.inq-drawer-section-title');
         if (title && !title.querySelector('.osint-checked-badge')) {
-            title.insertAdjacentHTML('beforeend', '<span class="osint-checked-badge">✓ Checked</span>');
+            title.insertAdjacentHTML('beforeend', '<span class="osint-checked-badge"><i class="fas fa-check me-1"></i>Checked</span>');
         }
 
         if (data.statusChanged) {
-            showInquiryToast(`⚠️ Trust score critically low (${data.osintResult.trustScore}/100) — auto-flagged as suspicious.`, 'danger');
+            showInquiryToast(`Trust score critically low (${data.osintResult.trustScore}/100) — auto-flagged as suspicious.`, 'danger');
             loadInquiries(InquiryDashboard.currentPage);
         } else {
-            showInquiryToast('Background check complete ✓', 'success');
+            showInquiryToast('Background check complete', 'success');
         }
         // Refresh missing count
         checkOsintMissing();
@@ -1173,7 +1251,7 @@ function buildRoommateProfileCard(quizJson) {
     catch (_) { return ''; }
     if (!q) return '';
 
-    const pEmoji = q.personality === 'Introvert' ? '🌙' : q.personality === 'Extrovert' ? '☀️' : '⚖️';
+    const pIcon = q.personality === 'Introvert' ? '<i class="fas fa-moon me-1"></i>' : q.personality === 'Extrovert' ? '<i class="fas fa-sun me-1"></i>' : '<i class="fas fa-balance-scale me-1"></i>';
     const noiseLabel = (q.noise_tolerance <= 2) ? 'Quiet' : (q.noise_tolerance >= 4) ? 'Lively' : 'Balanced';
     const cleanLabel = (q.cleanliness >= 4) ? 'Very Tidy' : (q.cleanliness <= 2) ? 'Relaxed' : 'Moderate';
 
@@ -1187,20 +1265,20 @@ function buildRoommateProfileCard(quizJson) {
     <div class="inq-drawer-section">
         <div class="inq-drawer-section-title">
             <i class="fas fa-users me-2"></i>Roommate Profile
-            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#c5a059">${pEmoji} ${q.personality || ''} · ${noiseLabel} · ${cleanLabel}</span>
+            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#c5a059">${pIcon} ${q.personality || ''} · ${noiseLabel} · ${cleanLabel}</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">
-            ${row('🕐','Wake', q.wake_time)}
-            ${row('🌙','Sleep', q.sleep_time)}
-            ${row('📚','Classes', q.class_schedule)}
-            ${row('📖','Study / day', q.study_hours)}
-            ${row('🎵','Music', q.plays_music ? (q.music_time || 'Yes') : 'No')}
-            ${row('👥','Guests', q.guest_frequency)}
-            ${row('❄️','Room Pref.', q.room_preference)}
-            ${row('💡','Lights', q.lights_sleep)}
+            ${row('<i class="fas fa-clock text-warning"></i>','Wake', q.wake_time)}
+            ${row('<i class="fas fa-bed text-primary"></i>','Sleep', q.sleep_time)}
+            ${row('<i class="fas fa-graduation-cap text-info"></i>','Classes', q.class_schedule)}
+            ${row('<i class="fas fa-book-reader text-secondary"></i>','Study / day', q.study_hours)}
+            ${row('<i class="fas fa-music text-danger"></i>','Music', q.plays_music ? (q.music_time || 'Yes') : 'No')}
+            ${row('<i class="fas fa-users text-success"></i>','Guests', q.guest_frequency)}
+            ${row('<i class="fas fa-door-open text-primary"></i>','Room Pref.', q.room_preference)}
+            ${row('<i class="fas fa-lightbulb text-warning"></i>','Lights', q.lights_sleep)}
         </div>
-        ${q.recommended_room ? `<div style="font-size:11.5px;color:#27ae60;font-weight:600;padding:6px 0;border-top:1px solid #f0e8d8">💡 Preferred Choice: ${escHtml(q.recommended_room)}</div>` : ''}
-        ${q.course ? `<div style="font-size:12px;color:#c5a059;padding:6px 0;border-top:1px solid #f0e8d8">🎓 ${escHtml(q.course)}${q.school_location ? ' · ' + escHtml(q.school_location) : ''}</div>` : ''}
+        ${q.recommended_room ? `<div style="font-size:11.5px;color:#27ae60;font-weight:600;padding:6px 0;border-top:1px solid #f0e8d8"><i class="fas fa-star me-1 text-warning"></i>Preferred Choice: ${escHtml(q.recommended_room)}</div>` : ''}
+        ${q.course ? `<div style="font-size:12px;color:#c5a059;padding:6px 0;border-top:1px solid #f0e8d8"><i class="fas fa-graduation-cap me-1"></i>${escHtml(q.course)}${q.school_location ? ' · ' + escHtml(q.school_location) : ''}</div>` : ''}
         ${q.notes ? `<div style="font-size:12px;color:#888;font-style:italic;margin-top:8px">"${escHtml(q.notes)}"</div>` : ''}
     </div>`;
 }

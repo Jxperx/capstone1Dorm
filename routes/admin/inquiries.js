@@ -148,6 +148,7 @@ router.get('/analytics', async (req, res) => {
                 COUNT(*) AS total,
                 SUM(CASE WHEN status = 'approved'   THEN 1 ELSE 0 END) AS approved,
                 SUM(CASE WHEN status = 'flagged'    THEN 1 ELSE 0 END) AS flagged,
+                SUM(CASE WHEN status = 'pending' OR status IS NULL OR status = '' THEN 1 ELSE 0 END) AS pending,
                 SUM(CASE WHEN status = 'duplicate'  THEN 1 ELSE 0 END) AS duplicate,
                 SUM(CASE WHEN status = 'suspicious' THEN 1 ELSE 0 END) AS suspicious,
                 SUM(CASE WHEN ai_result = 'SPAM'    THEN 1 ELSE 0 END) AS ai_spam,
