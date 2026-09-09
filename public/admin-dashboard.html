@@ -1249,11 +1249,11 @@
                             <div class="rpt-toolbar">
                                 <select id="rpt-type-select">
                                     <option value="">— Select Report Type —</option>
-                                    <option value="maintenance">🔧 Maintenance Report</option>
-                                    <option value="financial">💰 Financial Summary</option>
-                                    <option value="complaints">💬 Tenant Complaint Report</option>
-                                    <option value="booking">📋 Booking Activity Report</option>
-                                    <option value="incident">🚨 Emergency Incident Report</option>
+                                    <option value="maintenance">Maintenance Report</option>
+                                    <option value="financial">Financial Summary</option>
+                                    <option value="complaints">Tenant Complaint Report</option>
+                                    <option value="booking">Booking Activity Report</option>
+                                    <option value="incident">Emergency Incident Report</option>
                                 </select>
                                 <input type="date" id="rpt-date-from" title="From date">
                                 <input type="date" id="rpt-date-to"   title="To date">
@@ -1368,7 +1368,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h3 class="mb-1"><i class="fas fa-robot text-warning me-2"></i>AI Rent Optimizer
-                                    <span class="badge ms-2 fw-semibold" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#f0c040;font-size:0.65rem;letter-spacing:0.04em;vertical-align:middle;">🤖 AI AUTO-MANAGED</span>
+                                    <span class="badge ms-2 fw-semibold" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#f0c040;font-size:0.65rem;letter-spacing:0.04em;vertical-align:middle;"><i class="fas fa-robot me-1"></i>AI AUTO-MANAGED</span>
                                 </h3>
                                 <p class="text-muted small mb-0">Prices are automatically optimized every 1st of the month using live Calamba &amp; Nuvali market data.</p>
                             </div>
@@ -1380,15 +1380,15 @@
                         <!-- Auto-schedule info bar -->
                         <div class="d-flex gap-3 mb-4 flex-wrap">
                             <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#0f3460,#16213e);color:#fff;">
-                                <div class="small text-white-50 mb-1">🕐 Last Auto-Update</div>
+                                <div class="small text-white-50 mb-1"><i class="fas fa-clock me-1"></i>Last Auto-Update</div>
                                 <div class="fw-bold" id="lastAutoUpdate">Loading...</div>
                             </div>
                             <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#1a1a2e,#533483);color:#fff;">
-                                <div class="small text-white-50 mb-1">⏰ Next Auto-Update</div>
+                                <div class="small text-white-50 mb-1"><i class="fas fa-hourglass-half me-1"></i>Next Auto-Update</div>
                                 <div class="fw-bold" id="nextAutoUpdate">Loading...</div>
                             </div>
                             <div class="rounded-3 px-4 py-3 flex-grow-1" style="background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;">
-                                <div class="small text-white-50 mb-1">📊 Market Sources</div>
+                                <div class="small text-white-50 mb-1"><i class="fas fa-chart-bar me-1"></i>Market Sources</div>
                                 <div class="fw-bold">Gemini AI · Calamba &amp; Nuvali</div>
                             </div>
                         </div>
@@ -2106,42 +2106,53 @@
         </div>
     </div>
 
-    <!-- Inquiry Detail Drawer -->
-    <div id="inq-drawer-overlay" class="inq-drawer-overlay" onclick="closeInquiryDrawer()"></div>
-    <div id="inq-drawer" class="inq-drawer">
-        <div class="inq-drawer-header d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <h5 class="mb-0"><i class="fas fa-envelope-open-text me-2" style="color:#c5a059"></i>Inquiry Details</h5>
-                <div class="d-inline-flex align-items-center gap-1 bg-light px-2 py-1 rounded-pill border" id="inq-drawer-nav-container" style="display: none;">
-                    <button class="btn btn-sm btn-link text-muted p-0 drawer-nav-btn" id="inq-prev-btn" onclick="navigateInquiryDrawer(-1)" title="Previous Inquiry">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span id="inq-drawer-counter" style="font-size: 0.72rem; font-weight: 600; color: #64748b; padding: 0 4px; min-width: 45px; text-align: center;">1 of 1</span>
-                    <button class="btn btn-sm btn-link text-muted p-0 drawer-nav-btn" id="inq-next-btn" onclick="navigateInquiryDrawer(1)" title="Next Inquiry">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+    <!-- Inquiry Detail & Action Modal (Luxury Click-to-Inspect Popup) -->
+    <div class="modal fade" id="inquiryDetailModal" tabindex="-1" aria-labelledby="inquiryDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <!-- Header with dark luxury theme -->
+                <div class="modal-header bg-dark text-white py-3 px-4" style="border-bottom: 2px solid #d4a373;">
+                    <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <h5 class="modal-title fw-bold text-white mb-0" id="inqModalApplicantName">Inquiry Details</h5>
+                                <span class="badge" id="inqModalStatusBadge">Pending</span>
+                                <span class="badge" id="inqModalIdBadge">ID Pending</span>
+                                <div class="d-inline-flex align-items-center gap-1 bg-secondary bg-opacity-25 px-2 py-1 rounded-pill ms-2" id="inq-modal-nav-container" style="display: none;">
+                                    <button class="btn btn-sm btn-link text-white-50 p-0 drawer-nav-btn" id="inq-modal-prev-btn" onclick="navigateInquiryModal(-1)" title="Previous Inquiry">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <span id="inq-modal-counter" style="font-size: 0.72rem; font-weight: 600; color: #cbd5e1; padding: 0 4px; min-width: 45px; text-align: center;">1 of 1</span>
+                                    <button class="btn btn-sm btn-link text-white-50 p-0 drawer-nav-btn" id="inq-modal-next-btn" onclick="navigateInquiryModal(1)" title="Next Inquiry">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="small text-light opacity-75 mt-1" id="inqModalMeta">Submitted on —</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="inquiryModalBody">
+                    <!-- Populated dynamically by inquiries.js -->
+                </div>
+                <div class="modal-footer bg-light py-3 px-4 border-top d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger px-3" id="inqModalDeleteBtn" onclick="deleteCurrentInquiryModal()">
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-success px-3 shadow-sm" id="inqModalConvertBtn" onclick="convertCurrentInquiryToTenant()">
+                            <i class="fas fa-user-plus me-1"></i>Convert to Tenant
+                        </button>
+                        <button type="button" class="btn btn-sm text-white px-3 shadow-sm" id="inqModalSaveBtn" style="background-color: #c5a059; border-color: #c5a059;" onclick="submitInquiryModalUpdate()">
+                            <i class="fas fa-check me-1"></i>Update Status &amp; Save
+                        </button>
+                    </div>
                 </div>
             </div>
-            <button class="inq-drawer-close" onclick="closeInquiryDrawer()" title="Close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="inq-drawer-body" id="inq-drawer-body">
-            <!-- Populated by inquiries.js -->
-        </div>
-        <div class="inq-drawer-footer">
-            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="convertCurrentInquiryToTenant()">
-                <i class="fas fa-user-plus me-1"></i>Convert to Tenant
-            </button>
-            <button class="btn btn-sm btn-success rounded-pill px-3" onclick="updateInquiryStatus(InquiryDashboard.drawerInquiryId,'approved')">
-                <i class="fas fa-check me-1"></i>Approve
-            </button>
-            <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="updateInquiryStatus(InquiryDashboard.drawerInquiryId,'flagged')">
-                <i class="fas fa-flag me-1"></i>Flag as Spam
-            </button>
-            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-auto" onclick="deleteInquiry(InquiryDashboard.drawerInquiryId)">
-                <i class="fas fa-trash me-1"></i>Delete
-            </button>
         </div>
     </div>
 

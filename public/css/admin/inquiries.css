@@ -994,3 +994,29 @@ details[open] .osint-acc-title::before { transform: rotate(90deg); }
     background-color: #f1ede4 !important;
 }
 
+/* ── Inquiry Detail Modal Popup (Luxury Click-to-Inspect) ── */
+#inquiryDetailModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+#inquiryDetailModal .modal-header {
+    border-bottom: 2px solid #d4a373 !important;
+}
+#inquiryDetailModal .modal-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.15rem;
+}
+#inquiryDetailModal .btn-gold-action {
+    background-color: #c5a059 !important;
+    border-color: #c5a059 !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+#inquiryDetailModal .btn-gold-action:hover {
+    background-color: #b38f48 !important;
+    border-color: #b38f48 !important;
+}
+#proofModal {
+    z-index: 1075 !important;
+}

@@ -421,7 +421,7 @@ router.post('/:id(\\d+)/verify-id', async (req, res) => {
 router.patch('/:id/status', async (req, res) => {
     const { id }     = req.params;
     const { status, admin_note } = req.body;
-    const allowed = ['approved', 'flagged', 'duplicate', 'suspicious'];
+    const allowed = ['pending', 'approved', 'flagged', 'duplicate', 'suspicious'];
 
     if (!allowed.includes(status)) {
         return res.status(422).json({ error: 'Invalid status value.' });

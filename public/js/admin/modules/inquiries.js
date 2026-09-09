@@ -373,10 +373,14 @@ function renderInquiryRow(r) {
 }
 
 function updateInquiryDrawerNavButtons() {
-    const navCont = document.getElementById('inq-drawer-nav-container');
-    const prevBtn = document.getElementById('inq-prev-btn');
-    const nextBtn = document.getElementById('inq-next-btn');
-    const counter = document.getElementById('inq-drawer-counter');
+    updateInquiryModalNavButtons();
+}
+
+function updateInquiryModalNavButtons() {
+    const navCont = document.getElementById('inq-modal-nav-container') || document.getElementById('inq-drawer-nav-container');
+    const prevBtn = document.getElementById('inq-modal-prev-btn') || document.getElementById('inq-prev-btn');
+    const nextBtn = document.getElementById('inq-modal-next-btn') || document.getElementById('inq-next-btn');
+    const counter = document.getElementById('inq-modal-counter') || document.getElementById('inq-drawer-counter');
 
     if (!navCont || !prevBtn || !nextBtn || !counter) return;
 
@@ -394,13 +398,17 @@ function updateInquiryDrawerNavButtons() {
     nextBtn.disabled = idx >= total - 1;
 }
 
-function navigateInquiryDrawer(dir) {
+function navigateInquiryModal(dir) {
     const total = InquiryDashboard.activeIds.length;
     const newIdx = InquiryDashboard.currentIndex + dir;
     if (newIdx >= 0 && newIdx < total) {
         const nextId = InquiryDashboard.activeIds[newIdx];
         openInquiryDetail(nextId);
     }
+}
+
+function navigateInquiryDrawer(dir) {
+    navigateInquiryModal(dir);
 }
 
 function convertInquiryToTenant(name, email, phone, inqId) {
@@ -438,6 +446,67 @@ function convertCurrentInquiryToTenant() {
             convertInquiryToTenant(fullName, record.email, record.phone, inqId);
         })
         .catch(err => console.error('Error fetching inquiry details:', err));
+}
+
+async function deleteCurrentInquiryModal() {
+    const id = InquiryDashboard.drawerInquiryId;
+    if (!id) return;
+    if (!confirm(`Are you sure you want to permanently delete Inquiry #${id}?`)) return;
+
+    closeInquiryDrawer();
+    await deleteInquiry(id);
+}
+
+async function submitInquiryModalUpdate() {
+    const id = document.getElementById('inqModalRecordId')?.value || InquiryDashboard.drawerInquiryId;
+    if (!id) return;
+
+    const status = document.getElementById('inqModalStatusSelect')?.value || 'pending';
+    const admin_note = document.getElementById('inqModalAdminNote')?.value || '';
+
+    const saveBtn = document.getElementById('inqModalSaveBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+    }
+
+    try {
+        const res = await fetch(`/api/admin/inquiries/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, admin_note }),
+            credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showInquiryToast(data.message || 'Inquiry updated successfully', 'success');
+            loadInquiries(InquiryDashboard.currentPage);
+            loadInquiryAnalytics();
+
+            // Update badge in modal header
+            const statusBadgeEl = document.getElementById('inqModalStatusBadge');
+            if (statusBadgeEl) {
+                const statusClasses = {
+                    pending: 'badge bg-warning text-dark',
+                    approved: 'badge bg-success',
+                    suspicious: 'badge bg-danger',
+                    flagged: 'badge bg-danger',
+                    duplicate: 'badge bg-info text-dark'
+                };
+                statusBadgeEl.className = statusClasses[status] || 'badge bg-secondary';
+                statusBadgeEl.textContent = status.toUpperCase();
+            }
+        } else {
+            showInquiryToast(data.error || 'Failed to update', 'danger');
+        }
+    } catch (err) {
+        showInquiryToast('Network error while saving inquiry update', 'danger');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-check me-1"></i>Update Status &amp; Save';
+        }
+    }
 }
 // ─── Filters ──────────────────────────────────────────────────────────────────
 function applyInquiryFilters() {
@@ -619,23 +688,44 @@ async function runBulkOsint() {
     }
 }
 
-// ─── Detail Drawer ─────────────────────────────────────────────────────────────
+// ─── Detail Modal / Inspection Popup ──────────────────────────────────────────
 async function openInquiryDetail(id) {
     InquiryDashboard.drawerInquiryId = id;
     InquiryDashboard.currentIndex = InquiryDashboard.activeIds.indexOf(Number(id));
-    updateInquiryDrawerNavButtons();
+    updateInquiryModalNavButtons();
 
-    const drawer  = document.getElementById('inq-drawer');
+    const modalEl = document.getElementById('inquiryDetailModal');
+    const modalBody = document.getElementById('inquiryModalBody');
+    const drawer = document.getElementById('inq-drawer');
     const overlay = document.getElementById('inq-drawer-overlay');
-    const body    = document.getElementById('inq-drawer-body');
-    if (!drawer) return;
+    const drawerBody = document.getElementById('inq-drawer-body');
 
-    drawer.classList.add('open');
-    overlay.classList.add('show');
-    body.innerHTML = `<div class="text-center py-5">
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show();
+    } else if (drawer) {
+        drawer.classList.add('open');
+        overlay?.classList.add('show');
+    }
+
+    // Set loading placeholders in header and body
+    const nameEl = document.getElementById('inqModalApplicantName');
+    const statusBadgeEl = document.getElementById('inqModalStatusBadge');
+    const idBadgeEl = document.getElementById('inqModalIdBadge');
+    const metaEl = document.getElementById('inqModalMeta');
+
+    if (nameEl) nameEl.textContent = 'Loading...';
+    if (statusBadgeEl) { statusBadgeEl.className = 'badge bg-secondary'; statusBadgeEl.textContent = '...'; }
+    if (idBadgeEl) { idBadgeEl.className = 'badge bg-secondary'; idBadgeEl.textContent = '...'; }
+    if (metaEl) metaEl.textContent = 'Loading inquiry details...';
+
+    const loadingHtml = `<div class="text-center py-5">
         <div class="spinner-border text-warning" style="width:2rem;height:2rem"></div>
-        <p class="mt-3 text-muted" style="font-size:0.85rem">Loading details…</p>
+        <p class="mt-3 text-muted" style="font-size:0.85rem">Loading details...</p>
     </div>`;
+
+    if (modalBody) modalBody.innerHTML = loadingHtml;
+    if (drawerBody) drawerBody.innerHTML = loadingHtml;
 
     try {
         const res = await fetch(`/api/admin/inquiries/${id}`, { credentials: 'include' });
@@ -643,19 +733,61 @@ async function openInquiryDetail(id) {
         const record = await res.json();
         InquiryDashboard.currentInquiryRecord = record;
 
-        body.innerHTML = buildInquiryDrawerContent(record);
+        // Update modal header elements
+        const fullName = `${record.first_name || ''} ${record.last_name || ''}`.trim() || 'Inquiry Details';
+        if (nameEl) nameEl.textContent = fullName;
+
+        if (statusBadgeEl) {
+            const statusClasses = {
+                pending: 'badge bg-warning text-dark',
+                approved: 'badge bg-success',
+                suspicious: 'badge bg-danger',
+                flagged: 'badge bg-danger',
+                duplicate: 'badge bg-info text-dark'
+            };
+            statusBadgeEl.className = statusClasses[record.status] || 'badge bg-secondary';
+            statusBadgeEl.textContent = (record.status || 'pending').toUpperCase();
+        }
+
+        if (idBadgeEl) {
+            if (record.id_verify_status === 'passed') {
+                idBadgeEl.className = 'badge bg-success';
+                idBadgeEl.innerHTML = '<i class="fas fa-id-card me-1"></i>ID Verified';
+            } else if (record.id_verify_status === 'failed') {
+                idBadgeEl.className = 'badge bg-danger';
+                idBadgeEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Invalid ID';
+            } else {
+                idBadgeEl.className = 'badge bg-secondary';
+                idBadgeEl.innerHTML = '<i class="fas fa-id-card me-1"></i>ID Pending';
+            }
+        }
+
+        if (metaEl) {
+            const d = new Date(record.created_at);
+            metaEl.textContent = `Submitted on ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        const contentHtml = buildInquiryDrawerContent(record);
+        if (modalBody) modalBody.innerHTML = contentHtml;
+        if (drawerBody) drawerBody.innerHTML = contentHtml;
 
         // Auto OSINT: run immediately if no cached result exists
         if (!record.osint_result) {
             triggerOsintCheck(record.id);
         }
     } catch (err) {
-        body.innerHTML = `<div class="alert alert-danger m-3">${err.message}</div>`;
+        const errHtml = `<div class="alert alert-danger m-3">${err.message}</div>`;
+        if (modalBody) modalBody.innerHTML = errHtml;
+        if (drawerBody) drawerBody.innerHTML = errHtml;
     }
 }
 
-
 function closeInquiryDrawer() {
+    const modalEl = document.getElementById('inquiryDetailModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const inst = bootstrap.Modal.getInstance(modalEl);
+        if (inst) inst.hide();
+    }
     document.getElementById('inq-drawer')?.classList.remove('open');
     document.getElementById('inq-drawer-overlay')?.classList.remove('show');
     InquiryDashboard.drawerInquiryId = null;
@@ -663,68 +795,99 @@ function closeInquiryDrawer() {
 }
 
 function buildInquiryDrawerContent(r) {
-    const statusColors = {
-        approved: '#27ae60', flagged: '#e74c3c',
-        duplicate: '#3498db', suspicious: '#f39c12'
-    };
-    const color = statusColors[r.status] || '#888';
+    const firstName = (r.first_name || '').trim();
+    const lastName  = (r.last_name || '').trim();
+    const fullName  = `${firstName} ${lastName}`.trim() || 'Anonymous Applicant';
 
     return `
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-user me-2"></i>Contact Information</div>
-        ${dr('Name',  `${escHtml(r.first_name)} ${escHtml(r.last_name)}`)  }
-        ${dr('Email', `<a href="mailto:${escHtml(r.email)}">${escHtml(r.email)}</a>`)}
-        ${dr('Phone', escHtml(r.phone))}
-        ${r.guardian_phone ? dr('Guardian Phone', escHtml(r.guardian_phone)) : ''}
-        ${dr('Preferred Unit', escHtml(r.preferred_unit) || '—')}
-    </div>
-
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-comment me-2"></i>Message</div>
-        <div style="background:#faf7f2;border-radius:8px;padding:14px;font-size:0.85rem;
-                    color:#333;line-height:1.65;white-space:pre-wrap;word-break:break-word;">
-            ${escHtml(r.message) || '<em style="color:#bbb">No message provided.</em>'}
-        </div>
-    </div>
-
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-robot me-2"></i>AI Classification</div>
-        ${dr('Status',     statusBadge(r.status))}
-        ${dr('AI Result',  aiBadge(r.ai_result, r.ai_confidence))}
-        ${dr('Confidence', `
-            <div class="inq-confidence" style="min-width:120px">
-                <div class="inq-confidence-bar">
-                    <div class="inq-confidence-fill" style="width:${r.ai_confidence||0}%;
-                         background:${r.ai_result==='SPAM'?'#e74c3c':'#27ae60'}"></div>
+    <!-- 1. Applicant & Unit Information Card -->
+    <div class="p-3 mb-4 rounded border bg-light">
+        <div class="row g-3 align-items-center">
+            <div class="col-sm-6">
+                <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing: 0.5px;">Applicant Information</div>
+                <div class="fw-bold fs-6 text-dark mt-1">${escHtml(fullName)}</div>
+                <div class="text-muted small mt-1">
+                    <i class="fas fa-envelope me-1"></i><a href="mailto:${escHtml(r.email)}" class="text-decoration-none text-muted">${escHtml(r.email)}</a>
+                    <span class="mx-2">&bull;</span>
+                    <i class="fas fa-phone me-1"></i><span>${escHtml(r.phone)}</span>
                 </div>
-                <span>${r.ai_confidence ?? '—'}%</span>
-            </div>`)}
-        ${dr('Reasoning', `<em style="font-size:0.8rem;color:#666">${escHtml(r.ai_reasoning) || '—'}</em>`)}
-    </div>
-
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-fingerprint me-2"></i>Device &amp; Network</div>
-        ${dr('IP Address', `<code style="font-size:0.8rem">${escHtml(r.ip_address)}</code>`)}
-        ${dr('Device ID',  r.device_id
-            ? `<code style="font-size:0.72rem;word-break:break-all">${escHtml(r.device_id).slice(0,32)}…</code>`
-            : '<span class="text-muted">—</span>')}
-        ${dr('User Agent', `<div style="font-size:0.72rem;color:#888;word-break:break-all">${escHtml(r.user_agent)}</div>`)}
-        ${dr('Submitted',  fmtDate(r.created_at))}
-    </div>
-
-    ${r.admin_note ? `
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-sticky-note me-2"></i>Admin Note</div>
-        <div style="background:#fffbf3;border-radius:8px;padding:12px;font-size:0.83rem;color:#555">
-            ${escHtml(r.admin_note)}
+                ${r.guardian_phone ? `
+                <div class="text-muted small mt-1">
+                    <i class="fas fa-user-shield me-1"></i>Guardian Phone: <span>${escHtml(r.guardian_phone)}</span>
+                </div>` : ''}
+            </div>
+            <div class="col-sm-6 text-sm-end">
+                <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing: 0.5px;">Assigned Unit / Room</div>
+                <div class="fw-bold fs-6 text-primary mt-1">${r.preferred_unit ? 'Room ' + escHtml(r.preferred_unit) : 'General Inquiry'}</div>
+                <div class="small mt-1 text-muted">
+                    <span class="badge bg-secondary-subtle text-secondary border">Submitted: ${fmtDate(r.created_at)}</span>
+                </div>
+            </div>
         </div>
-    </div>` : ''}
+    </div>
 
-    ${r.room_quiz ? buildRoommateProfileCard(r.room_quiz) : ''}
+    <!-- 2. Complete Issue / Inquiry Description -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px; font-size: 0.8rem;">
+                Complete Inquiry Message
+            </h6>
+        </div>
+        <div class="p-3 rounded border bg-white shadow-sm" style="font-size: 0.95rem; line-height: 1.6; color: #2c3e50; min-height: 60px; white-space: pre-wrap; word-break: break-word;">
+            ${escHtml(r.message) || '<em class="text-muted">No message provided by applicant.</em>'}
+        </div>
+    </div>
 
+    <!-- 3. AI Diagnostic & Verification Section -->
     ${buildIdDocSection(r)}
 
-    ${buildOsintSection(r)}`;
+    <!-- 4. Background Check (OSINT) -->
+    ${buildOsintSection(r)}
+
+    <!-- 5. Roommate Profile (if completed) -->
+    ${r.room_quiz ? buildRoommateProfileCard(r.room_quiz) : ''}
+
+    <!-- 6. Device & Network Details -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 0.5px; font-size: 0.8rem;">
+                Device &amp; Network Intelligence
+            </h6>
+        </div>
+        <div class="p-3 rounded border bg-light small text-muted">
+            <div class="row g-2">
+                <div class="col-sm-4"><strong>IP Address:</strong> <code>${escHtml(r.ip_address || '—')}</code></div>
+                <div class="col-sm-4"><strong>Device ID:</strong> <code>${escHtml(r.device_id ? r.device_id.slice(0, 20) + '...' : '—')}</code></div>
+                <div class="col-sm-4"><strong>Submitted:</strong> ${fmtDate(r.created_at)}</div>
+                <div class="col-12 mt-1 text-truncate" title="${escHtml(r.user_agent || '')}"><strong>User Agent:</strong> ${escHtml(r.user_agent || '—')}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Status Update & Admin Response Form -->
+    <div class="p-3 rounded border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">
+            <i class="fas fa-edit me-1" style="color: #d4a373;"></i>Update Status &amp; Admin Response
+        </h6>
+        <input type="hidden" id="inqModalRecordId" value="${r.id}">
+        <div class="row g-3">
+            <div class="col-sm-5">
+                <label class="form-label fw-semibold small text-secondary">Status</label>
+                <select id="inqModalStatusSelect" class="form-select">
+                    <option value="pending"    ${r.status === 'pending'    ? 'selected' : ''}>Pending</option>
+                    <option value="approved"   ${r.status === 'approved'   ? 'selected' : ''}>Approved</option>
+                    <option value="suspicious" ${r.status === 'suspicious' ? 'selected' : ''}>Suspicious</option>
+                    <option value="flagged"    ${r.status === 'flagged'    ? 'selected' : ''}>Flagged as Spam</option>
+                    <option value="duplicate"  ${r.status === 'duplicate'  ? 'selected' : ''}>Duplicate</option>
+                </select>
+            </div>
+            <div class="col-sm-7">
+                <label class="form-label fw-semibold small text-secondary">Admin Note <span class="text-muted fw-normal">(internal remarks)</span></label>
+                <textarea id="inqModalAdminNote" class="form-control" rows="2" placeholder="e.g., Scheduled room viewing for tomorrow 2:00 PM...">${escHtml(r.admin_note || '')}</textarea>
+            </div>
+        </div>
+    </div>
+    `;
 }
 
 function dr(label, value) {
@@ -779,94 +942,76 @@ function buildIdDocSection(r) {
         </div>` : '';
 
     return `
-    <div class="inq-drawer-section" id="iddoc-section-${r.id}">
-        <div class="inq-drawer-section-title">
-            <i class="fas fa-id-card me-2"></i>ID Document Verification
-            ${analysis && !analysis.skipped
-                ? `<span style="margin-left:8px;padding:2px 10px;border-radius:20px;font-size:0.72rem;
-                              font-weight:700;background:${vc.bg};color:${vc.color};border:1px solid ${vc.color}40">
-                      ${vc.icon} ${vc.label}
-                   </span>
-                   <button class="osint-rerun-btn" onclick="triggerIdCheck(${r.id})" title="Re-run ID verification">
-                       <i class="fas fa-redo-alt"></i>
-                   </button>`
-                : `<span style="margin-left:8px;padding:2px 10px;border-radius:20px;font-size:0.72rem;
-                              font-weight:600;background:#f5f5f5;color:#999;border:1px solid #ddd">
-                      <i class="fas fa-clock me-1"></i>Pending
-                   </span>
-                   <button class="osint-rerun-btn" onclick="triggerIdCheck(${r.id})" title="Run ID verification">
-                       <i class="fas fa-play"></i>
-                   </button>`
-            }
+    <div class="p-3 mb-4 rounded border" style="background: #fdfbf7; border-color: #f0e6d2 !important;" id="iddoc-section-${r.id}">
+        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+            <span class="fw-semibold small text-uppercase" style="color: #a67c1e; letter-spacing: 0.5px;">
+                <i class="fas fa-robot me-1"></i>AI Diagnostic &amp; Verification Summary
+            </span>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <span class="badge" style="background:${vc.bg};color:${vc.color};border:1px solid ${vc.color}40">${vc.icon} ${vc.label}</span>
+                <span class="badge ${r.ai_result==='SPAM' ? 'bg-danger' : 'bg-success'}">${r.ai_result || 'CLEAN'} (${r.ai_confidence ?? 0}%)</span>
+                <button class="btn btn-sm btn-outline-warning py-0 px-2" onclick="triggerIdCheck(${r.id})" title="Re-run ID verification">
+                    <i class="fas fa-redo-alt me-1"></i>Re-run ID Check
+                </button>
+            </div>
         </div>
 
-        <!-- Document Thumbnails -->
-        <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-            ${hasSchool ? `
-            <div style="flex:1;min-width:120px">
-                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600"><i class="fas fa-graduation-cap me-1"></i>SCHOOL ID</div>
-                <a href="${schoolImgSrc}" target="_blank" rel="noopener"
-                   style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
-                          transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
-                   onmouseout="this.style.borderColor='rgba(197,160,89,0.3)'">
-                    <img src="${schoolImgSrc}" alt="School ID"
-                         style="width:100%;height:80px;object-fit:cover;display:block"
-                         onerror="this.parentElement.innerHTML='<div style=\\'padding:16px;text-align:center;color:#aaa;font-size:0.75rem\\'>Image unavailable</div>'">
-                </a>
-                <div style="font-size:0.68rem;color:#27ae60;margin-top:4px;text-align:center">Click to view full size</div>
-            </div>` : `
-            <div style="flex:1;min-width:120px;border:2px dashed #ddd;border-radius:8px;
-                        display:flex;align-items:center;justify-content:center;height:96px;color:#ccc;font-size:0.75rem">
-                <i class="fas fa-graduation-cap me-1"></i>No School ID
-            </div>`}
+        ${isNotAnId ? `
+        <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-center gap-2">
+            <i class="fas fa-exclamation-triangle fs-5"></i>
+            <div>
+                <strong>INVALID DOCUMENT: NOT AN ID CARD</strong>
+                <div class="small mt-1">${escHtml(analysis?.nonIdReason || analysis?.reason || 'The uploaded image is not a genuine identification card. A valid School ID or Government ID is required.')}</div>
+            </div>
+        </div>` : ''}
 
-            ${hasGovt ? `
-            <div style="flex:1;min-width:120px">
-                <div style="font-size:0.72rem;color:#888;margin-bottom:6px;font-weight:600"><i class="fas fa-id-card me-1"></i>GOVERNMENT ID</div>
-                <a href="${govtImgSrc}" target="_blank" rel="noopener"
-                   style="display:block;border-radius:8px;overflow:hidden;border:2px solid rgba(197,160,89,0.3);
-                          transition:border-color 0.2s" onmouseover="this.style.borderColor='#c5a059'"
-                   onmouseout="this.style.borderColor='rgba(197,160,89,0.3)'">
-                    <img src="${govtImgSrc}" alt="Government ID"
-                         style="width:100%;height:80px;object-fit:cover;display:block"
-                         onerror="this.parentElement.innerHTML='<div style=\\'padding:16px;text-align:center;color:#aaa;font-size:0.75rem\\'>Image unavailable</div>'">
-                </a>
-                <div style="font-size:0.68rem;color:#27ae60;margin-top:4px;text-align:center">Click to view full size</div>
-            </div>` : `
-            <div style="flex:1;min-width:120px;border:2px dashed #ddd;border-radius:8px;
-                        display:flex;align-items:center;justify-content:center;height:96px;color:#ccc;font-size:0.75rem">
-                <i class="fas fa-id-card me-1"></i>No Govt ID
-            </div>`}
+        <div class="small text-dark fst-italic mb-3">
+            ${escHtml(analysis?.reason || r.ai_reasoning || 'AI analysis completed.')}
         </div>
 
-        ${analysis && !analysis.skipped ? `
-        ${nonIdNotice}
-        <!-- AI Analysis Results -->
-        ${dr('ID Document Check', isNotAnId ? '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>Non-ID Photo Detected</span>' : '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Valid ID Document</span>')}
-        ${analysis.schoolId?.isIdDocument === false ? dr('School ID Detected As', `<span style="color:#e74c3c;font-weight:600">${escHtml(analysis.schoolId.detectedImageType || 'Non-ID Photo')}</span>`) : ''}
-        ${analysis.govtId?.isIdDocument === false ? dr('Govt ID Detected As', `<span style="color:#e74c3c;font-weight:600">${escHtml(analysis.govtId.detectedImageType || 'Non-ID Photo')}</span>`) : ''}
-        ${analysis.schoolId?.nameOnId ? dr('Name on School ID', `<code style="font-size:0.82rem">${escHtml(analysis.schoolId.nameOnId)}</code>`) : ''}
-        ${analysis.schoolId?.school   ? dr('School', escHtml(analysis.schoolId.school)) : ''}
-        ${analysis.govtId?.nameOnId   ? dr('Name on Govt ID',   `<code style="font-size:0.82rem">${escHtml(analysis.govtId.nameOnId)}</code>`) : ''}
-        ${analysis.govtId?.idType     ? dr('ID Type', escHtml(analysis.govtId.idType)) : ''}
-        ${dr('Names Match Form',    analysis.nameMatchesForm   ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No -- mismatch!</span>')}
-        ${dr('IDs Match Each Other', analysis.idsMatchEachOther ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No -- mismatch!</span>')}
-        ${analysis.suspiciousEditing ? dr('Editing Detected', `<span style="color:#e74c3c;font-weight:700"><i class="fas fa-exclamation-triangle me-1"></i>YES -- ${escHtml(analysis.editingReason||'possible tampering')}</span>`) : ''}
-        ${dr('AI Confidence', `
-            <div style="display:flex;align-items:center;gap:8px">
-                <div style="flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden">
-                    <div style="width:${conf}%;height:100%;background:${conf>=70?'#27ae60':conf>=40?'#f39c12':'#e74c3c'};border-radius:3px"></div>
+        <!-- Verification Detail Breakdown -->
+        <div class="p-3 rounded bg-white border small mb-3">
+            <div class="row g-2">
+                <div class="col-sm-6">
+                    <div><span class="text-muted">Real ID Document:</span> ${isNotAnId ? '<strong class="text-danger"><i class="fas fa-times me-1"></i>Non-ID Photo Detected</strong>' : '<strong class="text-success"><i class="fas fa-check me-1"></i>Valid ID Document</strong>'}</div>
+                    ${analysis?.schoolId?.detectedImageType ? `<div><span class="text-muted">School ID Type:</span> <code>${escHtml(analysis.schoolId.detectedImageType)}</code></div>` : ''}
+                    ${analysis?.govtId?.detectedImageType ? `<div><span class="text-muted">Govt ID Type:</span> <code>${escHtml(analysis.govtId.detectedImageType)}</code></div>` : ''}
+                    ${analysis?.schoolId?.nameOnId ? `<div><span class="text-muted">Name on School ID:</span> <strong>${escHtml(analysis.schoolId.nameOnId)}</strong></div>` : ''}
+                    ${analysis?.govtId?.nameOnId ? `<div><span class="text-muted">Name on Govt ID:</span> <strong>${escHtml(analysis.govtId.nameOnId)}</strong></div>` : ''}
                 </div>
-                <span style="font-size:0.8rem;font-weight:700;color:#555">${conf}%</span>
-            </div>`)}
-        ${analysis.reason ? dr('Verdict Reason', `<em style="font-size:0.8rem;color:#666">${escHtml(analysis.reason)}</em>`) : ''}
-        ` : analysis?.skipped ? `
-        <div style="font-size:0.82rem;color:#999;padding:10px 0;font-style:italic">
-            AI analysis not available -- ${escHtml(analysis.reason || 'No API key configured')}.
-        </div>` : `
-        <div style="font-size:0.82rem;color:#999;padding:10px 0;font-style:italic">
-            <i class="fas fa-circle-notch fa-spin me-1"></i>AI analysis running in background...
-        </div>`}
+                <div class="col-sm-6">
+                    <div><span class="text-muted">Name Matches Form:</span> ${analysis?.nameMatchesForm ? '<strong class="text-success"><i class="fas fa-check me-1"></i>Yes</strong>' : '<strong class="text-danger"><i class="fas fa-times me-1"></i>No mismatch</strong>'}</div>
+                    <div><span class="text-muted">Tampering Check:</span> ${analysis?.suspiciousEditing ? '<strong class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Detected</strong>' : '<strong class="text-success"><i class="fas fa-check me-1"></i>Clean</strong>'}</div>
+                    <div><span class="text-muted">AI Confidence:</span> <strong>${conf}%</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attached Photo Proof Section -->
+        ${(hasSchool || hasGovt) ? `
+        <div>
+            <h6 class="text-uppercase fw-bold text-secondary mb-2" style="letter-spacing: 0.5px; font-size: 0.75rem;">
+                Attached Photo Proof
+            </h6>
+            <div class="row g-3">
+                ${hasSchool ? `
+                <div class="col-sm-6 text-center">
+                    <div class="small text-muted fw-semibold mb-1"><i class="fas fa-graduation-cap me-1"></i>School ID</div>
+                    <img src="${schoolImgSrc}" alt="School ID" class="img-fluid rounded shadow-sm border bg-white"
+                         style="max-height: 200px; cursor: pointer; object-fit: contain;"
+                         onclick="viewProof('${schoolImgSrc}')" title="Click to view full size">
+                    <div class="small text-muted mt-1"><i class="fas fa-search-plus me-1"></i>Click image to expand in full lightbox</div>
+                </div>` : ''}
+                ${hasGovt ? `
+                <div class="col-sm-6 text-center">
+                    <div class="small text-muted fw-semibold mb-1"><i class="fas fa-id-card me-1"></i>Government ID</div>
+                    <img src="${govtImgSrc}" alt="Government ID" class="img-fluid rounded shadow-sm border bg-white"
+                         style="max-height: 200px; cursor: pointer; object-fit: contain;"
+                         onclick="viewProof('${govtImgSrc}')" title="Click to view full size">
+                    <div class="small text-muted mt-1"><i class="fas fa-search-plus me-1"></i>Click image to expand in full lightbox</div>
+                </div>` : ''}
+            </div>
+        </div>` : ''}
     </div>`;
 }
 
@@ -1262,8 +1407,23 @@ async function triggerIdCheck(id) {
         if (recRes.ok) {
             const record = await recRes.json();
             InquiryDashboard.currentInquiryRecord = record;
-            const body = document.getElementById('inq-drawer-body');
+            const body = document.getElementById('inquiryModalBody') || document.getElementById('inq-drawer-body');
             if (body) body.innerHTML = buildInquiryDrawerContent(record);
+
+            // Update ID badge in modal header
+            const idBadgeEl = document.getElementById('inqModalIdBadge');
+            if (idBadgeEl) {
+                if (record.id_verify_status === 'passed') {
+                    idBadgeEl.className = 'badge bg-success';
+                    idBadgeEl.innerHTML = '<i class="fas fa-id-card me-1"></i>ID Verified';
+                } else if (record.id_verify_status === 'failed') {
+                    idBadgeEl.className = 'badge bg-danger';
+                    idBadgeEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Invalid ID';
+                } else {
+                    idBadgeEl.className = 'badge bg-secondary';
+                    idBadgeEl.innerHTML = '<i class="fas fa-id-card me-1"></i>ID Pending';
+                }
+            }
         }
 
         if (data.statusChanged) {
