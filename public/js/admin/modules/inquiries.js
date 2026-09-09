@@ -1035,61 +1035,6 @@ function renderOsintPanel(d, r) {
            ${phoneWebHtml}
            ${phoneQuickLinks}`;
 
-    // ── Email section ────────────────────────────────────────────────────────
-    const email = d.email || {};
-    const emailHtml = email.skipped
-        ? `<span class="osint-skipped">Skipped — no API key</span>`
-        : email.rateLimited
-        ? `<div class="osint-rate-limited">
-               <i class="fas fa-clock me-2"></i>
-               <div>
-                   <strong>Rate limited by EmailRep.io</strong>
-                   <div style="font-size:0.74rem;margin-top:3px;opacity:0.85">
-                       Free tier allows 1 request/day. Add <code>EMAILREP_API_KEY</code> to your <code>.env</code> for unlimited access.
-                       ${email.isTempDomain ? '<br><span style="color:#e74c3c"><i class="fas fa-exclamation-triangle me-1"></i>Temp/disposable domain detected locally.</span>' : ''}
-                   </div>
-               </div>
-           </div>`
-        : email.error
-        ? `<span class="osint-error"><i class="fas fa-exclamation-triangle me-1"></i>${escHtml(email.error)}</span>`
-        : `<div class="osint-detail-row">
-               <span class="osint-detail-label">Reputation</span>
-               <span class="osint-detail-val osint-rep-${escHtml((email.reputation||'none').toLowerCase())}">${escHtml(email.reputation || '—')}</span>
-           </div>
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">Suspicious</span>
-               <span class="osint-detail-val ${email.suspicious ? 'osint-bad' : 'osint-ok'}">${email.suspicious ? '<i class="fas fa-times me-1 text-danger"></i>Yes' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
-           </div>
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">Blacklisted</span>
-               <span class="osint-detail-val ${email.blacklisted ? 'osint-bad' : 'osint-ok'}">${email.blacklisted ? '<i class="fas fa-times me-1 text-danger"></i>Yes' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
-           </div>
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">Temp Domain</span>
-               <span class="osint-detail-val ${email.isTempDomain ? 'osint-bad' : 'osint-ok'}">${email.isTempDomain ? '<i class="fas fa-times me-1 text-danger"></i>Disposable' : '<i class="fas fa-check me-1 text-success"></i>No'}</span>
-           </div>
-           ${(email.profiles || []).length > 0 ? `
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">Profiles</span>
-               <span class="osint-detail-val">${email.profiles.map(p => escHtml(p)).join(', ')}</span>
-           </div>` : ''}
-           <div class="osint-detail-row">
-               <span class="osint-detail-label">First Seen</span>
-               <span class="osint-detail-val">${escHtml(email.firstSeen || '—')}</span>
-           </div>`;
-
-
-    // ── Web results ──────────────────────────────────────────────────────────
-    const webResults = d.webResults || [];
-    const webHtml = webResults.length === 0
-        ? `<div class="osint-no-results"><i class="fas fa-search me-1"></i>No web results found for this name.</div>`
-        : webResults.map(r => `
-            <a class="osint-web-result" href="${escHtml(r.url)}" target="_blank" rel="noopener">
-                <div class="osint-web-title">${escHtml(r.title)}</div>
-                <div class="osint-web-snippet">${escHtml(r.snippet)}</div>
-                <div class="osint-web-url">${escHtml(r.url)}</div>
-            </a>`).join('');
-
     // ── Email Verification Panel (replaces Google search button) ─────────────
     const ev = d.emailVerify || {};
     const hasEmailVerify = ev.checkedVia != null; // only present on newly-scanned results
@@ -1233,14 +1178,6 @@ function renderOsintPanel(d, r) {
             <summary class="osint-acc-title"><i class="fas fa-phone me-2"></i>Phone Validation</summary>
             <div class="osint-acc-body">${phoneHtml}</div>
         </details>
-        <details class="osint-acc-item">
-            <summary class="osint-acc-title"><i class="fas fa-envelope me-2"></i>Email Reputation</summary>
-            <div class="osint-acc-body">${emailHtml}</div>
-        </details>
-        <details class="osint-acc-item">
-            <summary class="osint-acc-title"><i class="fas fa-globe me-2"></i>Web Search Results</summary>
-            <div class="osint-acc-body osint-web-results">${webHtml}</div>
-        </details>
     </div>
 
     <!-- Expanded Social & Contact Links -->
@@ -1255,11 +1192,9 @@ async function triggerOsintCheck(id) {
     if (!section) return;
 
     const steps = [
-        'Searching the web…',
-        'Validating phone number…',
-        'Checking email reputation…',
-        'Consulting AI for trust score…',
-        'Detecting PH carrier…'
+        'Validating phone number...',
+        'Consulting AI for trust score...',
+        'Detecting PH carrier...'
     ];
     let stepIdx = 0;
     const loadingEl = document.createElement('div');
