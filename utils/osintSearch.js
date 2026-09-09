@@ -658,11 +658,14 @@ async function runOsintCheck(inquiry) {
  * @returns {Promise<object>} Analysis result object
  */
 async function analyzeIdDocuments(inquiryId, schoolPath, govtPath, formName) {
-    const groqKey = process.env.GROQ_API_KEY;
-    if (!groqKey) {
-        console.warn(`[OSINT] GROQ_API_KEY not set â€” skipping ID analysis for inquiry #${inquiryId}`);
-        return { skipped: true, reason: 'No GROQ_API_KEY configured' };
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+
+    if (!geminiKey && !openaiKey) {
+        console.warn(`[OSINT] Neither GEMINI_API_KEY nor OPENAI_API_KEY is configured -- skipping ID analysis for inquiry #${inquiryId}`);
+        return { skipped: true, reason: 'No Vision AI API key configured' };
     }
+
     try {
         // Read both images and convert to base64 (supports local files and remote URLs)
         const readImage = async (filePath) => {
@@ -693,86 +696,171 @@ async function analyzeIdDocuments(inquiryId, schoolPath, govtPath, formName) {
             return { skipped: true, reason: 'No image files found on disk or remote storage' };
         }
 
-        const prompt = `You are an ID document verification system for a Philippine boarding house.
-Analyze the provided ID images and return ONLY a JSON object (no markdown, no explanation).
+        const prompt = `You are an expert fraud detection and ID document verification system for a Philippine boarding house.
+Carefully inspect the provided uploaded image(s) and determine if they are genuine identification documents.
 
-Submitted name on the form: "${formName}"
+Applicant Submitted Full Name: "${formName}"
 
-Extract and verify the following. If a value is not visible, use null.
+CRITICAL VERIFICATION RULES:
+1. ID CARD CLASSIFICATION (MUST CHECK FIRST):
+   - Check if each uploaded image is an actual, legitimate ID document (such as a Philippine National ID / PhilSys, Student / School ID, Driver's License, UMID, Passport, Postal ID, PRC ID, or Voter's ID).
+   - If an uploaded image is a SELFIE, A PHOTO OF A PERSON'S FACE WITHOUT AN ID CARD, A PET, AN OBJECT, A CAR, A RECEIPT, A SCREENSHOT OF A CHAT / SMS, A MEME, A LANDSCAPE, OR ANY ARBITRARY NON-ID PHOTO:
+     You MUST set "isIdDocument": false, "detectedImageType" to the actual type (e.g. "selfie", "random_photo", "receipt", "chat_screenshot", "meme", etc.), "isNotAnId": true, and "verdict": "FAIL".
+2. FULL NAME MATCHING:
+   - Extract the full name printed on each valid ID card.
+   - Compare the name on the ID with the applicant's submitted name ("${formName}").
+   - Allow standard middle initial / middle name variations or inverted order (e.g., "SURNAME, FIRSTNAME"), but flag if the person on the ID clearly has a different name.
+3. TAMPERING DETECTION:
+   - Check for signs of digital photo manipulation, mismatched fonts, pasted text, or altered numbers.
 
-Required JSON format:
+Respond ONLY with a valid JSON object (no markdown code blocks, no backticks, no explanatory prose):
 {
   "schoolId": {
-    "nameOnId": "Full name exactly as printed",
-    "studentNumber": "Student ID number if visible",
-    "school": "School or university name",
-    "expired": false,
+    "isIdDocument": true,
+    "detectedImageType": "student_id",
+    "nameOnId": "Full name exactly as printed on card or null",
+    "studentNumber": "Student number or null",
+    "school": "School / University name or null",
     "readable": true
   },
   "govtId": {
-    "nameOnId": "Full name exactly as printed",
-    "idType": "PhilSys / UMID / Driver's License / Passport / Other",
-    "idNumber": "ID number if visible",
-    "expired": false,
+    "isIdDocument": true,
+    "detectedImageType": "national_id",
+    "nameOnId": "Full name exactly as printed on card or null",
+    "idType": "PhilSys / Driver's License / UMID / Passport / Other or null",
+    "idNumber": "ID number or null",
     "readable": true
   },
+  "isNotAnId": false,
+  "nonIdReason": null,
   "nameMatchesForm": true,
   "idsMatchEachOther": true,
   "suspiciousEditing": false,
   "editingReason": null,
   "verdict": "PASS",
-  "reason": "One sentence explanation",
-  "confidence": 85
+  "reason": "Clear one-sentence explanation of verdict",
+  "confidence": 90
 }
 
 Rules for verdict:
-- PASS: Names match form, IDs are readable, no signs of editing
-- FLAG: Minor name mismatch (nickname vs full name), partially unreadable, or one ID missing
-- FAIL: Names clearly don't match, signs of digital editing, expired IDs, completely unreadable`;
+- FAIL: If ANY uploaded image is NOT an ID card (selfie, pet, receipt, screenshot, meme, object), OR if name on ID belongs to an entirely different person, OR if obvious tampering is detected. Set "isNotAnId": true if any uploaded file is not an ID.
+- FLAG: If ID cards are genuine, but name has a minor discrepancy (e.g. nickname vs legal name) or is blurry/partially unreadable.
+- PASS: If all uploaded images are genuine ID cards, names match the submitted name, and no tampering is detected.`;
 
-        // Build content array with available images
-        const contentParts = [{ type: 'text', text: prompt }];
-        if (schoolImg) {
-            contentParts.push({
-                type: 'image_url',
-                image_url: { url: `data:${schoolImg.mime};base64,${schoolImg.base64}` }
-            });
-        }
-        if (govtImg) {
-            contentParts.push({
-                type: 'image_url',
-                image_url: { url: `data:${govtImg.mime};base64,${govtImg.base64}` }
-            });
-        }
+        let parsed = null;
 
-        const response = await axios.post(
-            'https://api.groq.com/openai/v1/chat/completions',
-            {
-                model:      'llama-3.2-11b-vision-preview',
-                messages:   [{ role: 'user', content: contentParts }],
-                max_tokens: 1024,
-                temperature: 0.1
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${groqKey}`,
-                    'Content-Type':  'application/json'
-                },
-                timeout: 30000
+        // Primary: Gemini 3.6 Flash Vision
+        if (geminiKey) {
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`;
+                const parts = [{ text: prompt }];
+                if (schoolImg) {
+                    parts.push({
+                        inlineData: { mimeType: schoolImg.mime, data: schoolImg.base64 }
+                    });
+                }
+                if (govtImg) {
+                    parts.push({
+                        inlineData: { mimeType: govtImg.mime, data: govtImg.base64 }
+                    });
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts }],
+                        generationConfig: {
+                            temperature: 0.1,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    const cleaned = raw.replace(/```json|```/g, '').trim();
+                    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+                } else {
+                    console.warn(`[OSINT] Gemini Vision returned status ${response.status} for inquiry #${inquiryId}`);
+                }
+            } catch (geminiErr) {
+                console.warn(`[OSINT] Gemini Vision error for inquiry #${inquiryId}:`, geminiErr.message);
             }
-        );
+        }
 
-        const raw     = response.data?.choices?.[0]?.message?.content || '';
-        const cleaned = raw.replace(/```json|```/g, '').trim();
-        const parsed  = JSON.parse(cleaned);
+        // Secondary fallback: OpenAI gpt-4o-mini
+        if (!parsed && openaiKey) {
+            try {
+                const messagesContent = [{ type: 'text', text: prompt }];
+                if (schoolImg) {
+                    messagesContent.push({
+                        type: 'image_url',
+                        image_url: { url: `data:${schoolImg.mime};base64,${schoolImg.base64}` }
+                    });
+                }
+                if (govtImg) {
+                    messagesContent.push({
+                        type: 'image_url',
+                        image_url: { url: `data:${govtImg.mime};base64,${govtImg.base64}` }
+                    });
+                }
+
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${openaiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: [{ role: 'user', content: messagesContent }],
+                        max_tokens: 1024,
+                        temperature: 0.1
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const raw = data?.choices?.[0]?.message?.content || '';
+                    const cleaned = raw.replace(/```json|```/g, '').trim();
+                    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+                }
+            } catch (openaiErr) {
+                console.warn(`[OSINT] OpenAI Vision fallback error for inquiry #${inquiryId}:`, openaiErr.message);
+            }
+        }
+
+        if (!parsed) {
+            throw new Error('Vision AI services unavailable or returned unparseable response');
+        }
 
         // Clamp confidence
         parsed.confidence = Math.min(100, Math.max(0, parseInt(parsed.confidence) || 50));
 
+        // Check if any uploaded image is detected as non-ID
+        const schoolIsNotId = schoolImg && parsed.schoolId && parsed.schoolId.isIdDocument === false;
+        const govtIsNotId   = govtImg   && parsed.govtId   && parsed.govtId.isIdDocument === false;
+
+        if (schoolIsNotId || govtIsNotId || parsed.isNotAnId) {
+            parsed.isNotAnId = true;
+            parsed.verdict = 'FAIL';
+            const detected = [];
+            if (schoolIsNotId) detected.push(`School ID: ${parsed.schoolId.detectedImageType || 'non-ID image'}`);
+            if (govtIsNotId)   detected.push(`Govt ID: ${parsed.govtId.detectedImageType || 'non-ID image'}`);
+            parsed.nonIdReason = parsed.nonIdReason || `Uploaded document is not an actual ID card (${detected.join(', ') || 'invalid image'}).`;
+            if (!parsed.reason || parsed.reason.includes('PASS')) {
+                parsed.reason = parsed.nonIdReason;
+            }
+        }
+
         // Ensure valid verdict
         if (!['PASS', 'FLAG', 'FAIL'].includes(parsed.verdict)) parsed.verdict = 'FLAG';
 
-        console.log(`[OSINT] ID analysis for inquiry #${inquiryId}: ${parsed.verdict} (${parsed.confidence}% confidence)`);
+        console.log(`[OSINT] ID analysis for inquiry #${inquiryId}: ${parsed.verdict} (isNotAnId: ${!!parsed.isNotAnId}, confidence: ${parsed.confidence}%)`);
         return { ...parsed, skipped: false, analyzedAt: new Date().toISOString() };
 
     } catch (err) {
@@ -780,7 +868,7 @@ Rules for verdict:
         return {
             skipped:  false,
             verdict:  'FLAG',
-            reason:   'AI analysis failed â€” manual review required.',
+            reason:   'AI analysis failed -- manual review required.',
             error:    err.message,
             analyzedAt: new Date().toISOString()
         };

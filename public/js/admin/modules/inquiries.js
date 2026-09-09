@@ -346,6 +346,13 @@ function renderInquiryRow(r) {
         trustPill = `<span class="badge rounded-pill" style="background:${scoreBg}; color:${scoreColor}; font-size:0.68rem; font-weight:600;"><i class="fas fa-award me-1"></i>Trust ${score}</span>`;
     }
 
+    let idVerifyPill = '';
+    if (r.id_verify_status === 'failed') {
+        idVerifyPill = `<span class="badge rounded-pill me-1" style="background:#fde8e8; color:#e74c3c; font-size:0.68rem; font-weight:600;"><i class="fas fa-id-card me-1"></i>Invalid ID</span>`;
+    } else if (r.id_verify_status === 'passed') {
+        idVerifyPill = `<span class="badge rounded-pill me-1" style="background:#e8f8f0; color:#10b981; font-size:0.68rem; font-weight:600;"><i class="fas fa-id-card me-1"></i>ID Verified</span>`;
+    }
+
     return `
         <tr class="inq-triage-row" onclick="openInquiryDetail(${r.id})" style="border-bottom: 1px solid #f1f5f9;">
             <td style="padding: 11px 8px; vertical-align: middle;">
@@ -354,7 +361,7 @@ function renderInquiryRow(r) {
                     <span>${email}</span> &bull; <span>${phone}</span>
                 </div>
                 <div class="mt-1 d-flex flex-wrap align-items-center gap-1">
-                    ${unitBadge}${aiPill}${trustPill}
+                    ${unitBadge}${idVerifyPill}${aiPill}${trustPill}
                 </div>
             </td>
             <td style="padding: 11px 8px; vertical-align: middle; text-align: right; white-space: nowrap;">
@@ -759,19 +766,37 @@ function buildIdDocSection(r) {
         ? r.govt_id_path
         : `/api/admin/inquiry-docs/${r.id}/govt_id`;
 
+    const isNotAnId = !!(analysis && (analysis.isNotAnId || (analysis.schoolId && analysis.schoolId.isIdDocument === false) || (analysis.govtId && analysis.govtId.isIdDocument === false)));
+
+    const nonIdNotice = isNotAnId ? `
+        <div style="background:rgba(231,76,60,0.1);border-left:4px solid #e74c3c;padding:10px 14px;border-radius:6px;margin-bottom:14px">
+            <div style="color:#e74c3c;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:6px">
+                <i class="fas fa-exclamation-triangle"></i>INVALID DOCUMENT: NOT AN ID CARD
+            </div>
+            <div style="color:#c0392b;font-size:0.75rem;margin-top:4px;line-height:1.4">
+                ${escHtml(analysis.nonIdReason || analysis.reason || 'The uploaded image is not a genuine identification card. A valid School ID or Government ID is required.')}
+            </div>
+        </div>` : '';
+
     return `
-    <div class="inq-drawer-section">
+    <div class="inq-drawer-section" id="iddoc-section-${r.id}">
         <div class="inq-drawer-section-title">
             <i class="fas fa-id-card me-2"></i>ID Document Verification
             ${analysis && !analysis.skipped
                 ? `<span style="margin-left:8px;padding:2px 10px;border-radius:20px;font-size:0.72rem;
                               font-weight:700;background:${vc.bg};color:${vc.color};border:1px solid ${vc.color}40">
                       ${vc.icon} ${vc.label}
-                   </span>`
+                   </span>
+                   <button class="osint-rerun-btn" onclick="triggerIdCheck(${r.id})" title="Re-run ID verification">
+                       <i class="fas fa-redo-alt"></i>
+                   </button>`
                 : `<span style="margin-left:8px;padding:2px 10px;border-radius:20px;font-size:0.72rem;
                               font-weight:600;background:#f5f5f5;color:#999;border:1px solid #ddd">
                       <i class="fas fa-clock me-1"></i>Pending
-                   </span>`
+                   </span>
+                   <button class="osint-rerun-btn" onclick="triggerIdCheck(${r.id})" title="Run ID verification">
+                       <i class="fas fa-play"></i>
+                   </button>`
             }
         </div>
 
@@ -815,14 +840,18 @@ function buildIdDocSection(r) {
         </div>
 
         ${analysis && !analysis.skipped ? `
+        ${nonIdNotice}
         <!-- AI Analysis Results -->
+        ${dr('ID Document Check', isNotAnId ? '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>Non-ID Photo Detected</span>' : '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Valid ID Document</span>')}
+        ${analysis.schoolId?.isIdDocument === false ? dr('School ID Detected As', `<span style="color:#e74c3c;font-weight:600">${escHtml(analysis.schoolId.detectedImageType || 'Non-ID Photo')}</span>`) : ''}
+        ${analysis.govtId?.isIdDocument === false ? dr('Govt ID Detected As', `<span style="color:#e74c3c;font-weight:600">${escHtml(analysis.govtId.detectedImageType || 'Non-ID Photo')}</span>`) : ''}
         ${analysis.schoolId?.nameOnId ? dr('Name on School ID', `<code style="font-size:0.82rem">${escHtml(analysis.schoolId.nameOnId)}</code>`) : ''}
         ${analysis.schoolId?.school   ? dr('School', escHtml(analysis.schoolId.school)) : ''}
         ${analysis.govtId?.nameOnId   ? dr('Name on Govt ID',   `<code style="font-size:0.82rem">${escHtml(analysis.govtId.nameOnId)}</code>`) : ''}
         ${analysis.govtId?.idType     ? dr('ID Type', escHtml(analysis.govtId.idType)) : ''}
-        ${dr('Names Match Form',    analysis.nameMatchesForm   ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No — mismatch!</span>')}
-        ${dr('IDs Match Each Other', analysis.idsMatchEachOther ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No — mismatch!</span>')}
-        ${analysis.suspiciousEditing ? dr('Editing Detected', `<span style="color:#e74c3c;font-weight:700"><i class="fas fa-exclamation-triangle me-1"></i>YES — ${escHtml(analysis.editingReason||'possible tampering')}</span>`) : ''}
+        ${dr('Names Match Form',    analysis.nameMatchesForm   ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No -- mismatch!</span>')}
+        ${dr('IDs Match Each Other', analysis.idsMatchEachOther ? '<span style="color:#27ae60;font-weight:700"><i class="fas fa-check me-1"></i>Yes</span>' : '<span style="color:#e74c3c;font-weight:700"><i class="fas fa-times me-1"></i>No -- mismatch!</span>')}
+        ${analysis.suspiciousEditing ? dr('Editing Detected', `<span style="color:#e74c3c;font-weight:700"><i class="fas fa-exclamation-triangle me-1"></i>YES -- ${escHtml(analysis.editingReason||'possible tampering')}</span>`) : ''}
         ${dr('AI Confidence', `
             <div style="display:flex;align-items:center;gap:8px">
                 <div style="flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden">
@@ -833,10 +862,10 @@ function buildIdDocSection(r) {
         ${analysis.reason ? dr('Verdict Reason', `<em style="font-size:0.8rem;color:#666">${escHtml(analysis.reason)}</em>`) : ''}
         ` : analysis?.skipped ? `
         <div style="font-size:0.82rem;color:#999;padding:10px 0;font-style:italic">
-            AI analysis not available — ${escHtml(analysis.reason || 'No API key configured')}.
+            AI analysis not available -- ${escHtml(analysis.reason || 'No API key configured')}.
         </div>` : `
         <div style="font-size:0.82rem;color:#999;padding:10px 0;font-style:italic">
-            <i class="fas fa-circle-notch fa-spin me-1"></i>AI analysis running in background…
+            <i class="fas fa-circle-notch fa-spin me-1"></i>AI analysis running in background...
         </div>`}
     </div>`;
 }
@@ -1277,6 +1306,38 @@ async function triggerOsintCheck(id) {
     } catch (err) {
         clearInterval(stepTimer);
         loadingEl.innerHTML = `<div class="osint-error"><i class="fas fa-exclamation-triangle me-1"></i>${err.message}</div>`;
+        showInquiryToast(err.message, 'danger');
+    }
+}
+
+async function triggerIdCheck(id) {
+    const section = document.getElementById(`iddoc-section-${id}`);
+    if (!section) return;
+
+    showInquiryToast('Analyzing ID document(s)...', 'info');
+    try {
+        const res = await fetch(`/api/admin/inquiries/${id}/verify-id`, {
+            method: 'POST', credentials: 'include'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ID verification failed');
+
+        // Re-fetch inquiry detail and update drawer
+        const recRes = await fetch(`/api/admin/inquiries/${id}`, { credentials: 'include' });
+        if (recRes.ok) {
+            const record = await recRes.json();
+            InquiryDashboard.currentInquiryRecord = record;
+            const body = document.getElementById('inq-drawer-body');
+            if (body) body.innerHTML = buildInquiryDrawerContent(record);
+        }
+
+        if (data.statusChanged) {
+            showInquiryToast('ID check complete -- inquiry auto-flagged as suspicious.', 'danger');
+            loadInquiries(InquiryDashboard.currentPage);
+        } else {
+            showInquiryToast('ID verification complete', 'success');
+        }
+    } catch (err) {
         showInquiryToast(err.message, 'danger');
     }
 }

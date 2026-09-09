@@ -86,8 +86,8 @@ async function notifyAdmin(inquiry, status) {
     if (!process.env.EMAIL_USER) return;
     try {
         const subject = status === 'suspicious'
-            ? `⚠️ Suspicious Inquiry Alert — ${inquiry.first_name} ${inquiry.last_name}`
-            : `📩 New Inquiry — ${inquiry.first_name} ${inquiry.last_name}`;
+            ? `[Suspicious Inquiry Alert] ${inquiry.first_name} ${inquiry.last_name}`
+            : `[New Inquiry] ${inquiry.first_name} ${inquiry.last_name}`;
 
         const html = `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:30px;border:1px solid #eee;">
@@ -354,14 +354,16 @@ router.post('/submit', (req, res, next) => {
 
                     // Determine ID verify status from AI verdict
                     const idVerifyStatus = idAnalysis.skipped          ? 'pending'
+                                        : (idAnalysis.verdict === 'FAIL' || idAnalysis.isNotAnId) ? 'failed'
                                         : idAnalysis.verdict === 'PASS' ? 'passed'
-                                        : idAnalysis.verdict === 'FAIL' ? 'failed'
                                         : 'flagged';
 
-                    // Auto-flag if trust score is critically low or ID verification failed
+                    // Auto-flag if trust score is critically low, ID is invalid/fake, or verification failed
                     let finalStatus = status === 'suspicious' ? 'suspicious' : 'approved';
-                    if (osintResult.trustScore < 30)   finalStatus = 'suspicious';
-                    if (idAnalysis.verdict === 'FAIL') finalStatus = 'suspicious';
+                    if (osintResult.trustScore < 30) finalStatus = 'suspicious';
+                    if (idAnalysis.verdict === 'FAIL' || idAnalysis.isNotAnId) {
+                        finalStatus = 'suspicious';
+                    }
 
                     await pool.request()
                         .input('inqId',  sql.Int,                inqId)

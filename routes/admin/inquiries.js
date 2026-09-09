@@ -9,7 +9,7 @@
 const express = require('express');
 const router  = express.Router();
 const { poolPromise, sql } = require('../../config/db');
-const { runOsintCheck }   = require('../../utils/osintSearch');
+const { runOsintCheck, analyzeIdDocuments }   = require('../../utils/osintSearch');
 const { getAccessibleImageUrl } = require('../../config/cloudinary');
 
 // ─── Auth guard ─────────────────────────────────────────────────────────────
@@ -360,6 +360,60 @@ router.post('/:id(\\d+)/osint', async (req, res) => {
     } catch (err) {
         console.error('[Admin Inquiries] OSINT error:', err);
         return res.status(500).json({ error: 'OSINT check failed. Please try again.' });
+    }
+});
+
+// ─── POST /api/admin/inquiries/:id/verify-id ───────────────────────────────
+// Runs (or re-runs) the AI ID document analysis for an inquiry.
+router.post('/:id(\\d+)/verify-id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+        const pool = await poolPromise;
+        const fetchRes = await pool.request()
+            .input('id', sql.Int, id)
+            .query(`SELECT id, first_name, last_name, school_id_path, govt_id_path, status
+                    FROM inquiries WHERE id = @id`);
+
+        if (!fetchRes.recordset.length) {
+            return res.status(404).json({ error: 'Inquiry not found.' });
+        }
+
+        const inquiry = fetchRes.recordset[0];
+        const fullName = `${inquiry.first_name || ''} ${inquiry.last_name || ''}`.trim();
+        const idAnalysis = await analyzeIdDocuments(id, inquiry.school_id_path, inquiry.govt_id_path, fullName);
+        const idAnalysisJson = JSON.stringify(idAnalysis);
+
+        const idVerifyStatus = idAnalysis.skipped ? 'pending'
+                            : (idAnalysis.verdict === 'FAIL' || idAnalysis.isNotAnId) ? 'failed'
+                            : idAnalysis.verdict === 'PASS' ? 'passed'
+                            : 'flagged';
+
+        let newStatus = inquiry.status;
+        if (idAnalysis.verdict === 'FAIL' || idAnalysis.isNotAnId) {
+            newStatus = 'suspicious';
+        }
+
+        await pool.request()
+            .input('id',     sql.Int, id)
+            .input('idana',  sql.NVarChar(sql.MAX), idAnalysisJson)
+            .input('idvs',   sql.NVarChar(20), idVerifyStatus)
+            .input('status', sql.NVarChar(20), newStatus)
+            .query(`UPDATE inquiries
+                    SET id_analysis = @idana,
+                        id_verify_status = @idvs,
+                        status = @status
+                    WHERE id = @id`);
+
+        return res.json({
+            success: true,
+            idAnalysis,
+            idVerifyStatus,
+            statusChanged: newStatus !== inquiry.status,
+            newStatus
+        });
+    } catch (err) {
+        console.error('[Admin Inquiries] ID verify error:', err);
+        return res.status(500).json({ error: 'ID verification failed. Please try again.' });
     }
 });
 
