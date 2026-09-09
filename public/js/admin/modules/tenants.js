@@ -270,6 +270,8 @@ async function submitAddTenant() {
 
             if (typeof loadTenants === 'function') loadTenants(); 
             if (typeof loadRooms === 'function') loadRooms(); 
+            if (typeof loadInquiries === 'function') loadInquiries();
+            if (typeof loadInquiryAnalytics === 'function') loadInquiryAnalytics();
             if (typeof currentOpenUnitModalRoomId !== 'undefined' && currentOpenUnitModalRoomId && typeof openUnitOccupantsModal === 'function') {
                 openUnitOccupantsModal(currentOpenUnitModalRoomId, true);
             }

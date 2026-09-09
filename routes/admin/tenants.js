@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
 
 // Admin - Create Tenant Account
 router.post('/create-account', async (req, res) => {
-    const { full_name, email, password, phone, room_id, lease_start, lease_end } = req.body;
+    const { full_name, email, password, phone, room_id, lease_start, lease_end, inquiry_id } = req.body;
 
     if (!full_name || !email) {
         return res.status(400).json({ error: 'Name and email are required' });
@@ -161,10 +161,27 @@ router.post('/create-account', async (req, res) => {
                     `
                 };
                 await sendMailWithFallback(mailOptions);
-                console.log(`[Tenant Onboarding] ✅ Welcome email sent successfully to ${email}`);
+                console.log(`[Tenant Onboarding] Welcome email sent successfully to ${email}`);
             } catch (mailErr) {
-                console.error(`[Tenant Onboarding] ⚠️ Could not send welcome email to ${email}:`, mailErr.message);
+                console.error(`[Tenant Onboarding] Could not send welcome email to ${email}:`, mailErr.message);
             }
+        }
+
+        // 4. Auto-update matching inquiry to 'converted'
+        try {
+            if (inquiry_id) {
+                await pool.request()
+                    .input('inq_id', sql.Int, parseInt(inquiry_id, 10))
+                    .query(`UPDATE inquiries SET status = 'converted' WHERE id = @inq_id`);
+                console.log(`[Tenant Onboarding] Converted inquiry #${inquiry_id} to tenant.`);
+            } else if (email) {
+                // Fallback: check if any approved inquiry exists with this email
+                await pool.request()
+                    .input('inq_email', sql.NVarChar, email)
+                    .query(`UPDATE inquiries SET status = 'converted' WHERE LOWER(email) = LOWER(@inq_email) AND status = 'approved'`);
+            }
+        } catch (inqErr) {
+            console.error('[Tenant Onboarding] Error updating inquiry status:', inqErr.message);
         }
 
         res.status(201).json({

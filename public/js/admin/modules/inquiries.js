@@ -290,6 +290,9 @@ function renderInquiryTriage() {
 
     rows.forEach(r => {
         const st = (r.status || '').toLowerCase();
+        if (st === 'converted') {
+            return; // Converted inquiries are officially registered as tenants, omit from prospect triage columns
+        }
         if (st === 'approved') {
             approvedList.push(r);
         } else if (st === 'flagged' || st === 'duplicate' || st === 'suspicious' || r.ai_result === 'SPAM') {
@@ -393,12 +396,14 @@ function navigateInquiryDrawer(dir) {
     }
 }
 
-function convertInquiryToTenant(name, email, phone) {
+function convertInquiryToTenant(name, email, phone, inqId) {
+    const inqInput = document.getElementById('addTenantInquiryId');
     const nameInput = document.querySelector('#addTenantForm input[name="full_name"]');
     const emailInput = document.querySelector('#addTenantForm input[name="email"]');
     const phoneInput = document.querySelector('#addTenantForm input[name="phone"]');
     const passInput = document.querySelector('#addTenantForm input[name="password"]');
 
+    if (inqInput) inqInput.value = inqId || '';
     if (nameInput) nameInput.value = name || '';
     if (emailInput) emailInput.value = email || '';
     if (phoneInput) phoneInput.value = phone || '';
@@ -423,7 +428,7 @@ function convertCurrentInquiryToTenant() {
         .then(record => {
             const fullName = `${record.first_name || ''} ${record.last_name || ''}`.trim();
             closeInquiryDrawer();
-            convertInquiryToTenant(fullName, record.email, record.phone);
+            convertInquiryToTenant(fullName, record.email, record.phone, inqId);
         })
         .catch(err => console.error('Error fetching inquiry details:', err));
 }
