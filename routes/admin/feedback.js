@@ -9,71 +9,33 @@ async function ensureFeedbackTables() {
     try {
         const pool = await poolPromise;
         await pool.request().query(`
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='tenant_feedback' and xtype='U')
-            BEGIN
-                CREATE TABLE tenant_feedback (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    tenant_id INT NOT NULL FOREIGN KEY REFERENCES tenants(id),
-                    survey_id INT NULL,
-                    feedback_text NVARCHAR(MAX) NOT NULL,
-                    ai_sentiment NVARCHAR(20) DEFAULT 'Neutral',
-                    ai_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
-                    ai_topics NVARCHAR(MAX) NULL,
-                    ai_keywords NVARCHAR(MAX) NULL,
-                    ai_summary NVARCHAR(MAX) NULL,
-                    ai_needs_attention BIT DEFAULT 0,
-                    ai_confidence DECIMAL(5,2) DEFAULT 0.00,
-                    created_at DATETIME DEFAULT GETDATE()
-                );
-            END
+            CREATE TABLE IF NOT EXISTS tenant_feedback (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL REFERENCES tenants(id),
+                survey_id INT NULL,
+                feedback_text TEXT NOT NULL,
+                ai_sentiment VARCHAR(20) DEFAULT 'Neutral',
+                ai_sentiment_score NUMERIC(4,2) DEFAULT 0.00,
+                ai_topics TEXT NULL,
+                ai_keywords TEXT NULL,
+                ai_summary TEXT NULL,
+                ai_needs_attention BOOLEAN DEFAULT FALSE,
+                ai_confidence NUMERIC(5,2) DEFAULT 0.00,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='feedback_alerts' and xtype='U')
-            BEGIN
-                CREATE TABLE feedback_alerts (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    issue_topic NVARCHAR(100) NOT NULL,
-                    negative_count INT DEFAULT 0,
-                    avg_sentiment_score DECIMAL(4,2) DEFAULT 0.00,
-                    period_type NVARCHAR(20) NOT NULL,
-                    alert_severity NVARCHAR(20) NOT NULL,
-                    recommended_action NVARCHAR(MAX) NULL,
-                    is_resolved BIT DEFAULT 0,
-                    resolved_at DATETIME NULL,
-                    created_at DATETIME DEFAULT GETDATE()
-                );
-            END
-
-            -- Add resolved_at column if missing from existing feedback_alerts table
-            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('feedback_alerts') AND name = 'resolved_at')
-            BEGIN
-                ALTER TABLE feedback_alerts ADD resolved_at DATETIME NULL;
-            END
-
-            -- Auto-seed realistic sample tenant feedback if table is empty
-            DECLARE @fbCount INT;
-            SELECT @fbCount = COUNT(*) FROM tenant_feedback;
-            IF @fbCount = 0
-            BEGIN
-                DECLARE @tId INT;
-                SELECT TOP 1 @tId = id FROM tenants WHERE status = 'active';
-                IF @tId IS NULL SELECT TOP 1 @tId = id FROM tenants;
-
-                IF @tId IS NOT NULL
-                BEGIN
-                    INSERT INTO tenant_feedback (tenant_id, feedback_text, ai_sentiment, ai_sentiment_score, ai_topics, ai_keywords, ai_summary, ai_needs_attention, ai_confidence)
-                    VALUES 
-                    (@tId, 'The WiFi in Dorm A has been disconnecting frequently every evening around 8 PM. It makes studying very difficult.', 'Negative', -0.75, '["Internet / WiFi"]', '["wifi","disconnecting","slow"]', 'Tenant reports frequent evening WiFi disconnections affecting study hours.', 1, 0.90),
-                    (@tId, 'Loud music from the 3rd floor hallway late at night past midnight. Please enforce quiet hours.', 'Negative', -0.80, '["Noise"]', '["loud","music","night"]', 'Tenant complains about late-night noise violations near 3rd floor.', 1, 0.88),
-                    (@tId, 'Bathroom sink drain is slow and leaking slightly under the cabinet in Room 204.', 'Negative', -0.60, '["Bathroom / Plumbing"]', '["bathroom","sink","leak"]', 'Tenant reports leaking bathroom sink drain requiring plumbing repair.', 1, 0.85),
-                    (@tId, 'The new study lounge air conditioning is working great and common areas are clean!', 'Positive', 0.85, '["Air Conditioning","Cleanliness"]', '["clean","great","ac"]', 'Tenant expresses appreciation for clean study lounge and functional air conditioning.', 0, 0.92);
-
-                    INSERT INTO feedback_alerts (issue_topic, negative_count, avg_sentiment_score, period_type, alert_severity, recommended_action)
-                    VALUES
-                    ('Internet / WiFi', 5, -0.75, '7_days', 'High', 'Inspect Dorm A main router 2.4/5GHz channel congestion. Restart router daily at 4 AM or upgrade access point.'),
-                    ('Noise', 3, -0.80, '7_days', 'High', 'Issue quiet hours policy notice (10 PM - 6 AM) to 3rd-floor units and schedule night warden walk-throughs.'),
-                    ('Bathroom / Plumbing', 2, -0.60, '7_days', 'Medium', 'Dispatch plumbing maintenance to inspect Room 204 sink cabinet trap and seal joints.');
-                END
-            END
+            CREATE TABLE IF NOT EXISTS feedback_alerts (
+                id SERIAL PRIMARY KEY,
+                issue_topic VARCHAR(100) NOT NULL,
+                negative_count INT DEFAULT 0,
+                avg_sentiment_score NUMERIC(4,2) DEFAULT 0.00,
+                period_type VARCHAR(20) NOT NULL,
+                alert_severity VARCHAR(20) NOT NULL,
+                recommended_action TEXT NULL,
+                is_resolved BOOLEAN DEFAULT FALSE,
+                resolved_at TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
         feedbackTablesReady = true;
     } catch (err) {

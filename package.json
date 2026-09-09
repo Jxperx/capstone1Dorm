@@ -41,7 +41,6 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
-    "msnodesqlv8": "^5.1.9",
     "nodemon": "^3.0.2"
   }
 }
