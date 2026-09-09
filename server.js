@@ -284,7 +284,7 @@ app.use((err, req, res, next) => {
     res.status(statusCode).json({
         error: isProduction
             ? 'An internal server error occurred. Please try again later.'
-            : err.message
+            : (err.message || (typeof err.toString === 'function' ? err.toString() : 'Unknown error'))
     });
 });
 

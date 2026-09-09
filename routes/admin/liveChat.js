@@ -22,10 +22,11 @@ router.get('/sessions', requireAdmin, async (req, res) => {
                 r.room_number,
                 MAX(m.created_at) AS last_message_time,
                 (
-                    SELECT TOP 1 message
+                    SELECT message
                     FROM live_chat_messages
                     WHERE session_id = m.session_id
                     ORDER BY created_at DESC
+                    LIMIT 1
                 ) AS last_message,
                 SUM(CASE WHEN m.is_read = 0 AND m.sender = 'tenant' THEN 1 ELSE 0 END) AS unread_count
             FROM live_chat_messages m

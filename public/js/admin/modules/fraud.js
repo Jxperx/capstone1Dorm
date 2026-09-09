@@ -7,9 +7,12 @@
 // ─── State ─────────────────────────────────────────────────────
 const FraudDashboard = {
     currentPage: 1,
-    limit: 20,
+    limit: 100,
     filters: { riskLevel: 'ALL', method: 'ALL', flagged: '', dateFrom: '', dateTo: '', search: '' },
-    drawerPaymentId: null
+    drawerPaymentId: null,
+    activeIds: [],
+    currentIndex: -1,
+    records: []
 };
 
 // ─── Risk helpers ───────────────────────────────────────────────
@@ -54,7 +57,22 @@ function flagChips(flagsStr) {
 }
 function fmtDate(dt) {
     if (!dt) return '—';
-    return new Date(dt).toLocaleString('en-PH', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const d = new Date(dt);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+
+    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    if (isToday) {
+        return `Today, ${timeStr}`;
+    } else if (isYesterday) {
+        return `Yesterday, ${timeStr}`;
+    }
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 }
 function fmtMoney(amount) {
     if (amount === null || amount === undefined) return '—';
@@ -69,11 +87,15 @@ async function loadFraudAnalytics() {
         const data = await res.json();
         const s = data.summary || {};
 
-        document.getElementById('fd-total').textContent = s.total_analyzed ?? 0;
-        document.getElementById('fd-flagged').textContent = (s.high_risk_count ?? 0) + (s.medium_count ?? 0);
-        document.getElementById('fd-blocked').textContent = s.blocked_count ?? 0;
-        document.getElementById('fd-review').textContent = s.pending_review_count ?? 0;
-        document.getElementById('fd-safe').textContent = s.safe_count ?? 0;
+        const setEl = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setEl('fd-total', s.total_analyzed ?? 0);
+        setEl('fd-flagged', (s.high_risk_count ?? 0) + (s.medium_count ?? 0));
+        setEl('fd-blocked', s.blocked_count ?? 0);
+        setEl('fd-review', s.pending_review_count ?? 0);
+        setEl('fd-safe', s.safe_count ?? 0);
 
         // Top fraud reasons
         const topList = document.getElementById('fd-top-reasons');
@@ -95,88 +117,203 @@ async function loadFraudAnalytics() {
     }
 }
 
-// ─── Load Fraud Table ───────────────────────────────────────────
+// ─── Micro-Reason Badge Helper ──────────────────────────────────
+function getMicroReasonBadge(r, type) {
+    if (type === 'high') {
+        let reason = 'High Risk';
+        if (r.decision === 'BLOCKED' || r.decision === 'MANUAL_BLOCKED') reason = 'Blocked';
+        else if (r.flags && r.flags.includes('DUPLICATE')) reason = 'Duplicate Hash';
+        else if (r.flags && r.flags.includes('MISMATCH')) reason = 'Amount Mismatch';
+        else if (r.risk_score !== null && r.risk_score !== undefined) reason = `Risk: ${r.risk_score}`;
+        return `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    } else if (type === 'pending') {
+        let reason = 'Needs Review';
+        if (r.flags && r.flags.includes('MISMATCH')) reason = 'Amount Mismatch';
+        else if (r.flags && r.flags.includes('UNREADABLE')) reason = 'Unreadable Receipt';
+        else if (r.risk_score !== null && r.risk_score !== undefined) reason = `Score: ${r.risk_score}`;
+        return `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    } else if (type === 'safe') {
+        const reason = r.decision === 'AUTO_APPROVED' ? 'Auto-Approved' : 'Verified Safe';
+        return `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-block mt-1" style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px;">${reason}</span>`;
+    }
+    return '';
+}
+
+// ─── Load Fraud Triage Columns ──────────────────────────────────
 async function loadFraudDashboard(page = 1) {
     FraudDashboard.currentPage = page;
-    const tbody = document.getElementById('fraud-tbody');
-    if (!tbody) return;
+    const bHigh = document.getElementById('fd-high-body');
+    const bPending = document.getElementById('fd-pending-body');
+    const bSafe = document.getElementById('fd-safe-body');
 
-    // Show skeletons
-    tbody.innerHTML = Array(5).fill(0).map(() => `
+    // Show 2-column skeleton rows (UNIT and DATE)
+    const skeletonHtml = Array(3).fill(0).map(() => `
         <tr class="skeleton-row">
-            ${Array(11).fill('<td><div class="skeleton-line" style="width:${Math.random()*40+50}%"></div></td>').join('')}
+            <td style="padding: 12px 8px; width: 55%;"><div class="skeleton-line" style="width:75%"></div></td>
+            <td style="padding: 12px 8px; text-align: right; width: 45%;"><div class="skeleton-line ms-auto" style="width:55%"></div></td>
         </tr>`).join('');
 
-    const f = FraudDashboard.filters;
-    const params = new URLSearchParams({
-        page, limit: FraudDashboard.limit,
-        riskLevel: f.riskLevel, method: f.method,
-        flagged: f.flagged, dateFrom: f.dateFrom,
-        dateTo: f.dateTo, search: f.search
-    });
+    if (bHigh) bHigh.innerHTML = skeletonHtml;
+    if (bPending) bPending.innerHTML = skeletonHtml;
+    if (bSafe) bSafe.innerHTML = skeletonHtml;
 
     try {
-        const res = await fetch(`/api/admin/fraud?${params}`, { credentials: 'include' });
+        const res = await fetch('/api/admin/fraud?limit=100', { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load fraud data');
         const json = await res.json();
-        renderFraudTable(json.data);
-        renderFraudPagination(json.total, json.page, json.limit);
+        const records = json.data || [];
+        FraudDashboard.records = records;
+
+        const highRiskList = [];
+        const pendingList = [];
+        const safeList = [];
+
+        records.forEach(r => {
+            const isHighRisk = r.decision === 'BLOCKED' ||
+                               r.decision === 'MANUAL_REJECTED' ||
+                               r.risk_level === 'HIGH' ||
+                               r.risk_level === 'CRITICAL' ||
+                               (r.risk_score !== null && r.risk_score !== undefined && Number(r.risk_score) >= 75) ||
+                               (r.flags && (r.flags.includes('DUPLICATE') || r.flags.includes('MISMATCH')));
+
+            const isSafe = (r.decision === 'AUTO_APPROVED' || r.decision === 'MANUAL_APPROVED') ||
+                           ((r.risk_level === 'SAFE' || r.risk_level === 'LOW' || (r.risk_score !== null && Number(r.risk_score) < 30)) && r.payment_status === 'approved');
+
+            if (isHighRisk) {
+                highRiskList.push(r);
+            } else if (isSafe) {
+                safeList.push(r);
+            } else {
+                pendingList.push(r);
+            }
+        });
+
+        // Store active queue IDs in sequential display order
+        FraudDashboard.activeIds = [
+            ...highRiskList.map(r => r.payment_id),
+            ...pendingList.map(r => r.payment_id),
+            ...safeList.map(r => r.payment_id)
+        ];
+
+        // Update badge counters
+        const cHigh = document.getElementById('fd-count-high');
+        const cPending = document.getElementById('fd-count-pending');
+        const cSafe = document.getElementById('fd-count-safe');
+        if (cHigh) cHigh.textContent = highRiskList.length;
+        if (cPending) cPending.textContent = pendingList.length;
+        if (cSafe) cSafe.textContent = safeList.length;
+
+        // Render each column
+        renderFraudColumn('fd-high-body', highRiskList, 'high');
+        renderFraudColumn('fd-pending-body', pendingList, 'pending');
+        renderFraudColumn('fd-safe-body', safeList, 'safe');
+
+        // Re-apply client search filter if user already typed a query
+        const searchInput = document.getElementById('fd-quick-search');
+        if (searchInput && searchInput.value) {
+            filterFraudCards(searchInput.value);
+        }
+
     } catch (err) {
-        console.error('[FraudTable]', err);
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${err.message}</td></tr>`;
+        console.error('[FraudDashboard]', err);
+        const errHtml = `<tr><td colspan="2" class="text-center text-danger py-4" style="font-size: 0.85rem;"><i class="fas fa-exclamation-triangle me-1"></i>${err.message}</td></tr>`;
+        if (bHigh) bHigh.innerHTML = errHtml;
+        if (bPending) bPending.innerHTML = errHtml;
+        if (bSafe) bSafe.innerHTML = errHtml;
     }
 }
 
-function renderFraudTable(rows) {
-    const tbody = document.getElementById('fraud-tbody');
+function renderFraudColumn(tbodyId, rows, type) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
     if (!rows || rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-5" style="color:#64748b">
-            <i class="fas fa-shield-alt fa-2x mb-3 d-block"></i>No fraud records found for these filters.
-        </td></tr>`;
+        let emptyMsg = 'No transactions recorded.';
+        if (type === 'high') {
+            emptyMsg = '<i class="fas fa-check-circle me-1" style="color: #10b981;"></i>All clear. No high-risk transactions.';
+        } else if (type === 'pending') {
+            emptyMsg = '<i class="fas fa-check-circle me-1" style="color: #10b981;"></i>No pending reviews required.';
+        } else if (type === 'safe') {
+            emptyMsg = 'No cleared transactions yet.';
+        }
+        tbody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-muted" style="font-size: 0.85rem;">${emptyMsg}</td></tr>`;
         return;
     }
-    tbody.innerHTML = rows.map(r => `
-        <tr onclick="openFraudDetail(${r.payment_id})" style="cursor:pointer">
-            <td>
-                <div style="font-weight:600;color:#1a1a1a">${r.tenant_name || '—'}</div>
-                <div style="font-size:0.72rem;color:#888">${r.tenant_email || ''}</div>
+
+    tbody.innerHTML = rows.map(r => {
+        const unitText = r.room_number ? `Unit ${r.room_number}` : 'Unassigned';
+        const badge = getMicroReasonBadge(r, type);
+        return `
+        <tr onclick="openFraudDetail(${r.payment_id})" class="fraud-triage-row align-middle" data-payment-id="${r.payment_id}" style="cursor: pointer;">
+            <td style="padding: 12px 8px; width: 55%;">
+                <div style="font-weight: 700; color: #1a1a2e; font-size: 0.88rem;">${unitText}</div>
+                ${r.tenant_name ? `<div style="font-size: 0.72rem; color: #6b7280; font-weight: 500;">${r.tenant_name}</div>` : ''}
+                ${badge}
             </td>
-            <td>
-                <div style="font-size:0.8rem;color:#555">#${r.payment_id}</div>
-                ${r.booking_id ? `<div style="font-size:0.72rem;color:#888">Booking: ${r.booking_id}</div>` : ''}
+            <td style="padding: 12px 8px; text-align: right; width: 45%;">
+                <div class="d-inline-flex align-items-center justify-content-end">
+                    <span style="font-size: 0.78rem; color: #64748b; font-weight: 500;">${fmtDate(r.created_at)}</span>
+                    <i class="fas fa-chevron-right text-muted ms-2" style="font-size: 0.68rem;"></i>
+                </div>
             </td>
-            <td style="color:#666;font-size:0.8rem">${r.payment_method || 'Manual Upload'}</td>
-            <td>
-                <div style="color:#1a1a1a;font-weight:600">${fmtMoney(r.amount_paid)}</div>
-                ${r.expected_amount ? `<div style="font-size:0.72rem;color:#888">Exp: ${fmtMoney(r.expected_amount)}</div>` : ''}
-            </td>
-            <td>
-                <span class="badge ${r.payment_status === 'approved' ? 'bg-success' : r.payment_status === 'rejected' ? 'bg-danger' : 'bg-warning text-dark'}" style="font-size:0.7rem">
-                    ${(r.payment_status || 'pending').toUpperCase()}
-                </span>
-            </td>
-            <td>${r.receipt_path ? `<img src="${r.receipt_path}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,0,0,0.1);cursor:zoom-in" onclick="event.stopPropagation();openReceiptPreview('${r.receipt_path}')" title="Click to preview">` : '<span style="color:#888;font-size:0.75rem">—</span>'}</td>
-            <td>${scoreBar(r.risk_score, r.risk_level)}</td>
-            <td>${riskBadge(r.risk_level)}</td>
-            <td><div style="max-width:180px;white-space:normal">${flagChips(r.flags)}</div></td>
-            <td>${decisionBadge(r.decision)}</td>
-            <td style="font-size:0.75rem;color:#888;white-space:nowrap">${fmtDate(r.created_at)}</td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
-function renderFraudPagination(total, page, limit) {
-    const container = document.getElementById('fraud-pagination');
-    if (!container) return;
-    const totalPages = Math.ceil(total / limit);
-    if (totalPages <= 1) { container.innerHTML = ''; return; }
+// ─── Real-Time Client Search ────────────────────────────────────
+function filterFraudCards(query) {
+    const q = (query || '').trim().toLowerCase();
+    const rowsHigh = document.querySelectorAll('#fd-high-body tr.fraud-triage-row');
+    const rowsPending = document.querySelectorAll('#fd-pending-body tr.fraud-triage-row');
+    const rowsSafe = document.querySelectorAll('#fd-safe-body tr.fraud-triage-row');
 
-    let html = `<button class="fraud-page-btn" onclick="loadFraudDashboard(${page - 1})" ${page <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-    for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
-        html += `<button class="fraud-page-btn ${p === page ? 'active' : ''}" onclick="loadFraudDashboard(${p})">${p}</button>`;
+    function filterGroup(rows, countElId) {
+        let count = 0;
+        rows.forEach(tr => {
+            const text = tr.textContent.toLowerCase();
+            const matches = !q || text.includes(q);
+            tr.style.display = matches ? '' : 'none';
+            if (matches) count++;
+        });
+        const countEl = document.getElementById(countElId);
+        if (countEl) countEl.textContent = count;
     }
-    html += `<button class="fraud-page-btn" onclick="loadFraudDashboard(${page + 1})" ${page >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-    html += `<span style="color:#64748b;font-size:0.8rem;margin-left:8px">Page ${page} of ${totalPages} (${total} records)</span>`;
-    container.innerHTML = html;
+
+    filterGroup(rowsHigh, 'fd-count-high');
+    filterGroup(rowsPending, 'fd-count-pending');
+    filterGroup(rowsSafe, 'fd-count-safe');
+}
+
+// ─── Drawer Navigation ──────────────────────────────────────────
+function updateDrawerNavButtons() {
+    const navCont = document.getElementById('fraud-drawer-nav-container');
+    const prevBtn = document.getElementById('fraud-prev-btn');
+    const nextBtn = document.getElementById('fraud-next-btn');
+    const counter = document.getElementById('fraud-drawer-counter');
+
+    if (!navCont || !prevBtn || !nextBtn || !counter) return;
+
+    const total = FraudDashboard.activeIds.length;
+    const idx = FraudDashboard.currentIndex;
+
+    if (total <= 1 || idx === -1) {
+        navCont.style.display = 'none';
+        return;
+    }
+
+    navCont.style.display = 'inline-flex';
+    counter.textContent = `${idx + 1} of ${total}`;
+    prevBtn.disabled = idx <= 0;
+    nextBtn.disabled = idx >= total - 1;
+}
+
+function navigateFraudDrawer(dir) {
+    const total = FraudDashboard.activeIds.length;
+    const newIdx = FraudDashboard.currentIndex + dir;
+    if (newIdx >= 0 && newIdx < total) {
+        const nextId = FraudDashboard.activeIds[newIdx];
+        openFraudDetail(nextId);
+    }
 }
 
 // ─── Filters ────────────────────────────────────────────────────
@@ -193,6 +330,9 @@ function applyFraudFilters() {
 // ─── Detail Drawer ──────────────────────────────────────────────
 async function openFraudDetail(paymentId) {
     FraudDashboard.drawerPaymentId = paymentId;
+    FraudDashboard.currentIndex = FraudDashboard.activeIds.indexOf(Number(paymentId));
+    updateDrawerNavButtons();
+
     const drawer = document.getElementById('fraud-drawer');
     const overlay = document.getElementById('fraud-drawer-overlay');
     const body = document.getElementById('fraud-drawer-body');
@@ -217,6 +357,9 @@ function closeFraudDrawer() {
     document.getElementById('fraud-drawer-overlay')?.classList.remove('show');
     FraudDashboard.drawerPaymentId = null;
     FraudDashboard.currentPayment = null;
+    FraudDashboard.currentIndex = -1;
+    const navCont = document.getElementById('fraud-drawer-nav-container');
+    if (navCont) navCont.style.display = 'none';
 }
 
 function buildFraudDrawerContent(d) {
@@ -250,13 +393,13 @@ function buildFraudDrawerContent(d) {
 
     const isAmountValid = !hasAmountMismatch && (ourPrice > 0 ? Math.abs(claimedAmt - ourPrice) <= 1.0 && (ocrPaid === null || Math.abs(ocrPaid - ourPrice) <= 1.0) : true);
 
-    let refBadge = `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
+    let refBadge = `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Verified Unique (${p.reference_number || 'N/A'})</span>`;
     if (hasDupRef) {
-        refBadge = `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Duplicate Ref #</span>`;
+        refBadge = `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-times me-1"></i>Duplicate Ref #</span>`;
     } else if (hasOcrRefMismatch) {
-        refBadge = `<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>OCR Mismatch (${receipt?.ocr_ref_number || 'Differs'})</span>`;
+        refBadge = `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-exclamation-triangle me-1"></i>OCR Mismatch (${receipt?.ocr_ref_number || 'Differs'})</span>`;
     } else if (!p.reference_number) {
-        refBadge = `<span class="badge bg-secondary">No Ref #</span>`;
+        refBadge = `<span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;">No Ref #</span>`;
     }
 
     return `
@@ -274,45 +417,45 @@ function buildFraudDrawerContent(d) {
         </div>
         <div class="score-ring-info">
             <div class="risk-label" style="color:${color}">${level}</div>
-            <div style="font-size:0.85rem;color:#666;margin-top:3px">${DECISION_LABELS[p.decision] || '—'}</div>
-            <div style="font-size:0.75rem;color:#999;margin-top:2px">Analyzed: ${fmtDate(p.analyzed_at)}</div>
+            <div style="font-size:0.85rem;color:#4b5563;margin-top:3px;font-weight:500;">${DECISION_LABELS[p.decision] || '—'}</div>
+            <div style="font-size:0.75rem;color:#6b7280;margin-top:2px">Analyzed: ${fmtDate(p.analyzed_at)}</div>
         </div>
     </div>
 
     <!-- AI Parameter Verification Checklist -->
-    <div class="drawer-section" style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-        <div class="drawer-section-title" style="color: #c5a059; margin-bottom: 12px; font-weight: 600;">
-            <i class="fas fa-robot me-2"></i>AI Verification Checklist
+    <div class="drawer-section" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+        <div class="drawer-section-title" style="color: #1a1a2e; margin-bottom: 14px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+            <i class="fas fa-robot me-2 text-primary"></i>AI Verification Checklist
         </div>
         
         <!-- 1. Amount Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Payment Amount:</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-money-bill-wave me-2 text-muted"></i>Payment Amount:</span>
             ${isAmountValid 
-                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Match (${fmtMoney(claimedAmt)})</span>` 
-                : `<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Mismatch (OCR: ${ocrPaid !== null ? fmtMoney(ocrPaid) : 'N/A'} vs Price: ${fmtMoney(ourPrice)})</span>`}
+                ? `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Match (${fmtMoney(claimedAmt)})</span>` 
+                : `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-times me-1"></i>Mismatch (OCR: ${ocrPaid !== null ? fmtMoney(ocrPaid) : 'N/A'} vs Price: ${fmtMoney(ourPrice)})</span>`}
         </div>
 
         <!-- 2. Reference Number Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-hashtag me-2 text-info"></i>Reference Number:</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-hashtag me-2 text-muted"></i>Reference Number:</span>
             ${refBadge}
         </div>
 
         <!-- 3. Time / Submission Verification -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-clock me-2 text-primary"></i>Submission Date/Time:</span>
-            <span class="badge bg-info text-dark"><i class="fas fa-calendar-alt me-1"></i>${fmtDate(p.created_at)}</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-clock me-2 text-muted"></i>Submission Date/Time:</span>
+            <span class="badge rounded-pill bg-light text-dark border px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-calendar-alt me-1 text-muted"></i>${fmtDate(p.created_at)}</span>
         </div>
 
         <!-- 4. Receipt Image Integrity -->
-        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.82rem;">
-            <span class="text-light"><i class="fas fa-file-image me-2 text-secondary"></i>Receipt Image Check:</span>
+        <div class="d-flex justify-content-between align-items-center" style="font-size: 0.84rem;">
+            <span style="color: #374151; font-weight: 600;"><i class="fas fa-file-image me-2 text-muted"></i>Receipt Image Check:</span>
             ${imgUrl && !hasUnreadable && !hasDupHash
-                ? `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Valid & Unique Receipt</span>`
+                ? `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-check me-1"></i>Valid &amp; Unique Receipt</span>`
                 : hasDupHash 
-                    ? `<span class="badge bg-danger"><i class="fas fa-copy me-1"></i>Duplicate Image Hash</span>`
-                    : `<span class="badge bg-warning text-dark"><i class="fas fa-eye-slash me-1"></i>Unreadable / Missing</span>`}
+                    ? `<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-copy me-1"></i>Duplicate Image Hash</span>`
+                    : `<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-weight: 600; font-size: 0.78rem;"><i class="fas fa-eye-slash me-1"></i>Unreadable / Missing</span>`}
         </div>
     </div>
 

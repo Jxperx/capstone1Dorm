@@ -421,10 +421,11 @@
     align-items: center;
     gap: 16px;
     padding: 16px;
-    background: #f8f8f8;
-    border-radius: 8px;
-    margin-bottom: 14px;
-    border: 1px solid rgba(0,0,0,0.06);
+    background: #ffffff;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .score-ring {
     width: 72px; height: 72px;
@@ -611,5 +612,55 @@
     .drawer-body {
         padding: 16px 12px;
     }
+}
+
+/* ── Fraud Triage Columns ────────────────────────────────────── */
+.fraud-triage-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.fraud-triage-row:hover {
+    background-color: #f8fafc;
+}
+.fraud-triage-row:active {
+    background-color: #f1f5f9;
+}
+
+/* ── Fraud Triage Scroll & Ergonomics ────────────────────────── */
+.fraud-triage-scroll {
+    max-height: 440px;
+    overflow-y: auto;
+}
+.fraud-triage-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.fraud-triage-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.fraud-triage-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+}
+.fraud-triage-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.drawer-nav-btn {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #64748b !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.drawer-nav-btn:hover:not(:disabled) {
+    background-color: #e2e8f0;
+    color: #1a1a2e !important;
+}
+.drawer-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 
