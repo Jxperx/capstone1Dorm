@@ -636,7 +636,7 @@ async function runOsintCheck(inquiry) {
             nameMentioned: phoneWebData?.nameMentioned || false,
             scamFlagged:   phoneWebData?.scamFlagged || false
         },
-        socialLinks:     phoneWebData?.socialLinks || buildSocialLinks(firstName, lastName, phone),
+        socialLinks:     { ...buildSocialLinks(firstName, lastName, phone), ...(phoneWebData?.socialLinks || {}) },
         checkedAt:       new Date().toISOString()
     };
 

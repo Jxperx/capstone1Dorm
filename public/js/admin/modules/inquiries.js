@@ -634,6 +634,7 @@ async function openInquiryDetail(id) {
         const res = await fetch(`/api/admin/inquiries/${id}`, { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.json().catch(()=>({})))?.error || 'Failed'}`);
         const record = await res.json();
+        InquiryDashboard.currentInquiryRecord = record;
 
         body.innerHTML = buildInquiryDrawerContent(record);
 
@@ -651,6 +652,7 @@ function closeInquiryDrawer() {
     document.getElementById('inq-drawer')?.classList.remove('open');
     document.getElementById('inq-drawer-overlay')?.classList.remove('show');
     InquiryDashboard.drawerInquiryId = null;
+    InquiryDashboard.currentInquiryRecord = null;
 }
 
 function buildInquiryDrawerContent(r) {
@@ -701,14 +703,6 @@ function buildInquiryDrawerContent(r) {
             : '<span class="text-muted">—</span>')}
         ${dr('User Agent', `<div style="font-size:0.72rem;color:#888;word-break:break-all">${escHtml(r.user_agent)}</div>`)}
         ${dr('Submitted',  fmtDate(r.created_at))}
-    </div>
-
-    <div class="inq-drawer-section">
-        <div class="inq-drawer-section-title"><i class="fas fa-shield-alt me-2"></i>Fraud Hashes</div>
-        <div style="font-size:0.7rem;color:#888;margin-bottom:6px">Message Hash (SHA-256)</div>
-        <div class="inq-hash-box">${escHtml(r.message_hash) || '—'}</div>
-        <div style="font-size:0.7rem;color:#888;margin:10px 0 6px">User Hash (email+phone)</div>
-        <div class="inq-hash-box">${escHtml(r.user_hash) || '—'}</div>
     </div>
 
     ${r.admin_note ? `
@@ -868,7 +862,7 @@ function buildOsintSection(r) {
                 : '<span class="osint-scanning-badge"><i class="fas fa-circle-notch fa-spin me-1"></i>Scanning…</span>'
             }
         </div>
-        ${cached ? renderOsintPanel(cached) : `
+        ${cached ? renderOsintPanel(cached, r) : `
             <div class="osint-loading">
                 <div class="osint-loading-spinner"></div>
                 <div class="osint-loading-text" id="osint-loading-text"><i class="fas fa-search me-1"></i>Running background check…</div>
@@ -877,7 +871,44 @@ function buildOsintSection(r) {
     </div>`;
 }
 
-function renderOsintPanel(d) {
+function renderOsintPanel(d, r) {
+    const rec = r || InquiryDashboard.currentInquiryRecord || {};
+    const firstName = (rec.first_name || '').trim();
+    const lastName  = (rec.last_name || '').trim();
+    const fullName  = `${firstName} ${lastName}`.trim();
+    const rawPhone  = (rec.phone || (d.phone && (d.phone.raw || d.phone.sanitized)) || '').trim();
+    const digits    = rawPhone.replace(/\D/g, '');
+    let localPhone  = digits;
+    if (localPhone.startsWith('63') && localPhone.length === 12) localPhone = '0' + localPhone.slice(2);
+    let intlPhone   = digits;
+    if (intlPhone.startsWith('09') && intlPhone.length === 11) intlPhone = '63' + intlPhone.slice(1);
+
+    const sl = Object.assign({}, d.socialLinks || {});
+    if (!sl.facebook && fullName) {
+        sl.facebook = `https://www.facebook.com/search/top?q=${encodeURIComponent(fullName)}`;
+    }
+    if (!sl.facebookPhone && localPhone) {
+        sl.facebookPhone = `https://www.facebook.com/search/top?q=${encodeURIComponent(localPhone)}`;
+    }
+    if (!sl.google && fullName) {
+        sl.google = `https://www.google.com/search?q="${encodeURIComponent(fullName)}"+Philippines`;
+    }
+    if (!sl.googlePhone && localPhone) {
+        sl.googlePhone = `https://www.google.com/search?q="${encodeURIComponent(localPhone)}"+OR+"+${intlPhone}"`;
+    }
+    if (!sl.whatsapp && intlPhone) {
+        sl.whatsapp = `https://wa.me/${intlPhone}`;
+    }
+    if (!sl.viber && intlPhone) {
+        sl.viber = `viber://chat?number=%2B${intlPhone}`;
+    }
+    if (!sl.telegram && intlPhone) {
+        sl.telegram = `https://t.me/+${intlPhone}`;
+    }
+    if (!sl.messenger && fullName) {
+        sl.messenger = `https://www.facebook.com/search/top?q=${encodeURIComponent(fullName)}`;
+    }
+
     const levelClass = d.trustLevel === 'HIGH' ? 'osint-trust-high'
                      : d.trustLevel === 'MEDIUM' ? 'osint-trust-medium' : 'osint-trust-low';
     const levelColor = d.trustLevel === 'HIGH' ? '#27ae60'
@@ -889,13 +920,13 @@ function renderOsintPanel(d) {
     const fill   = circ - (circ * (d.trustScore || 0) / 100);
 
     // ── Recommendation Banner ────────────────────────────────────────────────
-    const rec = d.recommendation || (d.trustLevel === 'HIGH' ? 'SAFE' : d.trustLevel === 'MEDIUM' ? 'VERIFY' : 'AVOID');
     const recConfig = {
         SAFE:   { cls: 'osint-rec-safe',   icon: 'fas fa-check-circle',     label: 'Safe to Contact',  desc: 'This person appears to be legitimate. You may proceed.' },
         VERIFY: { cls: 'osint-rec-verify', icon: 'fas fa-exclamation-circle', label: 'Verify First',   desc: 'Some signals need verification before proceeding.' },
         AVOID:  { cls: 'osint-rec-avoid',  icon: 'fas fa-times-circle',      label: 'Do Not Contact', desc: 'Multiple red flags detected. Exercise extreme caution.' }
     };
-    const rc = recConfig[rec] || recConfig['VERIFY'];
+    const recAction = d.recommendation || (d.trustLevel === 'HIGH' ? 'SAFE' : d.trustLevel === 'MEDIUM' ? 'VERIFY' : 'AVOID');
+    const rc = recConfig[recAction] || recConfig['VERIFY'];
     const recBanner = `
     <div class="osint-rec-banner ${rc.cls}">
         <i class="${rc.icon} osint-rec-icon"></i>
@@ -928,7 +959,7 @@ function renderOsintPanel(d) {
     const phone = d.phone || {};
     const phoneWeb = d.phoneWebResults || [];
     const phoneWebStatus = d.phoneWebStatus || {};
-    const social = d.socialLinks || {};
+    const social = sl;
 
     const phoneWebHtml = phoneWeb.length > 0 ? `
         <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.08)">
@@ -1030,8 +1061,6 @@ function renderOsintPanel(d) {
                 <div class="osint-web-url">${escHtml(r.url)}</div>
             </a>`).join('');
 
-    // ── Social links (expanded) ───────────────────────────────────────────────
-    const sl = d.socialLinks || {};
     // ── Email Verification Panel (replaces Google search button) ─────────────
     const ev = d.emailVerify || {};
     const hasEmailVerify = ev.checkedVia != null; // only present on newly-scanned results
@@ -1111,17 +1140,20 @@ function renderOsintPanel(d) {
             ${emailVerifyHtml}
         </div>
         <div class="osint-social-group">
-            <div class="osint-social-group-label"><i class="fas fa-share-alt me-2"></i>Social Platforms</div>
+            <div class="osint-social-group-label"><i class="fas fa-share-alt me-2"></i>Social Platforms (Deep Search)</div>
             <div class="osint-social-links">
-                ${sl.facebook  ? `<a href="${sl.facebook}"  target="_blank" class="osint-social-btn osint-social-fb"><i class="fab fa-facebook me-1"></i>Facebook</a>` : ''}
+                ${sl.facebook      ? `<a href="${sl.facebook}"      target="_blank" class="osint-social-btn osint-social-fb" title="Search applicant by name on Facebook"><i class="fab fa-facebook me-1"></i>Facebook (Name Search)</a>` : ''}
+                ${sl.facebookPhone ? `<a href="${sl.facebookPhone}" target="_blank" class="osint-social-btn osint-social-fb" title="Search applicant by phone on Facebook"><i class="fab fa-facebook me-1"></i>Facebook (Phone Search)</a>` : ''}
+                ${sl.google        ? `<a href="${sl.google}"        target="_blank" class="osint-social-btn osint-social-go" title="Search applicant by name on Google Philippines"><i class="fab fa-google me-1"></i>Google Name Search</a>` : ''}
             </div>
         </div>
         <div class="osint-social-group">
-            <div class="osint-social-group-label"><i class="fas fa-comment-dots me-2"></i>Message</div>
+            <div class="osint-social-group-label"><i class="fas fa-comment-dots me-2"></i>Direct Messaging</div>
             <div class="osint-social-links">
-                ${sl.whatsapp  ? `<a href="${sl.whatsapp}"  target="_blank" class="osint-social-btn osint-social-wa"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>` : ''}
-                ${sl.viber     ? `<a href="${sl.viber}"     target="_blank" class="osint-social-btn osint-social-vb"><i class="fab fa-viber me-1"></i>Viber</a>` : ''}
-                ${sl.messenger ? `<a href="${sl.messenger}" target="_blank" class="osint-social-btn osint-social-ms"><i class="fab fa-facebook-messenger me-1"></i>Messenger</a>` : ''}
+                ${sl.whatsapp  ? `<a href="${sl.whatsapp}"  target="_blank" class="osint-social-btn osint-social-wa" title="Chat via WhatsApp"><i class="fab fa-whatsapp me-1"></i>WhatsApp</a>` : ''}
+                ${sl.viber     ? `<a href="${sl.viber}"     target="_blank" class="osint-social-btn osint-social-vb" title="Chat via Viber"><i class="fab fa-viber me-1"></i>Viber</a>` : ''}
+                ${sl.telegram  ? `<a href="${sl.telegram}"  target="_blank" class="osint-social-btn osint-social-tg" title="Chat via Telegram"><i class="fab fa-telegram me-1"></i>Telegram</a>` : ''}
+                ${sl.messenger ? `<a href="${sl.messenger}" target="_blank" class="osint-social-btn osint-social-ms" title="Open Messenger"><i class="fab fa-facebook-messenger me-1"></i>Messenger</a>` : ''}
             </div>
         </div>`;
 
@@ -1226,7 +1258,7 @@ async function triggerOsintCheck(id) {
         if (!res.ok) throw new Error(data.error || 'OSINT check failed');
 
         const panelEl = document.createElement('div');
-        panelEl.innerHTML = renderOsintPanel(data.osintResult);
+        panelEl.innerHTML = renderOsintPanel(data.osintResult, InquiryDashboard.currentInquiryRecord);
         loadingEl.replaceWith(panelEl.firstElementChild || panelEl);
 
         const title = section.querySelector('.inq-drawer-section-title');
