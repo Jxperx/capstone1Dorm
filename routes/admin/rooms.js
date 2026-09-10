@@ -195,7 +195,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Admin/Public - Get all property media
-router.get('/media/all', async (req, res) => {
+router.get(['/media/all', '/media'], async (req, res) => {
     try {
         const pool = await poolPromise;
         const result = await pool.request().query('SELECT type, image_url, video_url, map_embed_url FROM property_media');

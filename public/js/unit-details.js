@@ -110,6 +110,18 @@ async function loadUnitDetails() {
             mapEl.innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-direction:column; gap:10px;"><i class="fas fa-map-marked-alt fa-3x"></i><span>Map Not Available</span></div>';
         }
 
+        // Walkthrough Video from property_media
+        const videoWrap = document.getElementById('unitVideoContainer');
+        const videoPlayer = document.getElementById('unitVideoPlayer');
+        if (videoWrap && videoPlayer) {
+            if (media.video_url) {
+                videoPlayer.src = media.video_url;
+                videoWrap.style.display = 'block';
+            } else {
+                videoWrap.style.display = 'none';
+            }
+        }
+
         // Fetch visit availability then initialize calendar
         const visitData = await fetchVisitAvailability(roomId);
         initCalendar(isOccupied, data.leases || [], visitData);
@@ -316,7 +328,7 @@ function updateSlotAvailability() {
     const day = dateObj.getDay();
 
     if (day === 1 || day === 2) {
-        hint.textContent = '⚠️ Monday and Tuesday are not available for visits.';
+        hint.textContent = 'Notice: Monday and Tuesday are not available for visits.';
         hint.style.color = '#ef4444';
         return;
     }
@@ -327,13 +339,13 @@ function updateSlotAvailability() {
     const remaining   = maxPerSlot - bookedCount;
 
     if (remaining <= 0) {
-        hint.textContent = '❌ This slot is fully booked. Please choose another.';
+        hint.textContent = 'This slot is fully booked. Please choose another.';
         hint.style.color = '#ef4444';
     } else if (remaining === 1) {
-        hint.textContent = '⚠️ Only 1 slot remaining!';
+        hint.textContent = 'Notice: Only 1 slot remaining.';
         hint.style.color = '#eab308';
     } else {
-        hint.textContent = `✅ ${remaining} slot(s) available`;
+        hint.textContent = `${remaining} slot(s) available`;
         hint.style.color = '#22c55e';
     }
 }

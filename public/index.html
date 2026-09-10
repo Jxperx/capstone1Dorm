@@ -2235,8 +2235,9 @@
                 </div>
 
                 <!-- Dorm Map -->
-                <div class="location-map-wrap">
+                <div class="location-map-wrap" id="landingDormMapWrap">
                     <iframe
+                        id="landingDormMapIframe"
                         src="https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685460381!5m2!1sen!2sph!6m8!1m7!1sbSPznQdEBNgHTS7KmGUD0A!2m2!1d14.1846702!2d121.1375905!3f42.03968566802905!4f-9.663768123331309!5f0.7820865974627469"
                         width="100%" height="100%"
                         style="border:0; display:block; position:absolute; inset:0; filter:grayscale(15%) contrast(1.05);"
@@ -2254,8 +2255,9 @@
             <div class="location-card reverse">
 
                 <!-- Condo Map -->
-                <div class="location-map-wrap">
+                <div class="location-map-wrap" id="landingCondoMapWrap">
                     <iframe
+                        id="landingCondoMapIframe"
                         src="https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685884257!5m2!1sen!2sph!6m8!1m7!1sriOdGSCtvHmZQKl0O6Aauw!2m2!1d14.24048350795415!2d121.0425856352331!3f129.15545414837314!4f-2.0124363928627105!5f0.7820865974627469"
                         width="100%" height="100%"
                         style="border:0; display:block; position:absolute; inset:0; filter:grayscale(15%) contrast(1.05);"
@@ -2460,7 +2462,7 @@
                     const panelId = 'tour-panel-' + room.id;
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
-                    const img = condoImgs[i % condoImgs.length];
+                    const img = room.cover_image || condoImgs[i % condoImgs.length];
                     const tourSrc = condoTourSrcs[i] || null;
 
                     const tab = document.createElement('div');
@@ -2484,7 +2486,7 @@
                     const panelId = 'tour-panel-' + room.id;
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
-                    const img = dormImgs[i % dormImgs.length];
+                    const img = room.cover_image || dormImgs[i % dormImgs.length];
                     const tourSrc = dormTourSrcs[i] || null;
 
                     const tab = document.createElement('div');
@@ -2630,6 +2632,63 @@
                             <button onclick="loadAllRooms()" style="margin-top:14px;padding:8px 20px;background:var(--gold);color:var(--charcoal);border:none;border-radius:2px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">Retry Loading</button>
                         </div>`;
                 }
+            }
+        }
+
+        // ── Load Property Media for Landing Page (Maps & Tour Video) ──
+        async function loadLandingPropertyMedia() {
+            try {
+                const res = await fetch('/api/property-media');
+                if (!res.ok) return;
+                const media = await res.json();
+
+                // Connect Dorm Location Map
+                if (media.dorm && media.dorm.map_embed_url) {
+                    const raw = media.dorm.map_embed_url.trim();
+                    const wrap = document.getElementById('landingDormMapWrap');
+                    if (wrap && raw) {
+                        if (raw.startsWith('<iframe')) {
+                            wrap.innerHTML = raw + `
+                                <div style="position:absolute; top:18px; left:18px; z-index:1; background:rgba(26,26,27,0.88); backdrop-filter:blur(8px); border:1px solid rgba(212,175,55,0.35); border-radius:2px; padding:7px 13px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-bed" style="color:var(--gold); font-size:10px;"></i>
+                                    <span style="font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--white);">Dorm A1 · Live View</span>
+                                </div>`;
+                            const ifr = wrap.querySelector('iframe');
+                            if (ifr) {
+                                ifr.style.cssText = 'border:0; display:block; position:absolute; inset:0; width:100%; height:100%; filter:grayscale(15%) contrast(1.05);';
+                                ifr.setAttribute('loading', 'lazy');
+                            }
+                        } else if (raw.startsWith('http')) {
+                            const ifr = document.getElementById('landingDormMapIframe');
+                            if (ifr) ifr.src = raw;
+                        }
+                    }
+                }
+
+                // Connect Condo Location Map
+                if (media.condo && media.condo.map_embed_url) {
+                    const raw = media.condo.map_embed_url.trim();
+                    const wrap = document.getElementById('landingCondoMapWrap');
+                    if (wrap && raw) {
+                        if (raw.startsWith('<iframe')) {
+                            wrap.innerHTML = raw + `
+                                <div style="position:absolute; top:18px; right:18px; z-index:1; background:rgba(26,26,27,0.88); backdrop-filter:blur(8px); border:1px solid rgba(212,175,55,0.35); border-radius:2px; padding:7px 13px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-building" style="color:var(--gold); font-size:10px;"></i>
+                                    <span style="font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--white);">Condo · Live View</span>
+                                </div>`;
+                            const ifr = wrap.querySelector('iframe');
+                            if (ifr) {
+                                ifr.style.cssText = 'border:0; display:block; position:absolute; inset:0; width:100%; height:100%; filter:grayscale(15%) contrast(1.05);';
+                                ifr.setAttribute('loading', 'lazy');
+                            }
+                        } else if (raw.startsWith('http')) {
+                            const ifr = document.getElementById('landingCondoMapIframe');
+                            if (ifr) ifr.src = raw;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[Landing Media] Error loading property media:', err);
             }
         }
 
@@ -2789,6 +2848,7 @@
         // ── Init ──
         document.addEventListener('DOMContentLoaded', () => {
             loadAllRooms().then(handleUnitPreselect);
+            loadLandingPropertyMedia();
         });
     </script>
     <!-- Room Matching Quiz module -->

@@ -176,6 +176,25 @@ app.use('/api/visits', visitsRoutes);
 app.post('/api/applications/submit', applicationLimiter);
 app.use('/api/applications', applicationsRoutes);
 
+app.get('/api/property-media', async (req, res) => {
+    try {
+        const { poolPromise } = require('./config/db');
+        const pool = await poolPromise;
+        const result = await pool.request().query('SELECT type, image_url, video_url, map_embed_url FROM property_media');
+        const data = {};
+        result.recordset.forEach(row => {
+            data[row.type] = {
+                image_url: row.image_url,
+                video_url: row.video_url,
+                map_embed_url: row.map_embed_url
+            };
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // Mount Routes - Admin
 app.use('/api/rooms', adminRoomsRoutes);
 app.use('/api/admin/rooms', adminRoomsRoutes);

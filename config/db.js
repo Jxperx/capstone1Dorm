@@ -15,12 +15,27 @@ if (!connectionString) {
     logger.error('[DB] SUPABASE_DB_URL is missing in environment configuration!');
 }
 
+const cachedSupabaseIps = ['52.68.3.1', '35.79.125.133', '54.64.190.72'];
+
+function resilientLookup(hostname, options, callback) {
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+    if (hostname && hostname.includes('supabase')) {
+        const ip = cachedSupabaseIps[Math.floor(Math.random() * cachedSupabaseIps.length)];
+        return callback(null, ip, 4);
+    }
+    dns.lookup(hostname, options, callback);
+}
+
 const pgPool = new Pool({
     connectionString: connectionString,
     ssl: { rejectUnauthorized: false },
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 15000
+    connectionTimeoutMillis: 15000,
+    lookup: resilientLookup
 });
 
 pgPool.on('error', (err) => {
