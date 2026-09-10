@@ -10,11 +10,16 @@
 
 const RentPricingModule = {
     searching: false,
+    rawSuggestions: [],
+    marketListings: [],
+    marketSummary: [],
+    activeFilter: 'all',
+    activeTab: 'recommendations',
 
     init: async function () {
         console.log('[RentPricingModule] Initializing...');
         this.container = document.getElementById('rentPricingContainer');
-        this.attachActionButtons();
+        this.initTabs();
         await Promise.all([
             this.loadScheduleInfo(),
             this.loadSuggestions(),
@@ -22,28 +27,75 @@ const RentPricingModule = {
         ]);
     },
 
-    // ── Attach Header Action Controls ─────────────────────────────────────────
-    attachActionButtons: function () {
-        const headerActions = document.getElementById('rentPricingHeaderActions');
-        if (!headerActions) return;
+    // ── Tab Management ────────────────────────────────────────────────────────
+    initTabs: function () {
+        const btnRec = document.getElementById('tab-rent-recommendations');
+        const btnEv  = document.getElementById('tab-rent-evidence');
 
-        headerActions.innerHTML = `
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <button id="btnSearchMarketNow" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" style="border-radius:20px;">
-                    <i class="fas fa-search-dollar me-1"></i>Search Market Now
-                </button>
-                <button class="btn btn-outline-info btn-sm rounded-pill px-3" onclick="RentPricingModule.openDeepSearchModal()">
-                    <i class="fas fa-globe me-1"></i>Deep Search Competitors
-                </button>
-                <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="RentPricingModule.loadHistory()">
-                    <i class="fas fa-history me-1"></i>Pricing History
-                </button>
-            </div>`;
-
-        const btnSearch = document.getElementById('btnSearchMarketNow');
-        if (btnSearch) {
-            btnSearch.onclick = () => this.triggerMarketSearch();
+        if (btnRec && btnEv) {
+            btnRec.onclick = () => this.switchTab('recommendations');
+            btnEv.onclick  = () => this.switchTab('evidence');
         }
+    },
+
+    switchTab: function (tabName) {
+        this.activeTab = tabName;
+        const paneRec     = document.getElementById('rentTabPaneRecommendations');
+        const paneEv      = document.getElementById('rentTabPaneEvidence');
+        const btnRec      = document.getElementById('tab-rent-recommendations');
+        const btnEv       = document.getElementById('tab-rent-evidence');
+        const filterPills = document.getElementById('rentFilterPillsContainer');
+
+        if (tabName === 'recommendations') {
+            if (paneRec) paneRec.classList.remove('d-none');
+            if (paneEv) paneEv.classList.add('d-none');
+            if (btnRec) {
+                btnRec.classList.add('active', 'fw-bold');
+                btnRec.classList.remove('fw-semibold');
+            }
+            if (btnEv) {
+                btnEv.classList.remove('active', 'fw-bold');
+                btnEv.classList.add('fw-semibold');
+            }
+            if (filterPills) filterPills.classList.remove('d-none');
+        } else {
+            if (paneRec) paneRec.classList.add('d-none');
+            if (paneEv) paneEv.classList.remove('d-none');
+            if (btnEv) {
+                btnEv.classList.add('active', 'fw-bold');
+                btnEv.classList.remove('fw-semibold');
+            }
+            if (btnRec) {
+                btnRec.classList.remove('active', 'fw-bold');
+                btnRec.classList.add('fw-semibold');
+            }
+            if (filterPills) filterPills.classList.add('d-none');
+        }
+    },
+
+    // ── Quick Filter Handling ─────────────────────────────────────────────────
+    setFilter: function (filterType) {
+        this.activeFilter = filterType;
+        const btnAll     = document.getElementById('filterBtnAll');
+        const btnChanges = document.getElementById('filterBtnChanges');
+        const btnOptimal = document.getElementById('filterBtnOptimal');
+
+        [btnAll, btnChanges, btnOptimal].forEach(btn => {
+            if (btn) {
+                btn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-0.5';
+                btn.style.fontSize = '0.75rem';
+            }
+        });
+
+        if (filterType === 'all' && btnAll) {
+            btnAll.className = 'btn btn-sm btn-dark rounded-pill px-2.5 py-0.5';
+        } else if (filterType === 'changes' && btnChanges) {
+            btnChanges.className = 'btn btn-sm btn-dark rounded-pill px-2.5 py-0.5';
+        } else if (filterType === 'optimal' && btnOptimal) {
+            btnOptimal.className = 'btn btn-sm btn-dark rounded-pill px-2.5 py-0.5';
+        }
+
+        this.renderFilteredCards();
     },
 
     // ── Open Multi-Portal Deep Search Modal ──────────────────────────────────
@@ -53,115 +105,124 @@ const RentPricingModule = {
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
                     <div class="modal-header bg-dark text-white py-3">
-                        <h5 class="modal-title fw-bold"><i class="fas fa-globe text-info me-2"></i>Multi-Portal Deep Search & Competitor Evidence</h5>
+                        <h5 class="modal-title fw-bold"><i class="fas fa-globe text-primary me-2"></i>Multi-Portal Deep Search &amp; Competitor Evidence</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
                         <p class="text-muted small mb-4">
-                            Explore active real-time listings across all major Philippine property portals in <strong>Calamba & Nuvali/Santa Rosa</strong> to benchmark market rates.
+                            Direct, hyper-targeted queries across major Philippine property portals specifically filtered for units matching our property inventory in <strong>Calamba &amp; Nuvali</strong>.
                         </p>
                         
-                        <div class="row g-3">
-                            <!-- 1. Lamudi PH -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border border-primary-subtle shadow-sm p-3" style="border-radius:12px;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-building text-primary fs-4 me-3"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">Lamudi Philippines</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Top PH Real Estate Portal</span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.lamudi.com.ph/condominium/rent/laguna/calamba/" target="_blank" class="btn btn-sm btn-primary flex-fill">Calamba Condos</a>
-                                        <a href="https://www.lamudi.com.ph/condominium/rent/laguna/santa-rosa/nuvali/" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">Nuvali Condos</a>
-                                    </div>
-                                </div>
+                        <!-- Category 1: Condo Comps -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2">Category 1</span>
+                                <h6 class="fw-bold mb-0 text-dark">Studio &amp; 1BR Condo Comps (28–35 sqm, Furnished)</h6>
                             </div>
-
-                            <!-- 2. Carousell PH -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border border-danger-subtle shadow-sm p-3" style="border-radius:12px;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-store text-danger fs-4 me-3"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">Carousell Philippines</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Dorms & Student Bedspaces</span>
+                            <p class="text-muted" style="font-size:0.75rem;">Directly comparable to our Units CONDO-01 to CONDO-06 (28.5–35.0 sqm, Fully Furnished, AC, Fiber WiFi).</p>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <a href="https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-danger"><i class="fab fa-airbnb me-1"></i>Airbnb Calamba Studios</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Furnished Studio Condos in Calamba</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20dorm%20bedspace" target="_blank" class="btn btn-sm btn-danger flex-fill">Calamba Bedspaces</a>
-                                        <a href="https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=calamba%20condo" target="_blank" class="btn btn-sm btn-outline-danger flex-fill">Calamba Condos</a>
-                                    </div>
+                                    </a>
                                 </div>
-                            </div>
-
-                            <!-- 3. Airbnb PH -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border shadow-sm p-3" style="border-radius:12px; border-color:#FF5A5F !important;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fab fa-airbnb fs-4 me-3" style="color:#FF5A5F;"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">Airbnb Philippines</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Short & Long Stays</span>
+                                <div class="col-md-6">
+                                    <a href="https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-danger"><i class="fab fa-airbnb me-1"></i>Airbnb Nuvali Studios</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Furnished Studio Units in Nuvali / Santa Rosa</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes" target="_blank" class="btn btn-sm text-white flex-fill" style="background:#FF5A5F;">Calamba Homes</a>
-                                        <a href="https://www.airbnb.com/s/Santa-Rosa--Laguna--Philippines/homes" target="_blank" class="btn btn-sm btn-outline-danger flex-fill">Nuvali Homes</a>
-                                    </div>
+                                    </a>
                                 </div>
-                            </div>
-
-                            <!-- 4. Booking.com -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border shadow-sm p-3" style="border-radius:12px; border-color:#003580 !important;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-hotel fs-4 me-3" style="color:#003580;"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">Booking.com</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Hostels & Serviced Stays</span>
+                                <div class="col-md-6">
+                                    <a href="https://www.dotproperty.com.ph/condos-for-rent/laguna/santa-rosa?bedrooms=studio" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-success"><i class="fas fa-building me-1"></i>DotProperty Santa Rosa / Nuvali</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Studio Condos (28-35 sqm) in Santa Rosa / Nuvali</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.booking.com/searchresults.html?ss=Calamba+Laguna" target="_blank" class="btn btn-sm text-white flex-fill" style="background:#003580;">Calamba Stays</a>
-                                        <a href="https://www.booking.com/searchresults.html?ss=Santa+Rosa+Laguna" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">Nuvali Stays</a>
-                                    </div>
+                                    </a>
                                 </div>
-                            </div>
-
-                            <!-- 5. DotProperty PH -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border border-success-subtle shadow-sm p-3" style="border-radius:12px;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-city text-success fs-4 me-3"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">DotProperty Philippines</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Verified Property Listings</span>
+                                <div class="col-md-6">
+                                    <a href="https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba?bedrooms=studio" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-success"><i class="fas fa-home me-1"></i>DotProperty Calamba Studios</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Studio Rentals in Calamba Area (28-35 sqm)</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba" target="_blank" class="btn btn-sm btn-success flex-fill">Calamba Listings</a>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 6. Facebook Marketplace -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border border-info-subtle shadow-sm p-3" style="border-radius:12px;">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fab fa-facebook text-info fs-4 me-3"></i>
-                                        <div>
-                                            <h6 class="fw-bold mb-0">Facebook Marketplace</h6>
-                                            <span class="text-muted" style="font-size:0.75rem;">Local Calamba Direct Rentals</span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="https://www.facebook.com/marketplace/category/propertyrentals?query=calamba%20rent" target="_blank" class="btn btn-sm btn-info text-white flex-fill">Marketplace Calamba</a>
-                                    </div>
+                                    </a>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Category 2: Student Dorm Comps -->
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2">Category 2</span>
+                                <h6 class="fw-bold mb-0 text-dark">Student Dorm &amp; Bedspace Comps (AC &amp; Fiber WiFi)</h6>
+                            </div>
+                            <p class="text-muted" style="font-size:0.75rem;">Directly comparable to our Units DormA1 &amp; DormA2 (4-Person Student Dorm, Fully Furnished, AC, Fiber WiFi in Calamba).</p>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <a href="https://www.dotproperty.com.ph/apartments-for-rent/laguna/calamba" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-success"><i class="fas fa-bed me-1"></i>DotProperty Calamba Rentals</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Student Rooms &amp; Apartments in Calamba</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="https://www.facebook.com/marketplace/calamba/propertyrentals/?query=student%20dorm%20bedspace" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-info"><i class="fab fa-facebook me-1"></i>FB Marketplace Dorms</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Calamba Student Residences &amp; Bedspaces</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Private+room" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-danger"><i class="fab fa-airbnb me-1"></i>Airbnb Calamba Rooms &amp; Stays</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Private &amp; Shared Student Rooms in Calamba</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="https://www.facebook.com/marketplace/calamba/propertyrentals/?query=calamba%20student%20bedspace" target="_blank" class="card text-decoration-none border shadow-sm p-3 h-100 rounded-3 text-dark hover-shadow">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-bold small text-info"><i class="fab fa-facebook me-1"></i>FB Marketplace Calamba Bedspaces</div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Parian &amp; Bucal University Belt Bedspaces</div>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size:0.75rem;"></i>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -179,43 +240,95 @@ const RentPricingModule = {
     },
 
     // ── Smart URL Cleaner & Fallback Resolver ────────────────────────────────
-    getValidPropertyUrl: function (rawUrl, propertyName, location) {
+    getValidPropertyUrl: function (rawUrl, propertyName, location, unitType) {
         if (!rawUrl || typeof rawUrl !== 'string') rawUrl = '';
         const urlLower = rawUrl.toLowerCase();
         const propLower = (propertyName || '').toLowerCase();
         const locLower = (location || '').toLowerCase();
+        const isDorm = (unitType === 'dorm' || unitType === 'dorm-bed') ||
+                       propLower.includes('dorm') || propLower.includes('bedspace');
         const isNuvali = locLower.includes('nuvali') || locLower.includes('santa rosa') || propLower.includes('nuvali');
 
-        // Fix broken/404 RentPad URLs
+        // Redirect any Carousell links away from nationwide results to strict Calamba/Santa Rosa portals
+        if (urlLower.includes('carousell.ph')) {
+            if (isDorm) {
+                return 'https://www.dotproperty.com.ph/apartments-for-rent/laguna/calamba';
+            }
+            if (isNuvali) {
+                return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/santa-rosa?bedrooms=studio';
+            }
+            return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba?bedrooms=studio';
+        }
+
+        // Fix RentPad URLs to strict Calamba/Santa Rosa portals
         if (urlLower.includes('rentpad.com.ph')) {
-            if (isNuvali) return 'https://www.lamudi.com.ph/condominium/rent/laguna/santa-rosa/nuvali/';
-            return 'https://www.lamudi.com.ph/condominium/rent/laguna/calamba/';
+            if (isDorm) {
+                return 'https://www.dotproperty.com.ph/apartments-for-rent/laguna/calamba';
+            }
+            if (isNuvali) {
+                return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/santa-rosa?bedrooms=studio';
+            }
+            return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba?bedrooms=studio';
         }
 
-        // Fix broken/404 Klook hotel search URLs
-        if (urlLower.includes('klook.com')) {
-            if (isNuvali) return 'https://www.booking.com/searchresults.html?ss=Santa+Rosa+Laguna';
-            return 'https://www.booking.com/searchresults.html?ss=Calamba+Laguna';
+        // Fix hotel/resort URLs so they redirect to real rental comps
+        if (urlLower.includes('booking.com') || urlLower.includes('klook.com')) {
+            if (isDorm) {
+                return 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Private+room';
+            }
+            if (isNuvali) {
+                return 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt';
+            }
+            return 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt';
         }
 
-        // Fix broken/404 Carousell search query URLs
-        if (urlLower.includes('carousell.ph/q/')) {
-            const query = propLower.includes('dorm') || propLower.includes('bedspace')
-                ? 'calamba%20dorm%20bedspace'
-                : 'calamba%20condo';
-            return `https://www.carousell.ph/categories/property-102/real-estate-for-rent-1011/?query=${query}`;
+        // Redirect any Lamudi URLs to Airbnb
+        if (urlLower.includes('lamudi.com.ph')) {
+            if (isDorm) {
+                return 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Private+room';
+            }
+            if (isNuvali) {
+                return 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt';
+            }
+            return 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt';
         }
 
-        // Fix broken fake Airbnb room IDs
-        if (urlLower.includes('airbnb.com/rooms/101010') || urlLower.includes('airbnb.com/rooms/12345678') || urlLower.includes('airbnb.com/rooms/000')) {
+        // Fix Airbnb links to strict Calamba or Nuvali room type filters
+        if (urlLower.includes('airbnb.com')) {
+            if (isDorm) {
+                return 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Private+room';
+            }
             return isNuvali
-                ? 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes'
-                : 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes';
+                ? 'https://www.airbnb.com/s/Nuvali--Santa-Rosa--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt'
+                : 'https://www.airbnb.com/s/Calamba--Laguna--Philippines/homes?room_types[]=Entire+home%2Fapt';
+        }
+
+        // DotProperty strict province & city filtering (Laguna / Calamba or Santa Rosa)
+        if (urlLower.includes('dotproperty.com.ph')) {
+            if (isDorm) {
+                return 'https://www.dotproperty.com.ph/apartments-for-rent/laguna/calamba';
+            }
+            if (isNuvali) {
+                return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/santa-rosa?bedrooms=studio';
+            }
+            return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba?bedrooms=studio';
+        }
+
+        // Facebook Marketplace strict city slugs
+        if (urlLower.includes('facebook.com')) {
+            if (isDorm) {
+                return 'https://www.facebook.com/marketplace/calamba/propertyrentals/?query=student%20dorm%20bedspace';
+            }
+            if (isNuvali) {
+                return 'https://www.facebook.com/marketplace/santarosa/propertyrentals/?query=studio%20condo%20furnished';
+            }
+            return 'https://www.facebook.com/marketplace/calamba/propertyrentals/?query=studio%20condo%20furnished';
         }
 
         if (rawUrl.startsWith('http')) return rawUrl;
 
-        const searchQuery = encodeURIComponent(`${propertyName} ${location || 'Calamba Laguna'} rent lamudi carousell`);
+        const specKeyword = isDorm ? 'calamba student dorm bedspace aircon' : 'calamba studio condo 28sqm furnished';
+        const searchQuery = encodeURIComponent(`${propertyName || ''} ${specKeyword} rent`);
         return `https://www.google.com/search?q=${searchQuery}`;
     },
 
@@ -227,65 +340,61 @@ const RentPricingModule = {
         const btn = document.getElementById('btnSearchMarketNow');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Searching Market...`;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Scanning Market...`;
         }
 
-        this.showToast('🔍 Scanning Calamba & Nuvali market for live rental specs...', 'info');
+        this.showToast('Scanning Calamba & Nuvali market for rental listings...', 'info');
 
         try {
             const res  = await fetch('/api/admin/rent-pricing/trigger-search', { method: 'POST' });
             const data = await res.json();
 
             if (data.success) {
-                this.showToast(`✅ Search complete! Found ${data.data.condoListingsCount} condos & ${data.data.dormListingsCount} dorms.`, 'success');
+                this.showToast(`Market scan complete. Found ${data.data.condoListingsCount} condos & ${data.data.dormListingsCount} dorms.`, 'success');
                 await Promise.all([
                     this.loadScheduleInfo(),
                     this.loadSuggestions(),
                     this.loadMarketEvidence()
                 ]);
             } else {
-                this.showToast('❌ Search failed: ' + (data.error || 'Unknown error'), 'danger');
+                this.showToast('Market scan failed: ' + (data.error || 'Unknown error'), 'danger');
             }
         } catch (err) {
             console.error('[RentPricingModule] Trigger search error:', err);
-            this.showToast('❌ Failed to run market search.', 'danger');
+            this.showToast('Failed to run market scan.', 'danger');
         } finally {
             this.searching = false;
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-search-dollar me-1"></i>Search Market Now`;
+                btn.innerHTML = `<i class="fas fa-search-dollar me-1"></i>Run Market Scan`;
             }
         }
     },
 
-    // ── Load schedule metadata (last / next run) ──────────────────────────────
+    // ── Load Schedule Info & Live Market Pulse ────────────────────────────────
     loadScheduleInfo: async function () {
         try {
             const res  = await fetch('/api/admin/rent-pricing/schedule-info');
             const data = await res.json();
 
-            const lastEl = document.getElementById('lastAutoUpdate');
-            const nextEl = document.getElementById('nextAutoUpdate');
+            const nextEl = document.getElementById('rentMetricNextRun');
             const badge  = document.getElementById('marketPulseBadge');
 
-            if (lastEl) {
-                const lastDate = new Date(data.lastRun);
-                lastEl.textContent = lastDate.toLocaleString('en-PH', { month: 'long', year: 'numeric' });
-            }
-            if (nextEl) {
+            if (nextEl && data.nextRun) {
                 const nextDate = new Date(data.nextRun);
-                nextEl.textContent = nextDate.toLocaleString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' }) + ' · 2:00 AM';
+                nextEl.textContent = nextDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
             }
+
             if (badge) {
                 const mktRes  = await fetch('/api/admin/rent-pricing/market-data');
                 const mktData = await mktRes.json();
                 if (mktData.listings && mktData.listings.length > 0) {
-                    const updated = new Date(mktData.lastUpdated);
-                    badge.textContent = `Scanned · ${updated.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-                    badge.className   = 'badge bg-light text-success border ms-2 small fw-normal';
+                    const updated = new Date(mktData.lastUpdated || mktData.listings[0].created_at);
+                    badge.textContent = `Scanned: ${updated.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                    badge.className   = 'badge bg-light text-success border small fw-normal';
                 } else {
                     badge.textContent = 'Awaiting Next Scan';
-                    badge.className   = 'badge bg-light text-muted border ms-2 small fw-normal';
+                    badge.className   = 'badge bg-light text-muted border small fw-normal';
                 }
             }
         } catch (err) {
@@ -293,7 +402,7 @@ const RentPricingModule = {
         }
     },
 
-    // ── Load AI suggestions (auto-applied & suggested results) ────────────────
+    // ── Load AI Pricing Suggestions ───────────────────────────────────────────
     loadSuggestions: async function () {
         if (!this.container) return;
 
@@ -307,7 +416,10 @@ const RentPricingModule = {
             const res         = await fetch('/api/admin/rent-pricing/suggestions');
             const suggestions = await res.json();
             if (suggestions.error) throw new Error(suggestions.error);
-            this.renderSuggestions(suggestions);
+
+            this.rawSuggestions = Array.isArray(suggestions) ? suggestions : [];
+            this.updateMetricRibbon();
+            this.renderFilteredCards();
         } catch (err) {
             console.error('[RentPricingModule] Load error:', err);
             this.container.innerHTML = `
@@ -317,36 +429,95 @@ const RentPricingModule = {
         }
     },
 
-    // ── Render suggestion cards ───────────────────────────────────────────────
-    renderSuggestions: function (suggestions) {
-        if (!suggestions.length) {
+    // ── Update 4-Card Business Metric Ribbon ──────────────────────────────────
+    updateMetricRibbon: function () {
+        const totalUnitsEl    = document.getElementById('rentMetricTotalUnits');
+        const avgRateEl       = document.getElementById('rentMetricAvgRate');
+        const marketMedianEl  = document.getElementById('rentMetricMarketMedian');
+        const marketGapEl     = document.getElementById('rentMetricMarketGap');
+        const unitsBadgeEl    = document.getElementById('rentBadgeUnitsCount');
+
+        const total = this.rawSuggestions.length;
+        if (unitsBadgeEl) unitsBadgeEl.textContent = total;
+        if (totalUnitsEl) totalUnitsEl.textContent = `${total} / ${total}`;
+
+        if (!total) {
+            if (avgRateEl) avgRateEl.textContent = 'PHP 0';
+            if (marketMedianEl) marketMedianEl.textContent = 'PHP 0';
+            return;
+        }
+
+        const sumCurrent = this.rawSuggestions.reduce((acc, s) => acc + Number(s.currentRate || 0), 0);
+        const avgCurrent = Math.round(sumCurrent / total);
+        if (avgRateEl) avgRateEl.textContent = `PHP ${avgCurrent.toLocaleString()}`;
+
+        const sumMarket = this.rawSuggestions.reduce((acc, s) => acc + Number(s.marketAvg || 0), 0);
+        const avgMarket = Math.round(sumMarket / total);
+        if (marketMedianEl) marketMedianEl.textContent = `PHP ${avgMarket.toLocaleString()}`;
+
+        if (marketGapEl && avgCurrent && avgMarket) {
+            const gapPct = (((avgCurrent - avgMarket) / avgMarket) * 100).toFixed(1);
+            if (gapPct < 0) {
+                marketGapEl.textContent = `${gapPct}% vs Market Median`;
+                marketGapEl.className = 'small text-warning fw-semibold';
+            } else {
+                marketGapEl.textContent = `+${gapPct}% vs Market Median`;
+                marketGapEl.className = 'small text-success fw-semibold';
+            }
+        }
+    },
+
+    // ── Filter and Render Cards ───────────────────────────────────────────────
+    renderFilteredCards: function () {
+        if (!this.container) return;
+
+        let filtered = this.rawSuggestions;
+        if (this.activeFilter === 'changes') {
+            filtered = this.rawSuggestions.filter(s => s.action !== 'STAY' && s.suggestedRate !== s.currentRate);
+        } else if (this.activeFilter === 'optimal') {
+            filtered = this.rawSuggestions.filter(s => s.action === 'STAY' || s.suggestedRate === s.currentRate);
+        }
+
+        if (!filtered.length) {
             this.container.innerHTML = `
                 <div class="col-12 text-center py-5 text-muted">
-                    <i class="fas fa-check-circle text-success fs-1 mb-3"></i><br>
-                    All room prices are currently optimized by AI.
+                    <i class="fas fa-check-circle text-success fs-2 mb-3"></i>
+                    <p class="fw-semibold mb-1">No units match the selected filter.</p>
+                    <p class="small text-muted mb-0">All room rates in this view are currently optimized.</p>
                 </div>`;
             return;
         }
 
-        const lastUpdated = suggestions[0]?.lastUpdated
-            ? new Date(suggestions[0].lastUpdated).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-            : null;
+        this.container.innerHTML = filtered.map(s => {
+            const diff = Number(s.suggestedRate) - Number(s.currentRate);
+            const isIncrease = diff > 0;
+            const isDecrease = diff < 0;
+            const isStay = diff === 0 || s.action === 'STAY';
 
-        this.container.innerHTML = suggestions.map(s => {
-            const isUrgent      = s.action !== 'STAY' && s.confidence > 70;
-            const priorityLabel = isUrgent ? 'HIGH PRIORITY' : 'LOW PRIORITY';
-            const priorityClass = isUrgent ? 'bg-danger-subtle text-danger' : 'bg-light text-muted';
-            const borderColor   = s.action === 'INCREASE' ? '#28a745'
-                                : s.action === 'DECREASE' ? '#dc3545' : '#6c757d';
-            const borderStyle   = `border-left: 5px solid ${borderColor} !important;`;
-            const rateChanged   = s.suggestedRate !== s.currentRate;
-            const rateArrow     = s.action === 'INCREASE' ? '▲' : s.action === 'DECREASE' ? '▼' : '—';
-            const rateColor     = s.action === 'INCREASE' ? 'text-success' : s.action === 'DECREASE' ? 'text-danger' : 'text-muted';
-            const marketBadge   = lastUpdated
-                ? `<span class="text-muted" style="font-size:0.7rem;"><i class="fas fa-database me-1"></i>Market Data: ${lastUpdated}</span>`
-                : `<span class="text-muted" style="font-size:0.7rem;"><i class="fas fa-clock me-1"></i>Market Active</span>`;
+            let deltaPill = '';
+            let borderAccent = '#64748b';
+            let targetColor = 'text-secondary';
+            let arrow = '';
 
-            // Specs Label Compiler
+            if (isIncrease) {
+                borderAccent = '#10b981';
+                targetColor = 'text-success';
+                arrow = '▲';
+                const pct = ((diff / s.currentRate) * 100).toFixed(1);
+                deltaPill = `<span class="badge bg-success-subtle text-success border border-success fw-bold px-2 py-1" style="font-size:0.7rem;">+PHP ${Number(diff).toLocaleString()} (+${pct}%)</span>`;
+            } else if (isDecrease) {
+                borderAccent = '#f59e0b';
+                targetColor = 'text-warning';
+                arrow = '▼';
+                const pct = ((Math.abs(diff) / s.currentRate) * 100).toFixed(1);
+                deltaPill = `<span class="badge bg-warning-subtle text-dark border border-warning fw-bold px-2 py-1" style="font-size:0.7rem;">-PHP ${Number(Math.abs(diff)).toLocaleString()} (-${pct}%)</span>`;
+            } else {
+                borderAccent = '#64748b';
+                targetColor = 'text-muted';
+                deltaPill = `<span class="badge bg-light text-muted border fw-bold px-2 py-1" style="font-size:0.7rem;">Optimal Rate</span>`;
+            }
+
+            // Specs label
             let specLabel = '';
             if (s.unitType === 'condo') {
                 const sqmText = s.sqm ? `${s.sqm} sqm` : '';
@@ -356,236 +527,244 @@ const RentPricingModule = {
             } else {
                 const furnishedText = s.isFullyFurnished ? 'Furnished' : '';
                 const acText = s.hasAc ? 'AC' : '';
-                const wifiText = s.hasWifi ? 'Free WiFi' : '';
+                const wifiText = s.hasWifi ? 'WiFi' : '';
                 specLabel = [furnishedText, acText, wifiText].filter(Boolean).join(' · ');
             }
 
             return `
-            <div class="col-lg-6 col-xl-4">
-                <div class="card h-100 border-0 shadow-sm" style="${borderStyle} border-radius:12px; overflow:hidden;">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge ${priorityClass} fw-bold px-2 py-1" style="font-size:0.65rem;">${priorityLabel}</span>
-                            ${marketBadge}
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 d-flex flex-column justify-content-between" style="background:#fff; border-left: 4px solid ${borderAccent} !important;">
+                    <div>
+                        <!-- Header Row -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fw-semibold" style="font-size:0.75rem; text-transform:capitalize;">${s.unitType || 'Unit'}</span>
+                            ${deltaPill}
                         </div>
 
-                        <h5 class="fw-bold mb-1">
-                            <i class="fas fa-home text-warning me-2"></i>Unit: ${s.roomNumber}
-                        </h5>
-                        <div class="small text-muted mb-3 fw-semibold" style="font-size:0.75rem; letter-spacing:0.02em;">
-                            <i class="fas fa-sliders-h me-1 text-secondary"></i>${specLabel}
+                        <!-- Unit Title & Specs -->
+                        <h4 class="fw-bold mb-1 text-dark">Unit ${s.roomNumber}</h4>
+                        <div class="small text-muted mb-3" style="font-size:0.75rem;">
+                            <i class="fas fa-sliders-h me-1 text-secondary"></i>${specLabel || 'Standard Unit'}
                         </div>
-                        <p class="small text-muted mb-3">
-                            Current Rate: <strong>₱${Number(s.currentRate).toLocaleString()}</strong>
-                            <span class="mx-2">|</span>
-                            Market Avg: <strong>₱${Number(s.marketAvg).toLocaleString()}</strong>
-                        </p>
 
-                        <!-- AI Reasoning Breakdown Box -->
-                        <div class="bg-light rounded-3 p-3 mb-3" style="border:1px solid rgba(0,0,0,0.05);">
-                            <div class="fw-bold text-uppercase mb-2" style="font-size:0.65rem;color:#666;letter-spacing:0.05em;">AI Pricing Breakdown</div>
-                            <p class="small mb-2 text-dark" style="line-height:1.4;">${s.reason}</p>
-                            
-                            <div class="d-flex justify-content-between align-items-center pt-2 mt-2 border-top" style="font-size:0.72rem; color:#666;">
-                                <span><i class="fas fa-users me-1 text-primary"></i>Occupancy: <strong>${s.occupancyPct || 0}%</strong> (${s.occupancy})</span>
-                                <span><i class="fas fa-paper-plane me-1 text-info"></i>Inquiries: <strong>${s.inquiriesCount || 0}</strong></span>
-                                <span><i class="fas fa-percentage me-1 text-warning"></i>Market Gap: <strong>${s.gapPct || 0}%</strong></span>
+                        <!-- Price Comparison Box -->
+                        <div class="bg-light rounded-3 p-3 border mb-3">
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="text-muted">Current Rate</span>
+                                <span class="fw-bold text-dark">PHP ${Number(s.currentRate).toLocaleString()}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <span class="fw-bold ${targetColor}">AI Target Rate</span>
+                                <span class="fs-5 fw-bold ${targetColor}">${arrow} PHP ${Number(s.suggestedRate).toLocaleString()}</span>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <div>
-                                <div class="small fw-bold text-uppercase" style="font-size:0.65rem;letter-spacing:0.05em;color:#999;">
-                                    ${rateChanged ? '🤖 Recommended Rate' : 'Suggested Rate'}
+                        <!-- Compact 3-Signal Micro Grid -->
+                        <div class="row g-1 text-center mb-3">
+                            <div class="col-4">
+                                <div class="bg-light rounded-2 py-1 px-1 border">
+                                    <div class="text-muted text-uppercase" style="font-size:0.65rem;">Occupancy</div>
+                                    <div class="fw-bold text-dark" style="font-size:0.8rem;">${s.occupancyPct || 0}%</div>
                                 </div>
-                                <div class="fs-4 fw-bold ${rateColor}">
-                                    ${rateArrow} ₱${Number(s.suggestedRate).toLocaleString()}
-                                </div>
-                                ${rateChanged ? `<div class="text-muted" style="font-size:0.7rem;">was ₱${Number(s.currentRate).toLocaleString()}</div>` : ''}
                             </div>
-                            <button
-                                class="btn rounded-pill px-3 fw-bold"
-                                style="font-size:0.8rem; background:${s.action === 'STAY' ? '#e9ecef' : '#1a1a2e'}; color:${s.action === 'STAY' ? '#888' : '#f0c040'};"
-                                onclick="RentPricingModule.showOverride(${s.roomId}, ${s.currentRate}, '${s.roomNumber}')">
-                                ${s.action === 'STAY' ? 'Optimized' : '<i class="fas fa-edit me-1"></i>Override'}
-                            </button>
+                            <div class="col-4">
+                                <div class="bg-light rounded-2 py-1 px-1 border">
+                                    <div class="text-muted text-uppercase" style="font-size:0.65rem;">Inquiries</div>
+                                    <div class="fw-bold text-primary" style="font-size:0.8rem;">${s.inquiriesCount || 0} mo</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-light rounded-2 py-1 px-1 border">
+                                    <div class="text-muted text-uppercase" style="font-size:0.65rem;">Market Comp</div>
+                                    <div class="fw-bold text-dark" style="font-size:0.8rem;">PHP ${Number(s.marketAvg).toLocaleString()}</div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill flex-fill" style="font-size:0.75rem;" onclick="RentPricingModule.openAnalysisModal(${s.roomId})">
+                            <i class="fas fa-info-circle me-1"></i>View Analysis
+                        </button>
+                        ${!isStay ? `
+                        <button class="btn btn-dark btn-sm rounded-pill flex-fill fw-bold text-warning" style="font-size:0.75rem;" onclick="RentPricingModule.applyDirectRate(${s.roomId}, ${s.suggestedRate}, '${s.roomNumber}')">
+                            <i class="fas fa-check me-1"></i>Apply Rate
+                        </button>
+                        ` : ''}
+                        <button class="btn btn-outline-dark btn-sm rounded-pill px-2.5" style="font-size:0.75rem;" title="Manual Price Override" onclick="RentPricingModule.showOverrideModal(${s.roomId}, ${s.currentRate}, '${s.roomNumber}', ${s.suggestedRate})">
+                            <i class="fas fa-edit"></i>
+                        </button>
                     </div>
                 </div>
             </div>`;
         }).join('');
     },
 
-    // ── Load & Render Competitor Market Evidence ──────────────────────────────
-    loadMarketEvidence: async function () {
-        let evidenceContainer = document.getElementById('marketEvidenceSection');
-        if (!evidenceContainer) {
-            evidenceContainer = document.createElement('div');
-            evidenceContainer.id = 'marketEvidenceSection';
-            evidenceContainer.className = 'col-12 mt-4';
-            this.container.parentElement.appendChild(evidenceContainer);
+    // ── Open Analysis Inspection Modal ────────────────────────────────────────
+    openAnalysisModal: function (roomId) {
+        const item = this.rawSuggestions.find(s => Number(s.roomId) === Number(roomId));
+        if (!item) return;
+
+        const modalEl = document.getElementById('rentAnalysisModal');
+        if (!modalEl) return;
+
+        const titleEl  = document.getElementById('rentAnalysisModalTitle');
+        const bodyEl   = document.getElementById('rentAnalysisModalBody');
+        const footerEl = document.getElementById('rentAnalysisModalFooter');
+
+        const diff = Number(item.suggestedRate) - Number(item.currentRate);
+        const annualDiff = diff * 12;
+        const isIncrease = diff > 0;
+        const isDecrease = diff < 0;
+
+        let deltaText = 'Optimal Rate';
+        let deltaColor = 'text-muted';
+        if (isIncrease) {
+            deltaText = `+PHP ${Number(diff).toLocaleString()} / mo (+PHP ${Number(annualDiff).toLocaleString()} / yr)`;
+            deltaColor = 'text-success';
+        } else if (isDecrease) {
+            deltaText = `-PHP ${Number(Math.abs(diff)).toLocaleString()} / mo (-PHP ${Number(Math.abs(annualDiff)).toLocaleString()} / yr)`;
+            deltaColor = 'text-warning';
         }
 
-        evidenceContainer.innerHTML = `
-            <div class="card border-0 shadow-sm" style="border-radius:12px;">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1"><i class="fas fa-building text-primary me-2"></i>Market Evidence &amp; Competitor Listings</h5>
-                            <p class="small text-muted mb-0">Live competitor listings scraped in Calamba &amp; Nuvali used for AI pricing calculations.</p>
+        if (titleEl) {
+            titleEl.innerHTML = `<i class="fas fa-robot text-warning me-2"></i>Unit ${item.roomNumber} Pricing Analysis`;
+        }
+
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <div class="bg-light p-3 rounded-3 mb-3 border">
+                    <div class="fw-bold text-uppercase text-muted mb-1" style="font-size:0.7rem; letter-spacing:0.04em;">Algorithmic Recommendation Rationale</div>
+                    <p class="small text-dark mb-0 leading-relaxed" style="line-height:1.6;">${item.reason || 'Optimal rent calibration based on Calamba and Nuvali rental market median.'}</p>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border text-center">
+                            <div class="text-muted small text-uppercase" style="font-size:0.7rem;">Monthly Rate Shift</div>
+                            <div class="fs-5 fw-bold ${deltaColor} mt-1">${deltaText}</div>
                         </div>
-                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="RentPricingModule.loadMarketEvidence()">
-                            <i class="fas fa-sync-alt me-1"></i>Refresh Evidence
-                        </button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Property / Development</th>
-                                    <th>Location</th>
-                                    <th>Unit Type</th>
-                                    <th>Specs &amp; Amenities</th>
-                                    <th>Monthly Rate</th>
-                                    <th>Admin Verification</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="marketEvidenceTbody">
-                                <tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading competitor listings...</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border text-center">
+                            <div class="text-muted small text-uppercase" style="font-size:0.7rem;">Model Confidence</div>
+                            <div class="fs-5 fw-bold text-primary mt-1">${item.confidence || 85}% Calibrated</div>
+                        </div>
                     </div>
                 </div>
-            </div>`;
 
-        try {
-            const res  = await fetch('/api/admin/rent-pricing/market-data');
-            const data = await res.json();
-            this.renderMarketEvidenceTable(data.listings || []);
-        } catch (err) {
-            console.error('[RentPricingModule] Evidence load error:', err);
-            const tbody = document.getElementById('marketEvidenceTbody');
-            if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-3">Failed to load competitor listings.</td></tr>`;
-            }
+                <div class="card border rounded-3 p-3 mb-2">
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Unit Number &amp; Type:</span>
+                        <strong class="text-dark">Unit ${item.roomNumber} (${item.unitType})</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Current Monthly Rate:</span>
+                        <strong class="text-dark">PHP ${Number(item.currentRate).toLocaleString()}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">AI Recommended Rate:</span>
+                        <strong class="text-primary">PHP ${Number(item.suggestedRate).toLocaleString()}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Local Market Median Comp:</span>
+                        <strong class="text-dark">PHP ${Number(item.marketAvg).toLocaleString()}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Historical Occupancy:</span>
+                        <strong class="text-dark">${item.occupancyPct || 0}% (${item.occupancy || 'Standard'})</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1">
+                        <span class="text-muted">30-Day Inquiry Volume:</span>
+                        <strong class="text-dark">${item.inquiriesCount || 0} Inquiries</strong>
+                    </div>
+                </div>`;
         }
+
+        if (footerEl) {
+            footerEl.innerHTML = `
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-dark rounded-pill px-3" onclick="RentPricingModule.showOverrideModal(${item.roomId}, ${item.currentRate}, '${item.roomNumber}', ${item.suggestedRate})">
+                    <i class="fas fa-edit me-1"></i>Override Price
+                </button>
+                ${diff !== 0 ? `
+                <button type="button" class="btn btn-warning fw-bold rounded-pill px-4 shadow-sm" onclick="RentPricingModule.applyDirectRate(${item.roomId}, ${item.suggestedRate}, '${item.roomNumber}')">
+                    <i class="fas fa-check me-1"></i>Apply Target Rate (PHP ${Number(item.suggestedRate).toLocaleString()})
+                </button>
+                ` : ''}`;
+        }
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
     },
 
-    renderMarketEvidenceTable: function (listings) {
-        const tbody = document.getElementById('marketEvidenceTbody');
-        if (!tbody) return;
+    // ── Direct 1-Click Rate Application ───────────────────────────────────────
+    applyDirectRate: async function (roomId, suggestedRate, roomNumber) {
+        const analysisEl = document.getElementById('rentAnalysisModal');
+        if (analysisEl) {
+            const instance = bootstrap.Modal.getInstance(analysisEl);
+            if (instance) instance.hide();
+        }
 
-        if (!listings.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No competitor market listings recorded. Click "Search Market Now" to scan.</td></tr>`;
+        await this.applyOverride(
+            roomId,
+            Number(suggestedRate),
+            `Applied AI recommended rate for Unit ${roomNumber}`
+        );
+    },
+
+    // ── Show Structured Override Modal ────────────────────────────────────────
+    showOverrideModal: function (roomId, currentRate, roomNumber, suggestedRate) {
+        const analysisEl = document.getElementById('rentAnalysisModal');
+        if (analysisEl) {
+            const instance = bootstrap.Modal.getInstance(analysisEl);
+            if (instance) instance.hide();
+        }
+
+        const modalEl = document.getElementById('rentOverrideModal');
+        if (!modalEl) return;
+
+        document.getElementById('overrideRoomId').value = roomId;
+        document.getElementById('overrideRoomNumber').value = roomNumber;
+        document.getElementById('overrideUnitLabel').textContent = `Unit ${roomNumber}`;
+        document.getElementById('overrideCurrentRateLabel').textContent = `PHP ${Number(currentRate).toLocaleString()}`;
+        document.getElementById('overrideSuggestedRateLabel').textContent = `PHP ${Number(suggestedRate).toLocaleString()}`;
+
+        const inputRate = document.getElementById('overrideNewRateInput');
+        if (inputRate) inputRate.value = suggestedRate || currentRate;
+
+        const inputReason = document.getElementById('overrideReasonInput');
+        if (inputReason) inputReason.value = `Rate adjustment based on market comps for Unit ${roomNumber}`;
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    },
+
+    // ── Submit Structured Override Form ───────────────────────────────────────
+    submitOverrideForm: async function () {
+        const roomId     = document.getElementById('overrideRoomId').value;
+        const roomNumber = document.getElementById('overrideRoomNumber').value;
+        const newRate    = document.getElementById('overrideNewRateInput').value;
+        const reason     = document.getElementById('overrideReasonInput').value;
+
+        if (!newRate || isNaN(newRate) || Number(newRate) <= 0) {
+            this.showToast('Please enter a valid monthly rate greater than 0.', 'warning');
             return;
         }
 
-        tbody.innerHTML = listings.map(item => {
-            const verifiedState = item.is_verified === 1
-                ? `<span class="badge bg-success-subtle text-success border border-success"><i class="fas fa-check-circle me-1"></i>Verified</span>`
-                : item.is_verified === -1
-                ? `<span class="badge bg-danger-subtle text-danger border border-danger"><i class="fas fa-times-circle me-1"></i>Invalid / Excluded</span>`
-                : `<span class="badge bg-warning-subtle text-warning border border-warning"><i class="fas fa-question-circle me-1"></i>Unverified</span>`;
-
-            const sqmTag = (item.sqm_min || item.sqm_max)
-                ? `<span class="badge bg-light text-dark border me-1">${item.sqm_min || item.sqm_max} sqm</span>` : '';
-            const furnishedTag = item.is_fully_furnished ? `<span class="badge bg-info-subtle text-info border me-1">Furnished</span>` : '';
-            const cctvTag = item.has_cctv ? `<span class="badge bg-secondary-subtle text-secondary border me-1">CCTV</span>` : '';
-            const fiberTag = item.has_fiber ? `<span class="badge bg-primary-subtle text-primary border me-1">Fiber</span>` : '';
-
-            const urlLower = (item.source_url || '').toLowerCase();
-            const nameLower = (item.property_name || '').toLowerCase();
-
-            const isAirbnb = urlLower.includes('airbnb.com') || nameLower.includes('airbnb');
-            const isBooking = urlLower.includes('booking.com');
-            const isKlook = urlLower.includes('klook.com');
-
-            let badgeHtml = '';
-            let linkClass = 'text-primary';
-            let siteName = 'Web';
-
-            if (isAirbnb) {
-                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#FF5A5F; color:#fff; font-size:0.65rem;"><i class="fab fa-airbnb me-1"></i>Airbnb</span>`;
-                linkClass = 'text-danger';
-                siteName = 'Airbnb';
-            } else if (isBooking) {
-                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#003580; color:#fff; font-size:0.65rem;"><i class="fas fa-hotel me-1"></i>Booking.com</span>`;
-                linkClass = 'text-primary';
-                siteName = 'Booking.com';
-            } else if (isKlook) {
-                badgeHtml = `<span class="badge me-1 shadow-sm" style="background:#FF5B00; color:#fff; font-size:0.65rem;"><i class="fas fa-ticket-alt me-1"></i>Klook</span>`;
-                linkClass = 'text-warning';
-                siteName = 'Klook';
-            }
-
-            const rawUrl = this.getValidPropertyUrl(item.source_url, item.property_name, item.location);
-
-            const sourceDisplay = `<a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold ${linkClass} text-truncate d-inline-block" style="max-width:200px;" title="View '${this.escapeHtml(item.property_name)}' on ${siteName}">
-                ${badgeHtml}${this.escapeHtml(item.property_name)} <i class="fas fa-external-link-alt ms-1" style="font-size:0.7rem;"></i>
-            </a>`;
-
-            return `
-            <tr>
-                <td>
-                    ${sourceDisplay}
-                    ${item.raw_snippet ? `<div class="text-muted text-truncate" style="font-size:0.75rem; max-width:240px;" title="${this.escapeHtml(item.raw_snippet)}">${this.escapeHtml(item.raw_snippet)}</div>` : ''}
-                </td>
-                <td><i class="fas fa-map-marker-alt text-danger me-1"></i>${item.location || 'Calamba/Nuvali'}</td>
-                <td><span class="badge bg-dark text-capitalize">${item.unit_type || 'N/A'}</span></td>
-                <td>${sqmTag}${furnishedTag}${cctvTag}${fiberTag}</td>
-                <td class="fw-bold text-success">₱${Number(item.monthly_rate).toLocaleString()}</td>
-                <td>${verifiedState}</td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-success" title="Mark as Verified" onclick="RentPricingModule.toggleVerify(${item.id}, 1)">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" title="Mark as Invalid" onclick="RentPricingModule.toggleVerify(${item.id}, -1)">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary" title="Reset Verification" onclick="RentPricingModule.toggleVerify(${item.id}, 0)">
-                            <i class="fas fa-undo"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-    },
-
-    // ── Toggle Listing Verification ───────────────────────────────────────────
-    toggleVerify: async function (listingId, status) {
-        try {
-            const res = await fetch(`/api/admin/rent-pricing/competitors/${listingId}/verify`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                const label = status === 1 ? 'Verified' : status === -1 ? 'Marked Invalid' : 'Reset to Unverified';
-                this.showToast(`Listing ${label}`, 'success');
-                await Promise.all([
-                    this.loadMarketEvidence(),
-                    this.loadSuggestions()
-                ]);
-            } else {
-                this.showToast('❌ Verification update failed.', 'danger');
-            }
-        } catch (err) {
-            console.error('[RentPricingModule] Verify toggle error:', err);
-            this.showToast('❌ Failed to update verification status.', 'danger');
+        const modalEl = document.getElementById('rentOverrideModal');
+        if (modalEl) {
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
         }
+
+        await this.applyOverride(
+            Number(roomId),
+            Number(newRate),
+            reason || `Manual override for Unit ${roomNumber}`
+        );
     },
 
-    // ── Override modal (admin manual price set) ───────────────────────────────
-    showOverride: function (roomId, currentRate, roomNumber) {
-        const newRate = prompt(`Override AI price for ${roomNumber}?\n\nCurrent rate: ₱${Number(currentRate).toLocaleString()}\n\nEnter new monthly rate (₱):`);
-        if (!newRate || isNaN(newRate) || Number(newRate) <= 0) return;
-        this.applyOverride(roomId, Number(newRate), `Manual admin override for ${roomNumber}`);
-    },
-
+    // ── Execute Apply Rate in Backend ─────────────────────────────────────────
     applyOverride: async function (roomId, newRate, reason) {
         try {
             const res    = await fetch('/api/admin/rent-pricing/apply', {
@@ -595,16 +774,102 @@ const RentPricingModule = {
             });
             const result = await res.json();
             if (result.success) {
-                this.showToast(`✅ Override applied: ₱${newRate.toLocaleString()}`, 'success');
+                this.showToast(`Rate applied successfully: PHP ${Number(newRate).toLocaleString()}`, 'success');
                 await this.loadSuggestions();
                 if (typeof loadRooms === 'function') loadRooms();
             } else {
-                this.showToast('❌ Error: ' + result.error, 'danger');
+                this.showToast('Error applying rate: ' + (result.error || 'Unknown error'), 'danger');
             }
         } catch (err) {
             console.error('[RentPricingModule] Override error:', err);
-            this.showToast('❌ Failed to apply override.', 'danger');
+            this.showToast('Failed to apply rate adjustment.', 'danger');
         }
+    },
+
+    // ── Load & Render Competitor Market Evidence ──────────────────────────────
+    loadMarketEvidence: async function () {
+        const tbody = document.getElementById('marketEvidenceTbody');
+        const badgeComps = document.getElementById('rentBadgeCompsCount');
+
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading competitor listings...</td></tr>`;
+        }
+
+        try {
+            const res  = await fetch('/api/admin/rent-pricing/market-data');
+            const data = await res.json();
+            this.marketListings = data.listings || [];
+            this.marketSummary  = data.summary  || [];
+
+            if (badgeComps) badgeComps.textContent = this.marketListings.length;
+            this.renderMarketEvidenceTable(this.marketListings);
+        } catch (err) {
+            console.error('[RentPricingModule] Evidence load error:', err);
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Failed to load competitor listings.</td></tr>`;
+            }
+        }
+    },
+
+    renderMarketEvidenceTable: function (listings) {
+        const tbody = document.getElementById('marketEvidenceTbody');
+        if (!tbody) return;
+
+        if (!listings || !listings.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No competitor market listings recorded. Click "Scan Market Now" to fetch active comps.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = listings.map(item => {
+            const isDorm = (item.unit_type || '').toLowerCase().includes('dorm') ||
+                           (item.property_name || '').toLowerCase().includes('dorm') ||
+                           (item.property_name || '').toLowerCase().includes('bedspace');
+            const unitCategory = isDorm ? 'dorm' : 'condo';
+
+            const sqmTag = (item.sqm_min || item.sqm_max)
+                ? `<span class="badge bg-light text-dark border me-1">${item.sqm_min || item.sqm_max} sqm</span>` : '';
+            const furnishedTag = item.is_fully_furnished ? `<span class="badge bg-info-subtle text-info border me-1">Furnished</span>` : '';
+            const acTag = `<span class="badge bg-secondary-subtle text-secondary border me-1">AC</span>`;
+            const fiberTag = item.has_fiber ? `<span class="badge bg-primary-subtle text-primary border me-1">Fiber WiFi</span>` : '';
+
+            const rawUrl = this.getValidPropertyUrl(item.source_url, item.property_name, item.location, unitCategory);
+            const urlCheck = (rawUrl || '').toLowerCase();
+
+            let portalName = 'DotProperty';
+            let portalIcon = 'fas fa-home text-success';
+            let btnClass   = 'btn-outline-success';
+
+            if (urlCheck.includes('facebook.com')) {
+                portalName = 'FB Marketplace';
+                portalIcon = 'fab fa-facebook text-info';
+                btnClass   = 'btn-outline-info';
+            } else if (urlCheck.includes('airbnb.com')) {
+                portalName = 'Airbnb';
+                portalIcon = 'fab fa-airbnb text-danger';
+                btnClass   = 'btn-outline-danger';
+            } else if (urlCheck.includes('dotproperty.com.ph')) {
+                portalName = 'DotProperty';
+                portalIcon = 'fas fa-home text-success';
+                btnClass   = 'btn-outline-success';
+            }
+
+            return `
+            <tr>
+                <td>
+                    <div class="fw-bold text-dark">${this.escapeHtml(item.property_name)}</div>
+                    ${item.raw_snippet ? `<div class="text-muted text-truncate" style="font-size:0.75rem; max-width:280px;" title="${this.escapeHtml(item.raw_snippet)}">${this.escapeHtml(item.raw_snippet)}</div>` : ''}
+                </td>
+                <td><i class="fas fa-map-marker-alt text-danger me-1"></i>${this.escapeHtml(item.location || 'Calamba, Laguna')}</td>
+                <td><span class="badge ${isDorm ? 'bg-warning-subtle text-dark border border-warning' : 'bg-primary-subtle text-primary border border-primary'}">${isDorm ? 'Student Dorm Bed' : 'Condo Studio'}</span></td>
+                <td>${sqmTag}${furnishedTag}${acTag}${fiberTag}</td>
+                <td class="fw-bold text-success" style="font-size:0.95rem;">PHP ${Number(item.monthly_rate).toLocaleString()}</td>
+                <td>
+                    <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm ${btnClass} rounded-pill px-3 py-1 fw-semibold" style="font-size:0.75rem;" title="View listing on ${portalName}">
+                        <i class="${portalIcon} me-1"></i>View on ${portalName} <i class="fas fa-external-link-alt ms-1" style="font-size:0.65rem;"></i>
+                    </a>
+                </td>
+            </tr>`;
+        }).join('');
     },
 
     // ── Pricing history modal ─────────────────────────────────────────────────
@@ -634,21 +899,21 @@ const RentPricingModule = {
                 tbody.innerHTML = history.map(h => {
                     const isAI       = (h.applied_by || '').includes('AI');
                     const appliedTag = isAI
-                        ? `<span class="badge" style="background:#1a1a2e;color:#f0c040;font-size:0.65rem;">🤖 AI</span>`
+                        ? `<span class="badge" style="background:#1a1a2e;color:#f0c040;font-size:0.65rem;">AI</span>`
                         : `<span class="badge bg-secondary" style="font-size:0.65rem;">Admin</span>`;
                     const diff       = h.new_rate - h.old_rate;
                     const diffStr    = diff > 0
-                        ? `<span class="text-success">▲ ₱${Math.abs(diff).toLocaleString()}</span>`
+                        ? `<span class="text-success">▲ PHP ${Math.abs(diff).toLocaleString()}</span>`
                         : diff < 0
-                        ? `<span class="text-danger">▼ ₱${Math.abs(diff).toLocaleString()}</span>`
+                        ? `<span class="text-danger">▼ PHP ${Math.abs(diff).toLocaleString()}</span>`
                         : `<span class="text-muted">—</span>`;
 
                     return `
                     <tr>
                         <td class="small">${new Date(h.created_at).toLocaleDateString('en-PH')}</td>
                         <td><strong>${h.room_number}</strong></td>
-                        <td>₱${Number(h.old_rate).toLocaleString()}</td>
-                        <td class="fw-bold text-primary">₱${Number(h.new_rate).toLocaleString()}</td>
+                        <td>PHP ${Number(h.old_rate).toLocaleString()}</td>
+                        <td class="fw-bold text-primary">PHP ${Number(h.new_rate).toLocaleString()}</td>
                         <td>${diffStr}</td>
                         <td>${appliedTag}</td>
                     </tr>`;

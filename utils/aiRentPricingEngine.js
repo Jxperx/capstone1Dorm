@@ -154,27 +154,27 @@ const autoApplyPricing = async () => {
             if (occupancyRate >= 90) {
                 suggestedRate = room.monthly_rate * 1.05;
                 if (inqCount > 5) suggestedRate *= 1.02;
-                reason = `High occupancy (${Math.round(occupancyRate)}%) detected. Market avg for ${criteria} in ${areaName} is ₱${Math.round(marketAvg).toLocaleString()}. Increasing rate to maximize revenue.`;
+                reason = `High occupancy (${Math.round(occupancyRate)}%) detected. Market avg for ${criteria} in ${areaName} is PHP ${Math.round(marketAvg).toLocaleString()}. Increasing rate to maximize revenue.`;
                 action = 'INCREASE';
                 confidence = 92;
             } else if (occupancyRate < 50) {
                 suggestedRate = Math.min(room.monthly_rate * 0.95, marketAvg * 0.92);
-                reason = `Occupancy below 50% for ${room.room_number}. Market average for ${criteria} in ${areaName} is ₱${Math.round(marketAvg).toLocaleString()}. Adjusting rate to stay competitive.`;
+                reason = `Occupancy below 50% for ${room.room_number}. Market average for ${criteria} in ${areaName} is PHP ${Math.round(marketAvg).toLocaleString()}. Adjusting rate to stay competitive.`;
                 action = 'DECREASE';
                 confidence = 88;
             } else if (room.monthly_rate < marketAvg * 0.85) {
                 suggestedRate = marketAvg * 0.90;
-                reason = `Rate is 15%+ below the market average for ${criteria} in ${areaName} (₱${Math.round(marketAvg).toLocaleString()}). Bridging gap gradually.`;
+                reason = `Rate is 15%+ below the market average for ${criteria} in ${areaName} (PHP ${Math.round(marketAvg).toLocaleString()}). Bridging gap gradually.`;
                 action = 'INCREASE';
                 confidence = 90;
             } else if (room.monthly_rate > marketAvg * 1.15) {
                 suggestedRate = marketAvg * 1.05;
-                reason = `Rate is above market average for ${criteria} in ${areaName} (₱${Math.round(marketAvg).toLocaleString()}). Slight reduction recommended to avoid vacancy risk.`;
+                reason = `Rate is above market average for ${criteria} in ${areaName} (PHP ${Math.round(marketAvg).toLocaleString()}). Slight reduction recommended to avoid vacancy risk.`;
                 action = 'DECREASE';
                 confidence = 87;
             } else {
                 suggestedRate = room.monthly_rate;
-                reason = `Price is well-aligned with the ₱${Math.round(marketAvg).toLocaleString()} market average for ${criteria} in ${areaName}.`;
+                reason = `Price is well-aligned with the PHP ${Math.round(marketAvg).toLocaleString()} market average for ${criteria} in ${areaName}.`;
                 action = 'STAY';
                 confidence = 95;
             }
@@ -214,11 +214,11 @@ const autoApplyPricing = async () => {
             });
         }
 
-        console.log(`[AI Rent Optimizer] ✅ Auto-applied prices for ${monthYear}. Rooms processed: ${results.length}`);
+        console.log(`[AI Rent Optimizer] [OK] Auto-applied prices for ${monthYear}. Rooms processed: ${results.length}`);
         return { success: true, monthYear, results };
 
     } catch (err) {
-        console.error('[AI Rent Optimizer] ❌ Auto-apply error:', err.message);
+        console.error('[AI Rent Optimizer] [ERROR] Auto-apply error:', err.message);
         throw err;
     }
 };
@@ -286,16 +286,16 @@ const suggestRentPricing = async () => {
             if (occupancyRate >= 90) {
                 suggestedRate *= 1.05;
                 if (inqCount > 5) suggestedRate *= 1.02;
-                reason = `High occupancy (${Math.round(occupancyRate)}%) in ${areaName}. Matching comparable specs (${criteria}) market average is ₱${Math.round(marketAvg).toLocaleString()}.`;
+                reason = `High occupancy (${Math.round(occupancyRate)}%) in ${areaName}. Matching comparable specs (${criteria}) market average is PHP ${Math.round(marketAvg).toLocaleString()}.`;
                 confidence = 92;
             } else if (occupancyRate < 50) {
                 suggestedRate = Math.min(room.monthly_rate * 0.95, marketAvg * 0.92);
-                reason = `Occupancy below 50% for ${room.room_number}. Comparable specs (${criteria}) market average in ${areaName} is ₱${Math.round(marketAvg).toLocaleString()}. Suggesting competitive adjustment.`;
+                reason = `Occupancy below 50% for ${room.room_number}. Comparable specs (${criteria}) market average in ${areaName} is PHP ${Math.round(marketAvg).toLocaleString()}. Suggesting competitive adjustment.`;
             } else if (room.monthly_rate < marketAvg * 0.85) {
                 suggestedRate = marketAvg * 0.90;
-                reason = `Your price is 15%+ below the market average for ${criteria} in ${areaName} (₱${Math.round(marketAvg).toLocaleString()}).`;
+                reason = `Your price is 15%+ below the market average for ${criteria} in ${areaName} (PHP ${Math.round(marketAvg).toLocaleString()}).`;
             } else {
-                reason = `Price is well-aligned with the ₱${Math.round(marketAvg).toLocaleString()} market average for ${criteria} in ${areaName}.`;
+                reason = `Price is well-aligned with the PHP ${Math.round(marketAvg).toLocaleString()} market average for ${criteria} in ${areaName}.`;
                 confidence = 95;
             }
 

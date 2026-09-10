@@ -18,8 +18,8 @@ const runMonthlySearch = async (triggerType = 'auto') => {
     try {
         // ── STEP 1: Execute Parallel Scrapes (Google API + Airbnb Deep Search) ────────
         const [rawCondoItems, rawDormItems, airbnbCondos, airbnbDorms] = await Promise.all([
-            searchLiveListings('condo for rent 28sqm OR 30sqm fully furnished Calamba OR Nuvali Laguna site:lamudi.com.ph OR site:carousell.ph OR site:rentpad.com.ph OR site:booking.com OR site:klook.com', cx, apiKey),
-            searchLiveListings('dorm bedspace for rent Calamba Parian Laguna site:rentpad.com.ph OR site:carousell.ph OR site:lamudi.com.ph OR site:booking.com OR site:klook.com', cx, apiKey),
+            searchLiveListings('condo for rent 28sqm OR 30sqm OR 32sqm studio fully furnished Calamba OR "Santa Rosa" OR Nuvali Laguna site:dotproperty.com.ph OR site:airbnb.com', cx, apiKey),
+            searchLiveListings('student dorm bedspace aircon Calamba Laguna site:dotproperty.com.ph OR site:airbnb.com', cx, apiKey),
             scrapeAirbnbListings('Nuvali Santa Rosa Laguna', 'studio'),
             scrapeAirbnbListings('Calamba Laguna', 'dorm-bed')
         ]);
@@ -53,7 +53,7 @@ const runMonthlySearch = async (triggerType = 'auto') => {
                 .input('location',          sql.NVarChar(100), listing.location || 'Calamba/Nuvali')
                 .input('sqm_min',           sql.Int,           listing.sqm_min || null)
                 .input('sqm_max',           sql.Int,           listing.sqm_max || null)
-                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 18000)
+                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 14000)
                 .input('is_fully_furnished',sql.Bit,           listing.is_fully_furnished ? 1 : 0)
                 .input('has_cctv',          sql.Bit,           listing.has_cctv ? 1 : 0)
                 .input('has_fiber',         sql.Bit,           listing.has_fiber ? 1 : 0)
@@ -75,7 +75,7 @@ const runMonthlySearch = async (triggerType = 'auto') => {
                 .input('location',          sql.NVarChar(100), listing.location || 'Calamba')
                 .input('sqm_min',           sql.Int,           null)
                 .input('sqm_max',           sql.Int,           null)
-                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 4500)
+                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 5200)
                 .input('is_fully_furnished',sql.Bit,           1)
                 .input('has_cctv',          sql.Bit,           listing.has_cctv ? 1 : 0)
                 .input('has_fiber',         sql.Bit,           listing.has_fiber ? 1 : 0)
@@ -90,16 +90,16 @@ const runMonthlySearch = async (triggerType = 'auto') => {
         }
 
         // ── STEP 3: Compute Benchmarks ───────────────────────────────────────
-        const condoRates = condoListings.map(l => Number(l.monthly_rate) || 18000);
-        const dormRates  = dormListings.map(l => Number(l.monthly_rate) || 4500);
+        const condoRates = condoListings.map(l => Number(l.monthly_rate) || 14000);
+        const dormRates  = dormListings.map(l => Number(l.monthly_rate) || 5200);
 
-        const condoAvg  = condoRates.length ? Math.round(condoRates.reduce((a,b)=>a+b,0)/condoRates.length) : 19750;
-        const condoLow  = condoRates.length ? Math.min(...condoRates) : 16500;
-        const condoHigh = condoRates.length ? Math.max(...condoRates) : 23000;
+        const condoAvg  = condoRates.length ? Math.round(condoRates.reduce((a,b)=>a+b,0)/condoRates.length) : 14250;
+        const condoLow  = condoRates.length ? Math.min(...condoRates) : 12800;
+        const condoHigh = condoRates.length ? Math.max(...condoRates) : 16000;
 
-        const dormAvg  = dormRates.length ? Math.round(dormRates.reduce((a,b)=>a+b,0)/dormRates.length) : 4350;
-        const dormLow  = dormRates.length ? Math.min(...dormRates) : 3800;
-        const dormHigh = dormRates.length ? Math.max(...dormRates) : 5000;
+        const dormAvg  = dormRates.length ? Math.round(dormRates.reduce((a,b)=>a+b,0)/dormRates.length) : 5150;
+        const dormLow  = dormRates.length ? Math.min(...dormRates) : 4500;
+        const dormHigh = dormRates.length ? Math.max(...dormRates) : 6000;
 
         await pool.request()
             .input('avg', sql.Decimal(10,2), condoAvg)
@@ -121,7 +121,7 @@ const runMonthlySearch = async (triggerType = 'auto') => {
                     WHEN NOT MATCHED THEN INSERT (unit_type, avg_market_rate, price_low, price_high, area, last_updated)
                          VALUES ('dorm', @avg, @low, @high, 'Calamba / Nuvali Santa Rosa', GETDATE());`);
 
-        console.log(`[Market Search Engine] ✅ ${triggerType.toUpperCase()} search complete (with Airbnb) for ${monthYear}. Condo avg: ₱${condoAvg.toLocaleString()} | Dorm avg: ₱${dormAvg.toLocaleString()}`);
+        console.log(`[Market Search Engine] [OK] ${triggerType.toUpperCase()} search complete for ${monthYear}. Condo avg: PHP ${condoAvg.toLocaleString()} | Dorm avg: PHP ${dormAvg.toLocaleString()}`);
 
         return {
             success: true,
@@ -135,7 +135,7 @@ const runMonthlySearch = async (triggerType = 'auto') => {
         };
 
     } catch (err) {
-        console.error(`[Market Search Engine] ❌ ${triggerType} Search Error:`, err.message);
+        console.error(`[Market Search Engine] [ERROR] ${triggerType} Search Error:`, err.message);
         throw err;
     }
 };

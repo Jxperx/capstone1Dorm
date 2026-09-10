@@ -1,4 +1,12 @@
 require('dotenv').config();
+const dns = require('dns');
+try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+    if (dns.setDefaultResultOrder) {
+        dns.setDefaultResultOrder('ipv4first');
+    }
+} catch (e) {}
+
 const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
