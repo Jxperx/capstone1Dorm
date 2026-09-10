@@ -60,8 +60,12 @@ function showSection(sectionId, linkElement) {
     if (sectionId === 'maintenance' && typeof loadMaintenance === 'function') {
         loadMaintenance();
     }
-    if (sectionId === 'media' && typeof loadPropertyMediaAdmin === 'function') {
-        loadPropertyMediaAdmin();
+    if (sectionId === 'media') {
+        showSection('reports');
+        if (typeof ReportModule !== 'undefined' && typeof ReportModule.switchTab === 'function') {
+            ReportModule.switchTab('media');
+        }
+        return;
     }
     if (sectionId === 'feedback' && typeof loadAdminFeedback === 'function') {
         loadAdminFeedback();

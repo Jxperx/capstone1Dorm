@@ -322,13 +322,97 @@
 
 /* ── Print styles ────────────────────────────────────────────────── */
 @media print {
-    #sidebar-wrapper, .rpt-toolbar, .rpt-history-panel, nav.navbar, .btn { display: none !important; }
+    #sidebar-wrapper, .rpt-toolbar, .rpt-history-panel, nav.navbar, .btn, #reportsWorkspaceTabs { display: none !important; }
     #section-reports { padding: 0 !important; }
     .rpt-report-card { box-shadow: none !important; border: 1px solid #ccc !important; }
     .rpt-report-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; }
 }
 
-/* ── Responsive Adaptations ──────────────────────────────────── */
+/* ── Workspace Tabs & Navigation ─────────────────────────────────── */
+#reportsWorkspaceTabs {
+    border-bottom: none;
+    gap: 8px;
+}
+
+#reportsWorkspaceTabs .nav-link {
+    color: #555;
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 30px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+#reportsWorkspaceTabs .nav-link:hover {
+    background: #edf2f7;
+    color: #1a1a2e;
+    border-color: #cbd5e0;
+}
+
+#reportsWorkspaceTabs .nav-link.active {
+    background: #1a1a2e;
+    color: #fff;
+    border-color: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(26, 26, 46, 0.15);
+}
+
+#reportsWorkspaceTabs .nav-link.active i {
+    color: #c5a059 !important;
+}
+
+/* ── Media Filter Pills ──────────────────────────────────────────── */
+.media-filter-btn {
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.media-filter-btn.active {
+    background: #1a1a2e !important;
+    color: #fff !important;
+}
+
+/* ── Condo & Dorm Badges ─────────────────────────────────────────── */
+.rpt-badge-condo {
+    background: rgba(13, 110, 253, 0.12);
+    color: #0d6efd;
+    border: 1px solid rgba(13, 110, 253, 0.25);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.rpt-badge-dorm {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+    border: 1px solid rgba(25, 135, 84, 0.25);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+/* ── Upload Zone Polish ──────────────────────────────────────────── */
+#uploadZone {
+    background: #fafafa;
+    border: 2px dashed #d1d5db;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+}
+
+#uploadZone:hover {
+    border-color: #c5a059 !important;
+    background: #fdfbf7 !important;
+    transform: translateY(-1px);
+}
+
+/* ── Responsive Adaptations ──────────────────────────────────────── */
 .rpt-table-wrap,
 .rpt-output-table {
     width: 100%;
@@ -347,5 +431,15 @@
     .rpt-toolbar input {
         width: 100%;
     }
+
+    #reportsWorkspaceTabs {
+        flex-direction: column;
+    }
+
+    #reportsWorkspaceTabs .nav-link {
+        width: 100%;
+        justify-content: center;
+    }
 }
+
 

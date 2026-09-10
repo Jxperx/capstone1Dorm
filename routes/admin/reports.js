@@ -108,6 +108,74 @@ router.get('/', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  GET /api/admin/reports/media-stats — media health & coverage statistics
+// ═══════════════════════════════════════════════════════════════════════════════
+router.get('/media-stats', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const roomsRes = await pool.request().query(`
+            SELECT r.id, r.room_number, r.room_type, r.monthly_rate,
+                   COALESCE(g.photo_count, 0) AS photo_count,
+                   g.cover_image
+            FROM rooms r
+            LEFT JOIN (
+                SELECT room_id,
+                       COUNT(id) AS photo_count,
+                       MAX(CASE WHEN sort_order = 0 THEN image_url ELSE NULL END) AS cover_image
+                FROM room_gallery
+                GROUP BY room_id
+            ) g ON r.id = g.room_id
+            ORDER BY r.room_type, r.room_number
+        `);
+
+        let propertyMedia = {};
+        try {
+            const pmRes = await pool.request().query('SELECT type, image_url, video_url, map_embed_url FROM property_media');
+            pmRes.recordset.forEach(row => {
+                propertyMedia[row.type] = row;
+            });
+        } catch {
+            // property_media table fallback
+        }
+
+        const rooms = roomsRes.recordset || [];
+        const condos = rooms.filter(r => r.room_type === 'condo');
+        const dorms  = rooms.filter(r => r.room_type === 'dorm');
+
+        const condoPhotographed = condos.filter(r => parseInt(r.photo_count, 10) > 0).length;
+        const dormPhotographed  = dorms.filter(r => parseInt(r.photo_count, 10) > 0).length;
+
+        const condoVideo = !!(propertyMedia.condo && propertyMedia.condo.video_url);
+        const dormVideo  = !!(propertyMedia.dorm && propertyMedia.dorm.video_url);
+
+        const condoMap   = !!(propertyMedia.condo && propertyMedia.condo.map_embed_url);
+        const dormMap    = !!(propertyMedia.dorm && propertyMedia.dorm.map_embed_url);
+
+        res.json({
+            rooms,
+            metrics: {
+                totalUnits: rooms.length,
+                condoCount: condos.length,
+                dormCount: dorms.length,
+                condoPhotographed,
+                dormPhotographed,
+                condoPhotoPct: condos.length > 0 ? Math.round((condoPhotographed / condos.length) * 100) : 0,
+                dormPhotoPct: dorms.length > 0 ? Math.round((dormPhotographed / dorms.length) * 100) : 0,
+                condoVideo,
+                dormVideo,
+                condoMap,
+                dormMap,
+                overallCoveragePct: rooms.length > 0 ? Math.round(((condoPhotographed + dormPhotographed) / rooms.length) * 100) : 0
+            },
+            propertyMedia
+        });
+    } catch (err) {
+        console.error('[Media Stats Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve media statistics' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  GET /api/admin/reports/:id — fetch a specific saved report
 // ═══════════════════════════════════════════════════════════════════════════════
 router.get('/:id(\\d+)', async (req, res) => {
