@@ -43,21 +43,39 @@ const runMonthlySearch = async (triggerType = 'auto') => {
         await pool.request()
             .input('m', sql.Int, searchMonth)
             .input('y', sql.Int, searchYear)
-            .query(`DELETE FROM market_search_results WHERE MONTH(created_at) = @m AND YEAR(created_at) = @y AND (is_verified IS NULL OR is_verified = 0)`);
+            .query(`DELETE FROM market_search_results WHERE EXTRACT(MONTH FROM created_at) = @m AND EXTRACT(YEAR FROM created_at) = @y AND (is_verified IS NULL OR is_verified = 0)`);
+
+        // Helper to ensure all stored source URLs are clean and geo-fenced
+        const sanitizeCompUrl = (rawUrl, isDorm, location) => {
+            if (!rawUrl || typeof rawUrl !== 'string') rawUrl = '';
+            const lower = rawUrl.toLowerCase();
+            const locLower = (location || '').toLowerCase();
+            const isNuvali = locLower.includes('nuvali') || locLower.includes('santa rosa');
+
+            if (lower.includes('carousell.ph') || lower.includes('lamudi.com.ph') || lower.includes('rentpad.com.ph') || !lower.startsWith('http')) {
+                if (isDorm) return 'https://www.dotproperty.com.ph/apartments-for-rent/laguna/calamba';
+                if (isNuvali) return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/santa-rosa?bedrooms=studio';
+                return 'https://www.dotproperty.com.ph/condos-for-rent/laguna/calamba?bedrooms=studio';
+            }
+            return rawUrl.slice(0, 500);
+        };
 
         // Insert condo listings
         for (const listing of condoListings) {
+            const safeUrl = sanitizeCompUrl(listing.source_url, false, listing.location);
+            const rate = (Number(listing.monthly_rate) && Number(listing.monthly_rate) > 0) ? Number(listing.monthly_rate) : 14000;
+
             await pool.request()
                 .input('unit_type',         sql.NVarChar(20),  listing.unit_type || 'studio')
-                .input('property_name',     sql.NVarChar(200), listing.property_name || 'Calamba Condo')
-                .input('location',          sql.NVarChar(100), listing.location || 'Calamba/Nuvali')
+                .input('property_name',     sql.NVarChar(200), listing.property_name || 'Calamba Studio Condo')
+                .input('location',          sql.NVarChar(100), listing.location || 'Calamba, Laguna')
                 .input('sqm_min',           sql.Int,           listing.sqm_min || null)
                 .input('sqm_max',           sql.Int,           listing.sqm_max || null)
-                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 14000)
+                .input('monthly_rate',      sql.Decimal(10,2), rate)
                 .input('is_fully_furnished',sql.Bit,           listing.is_fully_furnished ? 1 : 0)
                 .input('has_cctv',          sql.Bit,           listing.has_cctv ? 1 : 0)
                 .input('has_fiber',         sql.Bit,           listing.has_fiber ? 1 : 0)
-                .input('source_url',        sql.NVarChar(500), listing.source_url)
+                .input('source_url',        sql.NVarChar(500), safeUrl)
                 .input('raw_snippet',       sql.NVarChar(sql.MAX), listing.notes || '')
                 .input('is_verified',       sql.Int,           0)
                 .query(`INSERT INTO market_search_results
@@ -69,17 +87,20 @@ const runMonthlySearch = async (triggerType = 'auto') => {
 
         // Insert dorm listings
         for (const listing of dormListings) {
+            const safeUrl = sanitizeCompUrl(listing.source_url, true, listing.location);
+            const rate = (Number(listing.monthly_rate) && Number(listing.monthly_rate) > 0) ? Number(listing.monthly_rate) : 5200;
+
             await pool.request()
                 .input('unit_type',         sql.NVarChar(20),  'dorm-bed')
-                .input('property_name',     sql.NVarChar(200), listing.property_name || 'Student Dorm')
-                .input('location',          sql.NVarChar(100), listing.location || 'Calamba')
+                .input('property_name',     sql.NVarChar(200), listing.property_name || 'Calamba Student Dorm')
+                .input('location',          sql.NVarChar(100), listing.location || 'Calamba, Laguna')
                 .input('sqm_min',           sql.Int,           null)
                 .input('sqm_max',           sql.Int,           null)
-                .input('monthly_rate',      sql.Decimal(10,2), listing.monthly_rate || 5200)
+                .input('monthly_rate',      sql.Decimal(10,2), rate)
                 .input('is_fully_furnished',sql.Bit,           1)
                 .input('has_cctv',          sql.Bit,           listing.has_cctv ? 1 : 0)
                 .input('has_fiber',         sql.Bit,           listing.has_fiber ? 1 : 0)
-                .input('source_url',        sql.NVarChar(500), listing.source_url)
+                .input('source_url',        sql.NVarChar(500), safeUrl)
                 .input('raw_snippet',       sql.NVarChar(sql.MAX), listing.notes || '')
                 .input('is_verified',       sql.Int,           0)
                 .query(`INSERT INTO market_search_results
@@ -102,24 +123,26 @@ const runMonthlySearch = async (triggerType = 'auto') => {
         const dormHigh = dormRates.length ? Math.max(...dormRates) : 6000;
 
         await pool.request()
-            .input('avg', sql.Decimal(10,2), condoAvg)
-            .input('low', sql.Decimal(10,2), condoLow)
-            .input('high',sql.Decimal(10,2), condoHigh)
-            .query(`MERGE market_benchmarks AS target
-                    USING (SELECT 'condo' AS unit_type) AS src ON target.unit_type = src.unit_type
-                    WHEN MATCHED THEN UPDATE SET avg_market_rate=@avg, price_low=@low, price_high=@high, last_updated=GETDATE()
-                    WHEN NOT MATCHED THEN INSERT (unit_type, avg_market_rate, price_low, price_high, area, last_updated)
-                         VALUES ('condo', @avg, @low, @high, 'Calamba / Nuvali Santa Rosa', GETDATE());`);
+            .input('type', sql.NVarChar(20), 'condo')
+            .query(`DELETE FROM market_benchmarks WHERE unit_type = @type`);
 
         await pool.request()
-            .input('avg', sql.Decimal(10,2), dormAvg)
-            .input('low', sql.Decimal(10,2), dormLow)
-            .input('high',sql.Decimal(10,2), dormHigh)
-            .query(`MERGE market_benchmarks AS target
-                    USING (SELECT 'dorm' AS unit_type) AS src ON target.unit_type = src.unit_type
-                    WHEN MATCHED THEN UPDATE SET avg_market_rate=@avg, price_low=@low, price_high=@high, last_updated=GETDATE()
-                    WHEN NOT MATCHED THEN INSERT (unit_type, avg_market_rate, price_low, price_high, area, last_updated)
-                         VALUES ('dorm', @avg, @low, @high, 'Calamba / Nuvali Santa Rosa', GETDATE());`);
+            .input('avg',  sql.Decimal(10,2), condoAvg)
+            .input('low',  sql.Decimal(10,2), condoLow)
+            .input('high', sql.Decimal(10,2), condoHigh)
+            .query(`INSERT INTO market_benchmarks (unit_type, avg_market_rate, price_low, price_high, area, last_updated)
+                    VALUES ('condo', @avg, @low, @high, 'Calamba / Nuvali Santa Rosa', NOW())`);
+
+        await pool.request()
+            .input('type', sql.NVarChar(20), 'dorm')
+            .query(`DELETE FROM market_benchmarks WHERE unit_type = @type`);
+
+        await pool.request()
+            .input('avg',  sql.Decimal(10,2), dormAvg)
+            .input('low',  sql.Decimal(10,2), dormLow)
+            .input('high', sql.Decimal(10,2), dormHigh)
+            .query(`INSERT INTO market_benchmarks (unit_type, avg_market_rate, price_low, price_high, area, last_updated)
+                    VALUES ('dorm', @avg, @low, @high, 'Calamba / Nuvali Santa Rosa', NOW())`);
 
         console.log(`[Market Search Engine] [OK] ${triggerType.toUpperCase()} search complete for ${monthYear}. Condo avg: PHP ${condoAvg.toLocaleString()} | Dorm avg: PHP ${dormAvg.toLocaleString()}`);
 

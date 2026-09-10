@@ -23,7 +23,7 @@ router.post('/trigger-search', async (req, res) => {
         });
     } catch (err) {
         console.error('Trigger Search Error:', err);
-        res.status(500).json({ error: 'Market search failed. Please try again.' });
+        res.status(500).json({ error: err.message || 'Market search failed. Please try again.' });
     }
 });
 
@@ -159,7 +159,7 @@ router.post('/apply', async (req, res) => {
             .query(`INSERT INTO room_pricing_history (room_id, old_rate, new_rate, reason, applied_by)
                     VALUES (@room_id, @old_rate, @new_rate, @reason, @applied_by)`);
 
-        res.json({ success: true, message: `Price updated to ₱${Number(newRate).toLocaleString()}` });
+        res.json({ success: true, message: `Price updated to PHP ${Number(newRate).toLocaleString()}` });
 
     } catch (err) {
         console.error('Apply Pricing Error:', err);
