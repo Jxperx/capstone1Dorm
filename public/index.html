@@ -71,11 +71,17 @@
 
         #condos.snap-section,
         #dorms.snap-section,
-        #inquire.snap-section,
-        #location.snap-section {
+        #inquire.snap-section {
             scroll-margin-top: 136px;
             min-height: calc(100vh - 136px);
             justify-content: center;
+        }
+
+        #location.snap-section {
+            scroll-margin-top: 136px;
+            min-height: calc(100vh - 136px);
+            justify-content: flex-start;
+            padding: clamp(32px, 5vh, 60px) 0 0 0;
         }
 
         /* Floating Right Navigation Dots */
@@ -548,10 +554,10 @@
             max-width: 1640px;
             width: 94%;
             margin: 0 auto;
-            padding: 0 20px 80px;
+            padding: 0 20px 0;
             display: flex;
             flex-direction: column;
-            gap: 100px;
+            gap: 0;
         }
 
         /* ══════════════════════════════════════
@@ -1271,16 +1277,16 @@
            LOCATION & MAPS
         ══════════════════════════════════════ */
         .location-section {
-            scroll-margin-top: 120px;
+            scroll-margin-top: 136px;
         }
 
         .location-cards-wrap {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 28px;
-        }
-        @media (max-width: 960px) {
-            .location-cards-wrap { grid-template-columns: 1fr; gap: 24px; }
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
         }
 
         .location-card {
@@ -1289,30 +1295,47 @@
             border-radius: var(--radius-xl);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr; grid-template-rows: auto 1fr;
-            min-height: 440px;
+            grid-template-columns: 1fr 1.5fr;
+            min-height: 420px;
         }
 
         .location-card.reverse {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.5fr 1fr;
         }
 
-        @media (max-width: 860px) {
-            .location-card, .location-card.reverse { grid-template-columns: 1fr; }
+        @media (max-width: 960px) {
+            .location-cards-wrap {
+                gap: 28px;
+            }
+            .location-card,
+            .location-card.reverse {
+                display: flex;
+                flex-direction: column;
+            }
+            .location-info-panel {
+                order: 1;
+                padding: 32px 24px;
+            }
+            .location-map-wrap {
+                order: 2;
+                min-height: 300px;
+                height: 300px;
+            }
         }
 
         .location-info-panel {
-            padding: clamp(24px, 4vw, 40px);
+            padding: clamp(32px, 4vw, 48px);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
             gap: 24px;
         }
 
         .location-map-wrap {
             position: relative;
-            min-height: 320px;
+            min-height: 380px;
             background: #141518;
+            overflow: hidden;
         }
 
         /* ══════════════════════════════════════
@@ -1322,7 +1345,7 @@
             border-top: 1px solid var(--glass-border);
             padding: 48px 24px;
             max-width: 1640px; width: 94%;
-            margin: 0 auto;
+            margin: 60px auto 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
