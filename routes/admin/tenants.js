@@ -58,40 +58,98 @@ router.post('/create-account', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(initialPassword, 10);
         const userStatus = isSelfService ? 'pending' : 'active';
+        const cleanEmail = email.trim().toLowerCase();
 
-        // 1. Insert User record in PostgreSQL
-        const userRes = await pool.request()
-            .input('full_name', sql.NVarChar, full_name)
-            .input('email', sql.NVarChar, email)
-            .input('phone', sql.NVarChar, phone || null)
-            .input('password_hash', sql.NVarChar, hashedPassword)
-            .input('status', sql.NVarChar, userStatus)
-            .input('role', sql.NVarChar, 'tenant')
-            .query(`
-                INSERT INTO users (full_name, email, phone_number, password_hash, status, role)
-                VALUES (@full_name, @email, @phone, @password_hash, @status, @role)
-                RETURNING id
-            `);
+        // 1. Check if a user account already exists with this email
+        const existingUserRes = await pool.request()
+            .input('check_email', sql.NVarChar, cleanEmail)
+            .query(`SELECT id, status, role, full_name FROM users WHERE LOWER(email) = @check_email`);
 
-        const userId = userRes.recordset[0].id;
+        let userId;
+        if (existingUserRes.recordset.length > 0) {
+            const existingUser = existingUserRes.recordset[0];
+            if (existingUser.status === 'active') {
+                return res.status(400).json({
+                    error: 'A tenant account with this email is already active. Please manage their room assignment in the Tenants list.'
+                });
+            }
 
-        // 2. Insert Tenant record linked to room & lease dates
-        const tenantReq = pool.request()
-            .input('user_id', sql.Int, userId)
-            .input('lease_start', sql.Date, lease_start || new Date())
-            .input('lease_end', sql.Date, lease_end || null);
-
-        let tenantQuery = `INSERT INTO tenants (user_id, status, lease_start_date, lease_end_date`;
-        let tenantValues = `VALUES (@user_id, 'active', @lease_start, @lease_end`;
-
-        if (room_id && room_id !== '' && room_id !== 'null') {
-            tenantReq.input('room_id', sql.Int, parseInt(room_id, 10));
-            tenantQuery += `, room_id`;
-            tenantValues += `, @room_id`;
+            // User exists in pending/invited state - reuse existing account
+            userId = existingUser.id;
+            await pool.request()
+                .input('user_id', sql.Int, userId)
+                .input('full_name', sql.NVarChar, full_name)
+                .input('phone', sql.NVarChar, phone || null)
+                .input('password_hash', sql.NVarChar, hashedPassword)
+                .input('status', sql.NVarChar, userStatus)
+                .query(`
+                    UPDATE users
+                    SET full_name = @full_name,
+                        phone_number = @phone,
+                        password_hash = @password_hash,
+                        status = @status
+                    WHERE id = @user_id
+                `);
+            console.log(`[Tenant Onboarding] Updated existing pending user #${userId} (${cleanEmail})`);
+        } else {
+            // Insert new user record
+            const userRes = await pool.request()
+                .input('full_name', sql.NVarChar, full_name)
+                .input('email', sql.NVarChar, cleanEmail)
+                .input('phone', sql.NVarChar, phone || null)
+                .input('password_hash', sql.NVarChar, hashedPassword)
+                .input('status', sql.NVarChar, userStatus)
+                .input('role', sql.NVarChar, 'tenant')
+                .query(`
+                    INSERT INTO users (full_name, email, phone_number, password_hash, status, role)
+                    VALUES (@full_name, @email, @phone, @password_hash, @status, @role)
+                    RETURNING id
+                `);
+            userId = userRes.recordset[0].id;
+            console.log(`[Tenant Onboarding] Created new user #${userId} (${cleanEmail})`);
         }
 
-        tenantQuery += `) ${tenantValues})`;
-        await tenantReq.query(tenantQuery);
+        // 2. Link or update Tenant record with room and lease dates
+        const parsedRoomId = (room_id && room_id !== '' && room_id !== 'null') ? parseInt(room_id, 10) : null;
+        const existingTenantRes = await pool.request()
+            .input('user_id', sql.Int, userId)
+            .query(`SELECT id FROM tenants WHERE user_id = @user_id`);
+
+        if (existingTenantRes.recordset.length > 0) {
+            const tenantId = existingTenantRes.recordset[0].id;
+            await pool.request()
+                .input('tenant_id', sql.Int, tenantId)
+                .input('room_id', sql.Int, parsedRoomId)
+                .input('lease_start', sql.Date, lease_start || new Date())
+                .input('lease_end', sql.Date, lease_end || null)
+                .query(`
+                    UPDATE tenants
+                    SET room_id = @room_id,
+                        lease_start_date = @lease_start,
+                        lease_end_date = @lease_end,
+                        status = 'active'
+                    WHERE id = @tenant_id
+                `);
+            console.log(`[Tenant Onboarding] Updated existing tenant record #${tenantId} for user #${userId}`);
+        } else {
+            const tenantReq = pool.request()
+                .input('user_id', sql.Int, userId)
+                .input('lease_start', sql.Date, lease_start || new Date())
+                .input('lease_end', sql.Date, lease_end || null);
+
+            let tenantQuery = `INSERT INTO tenants (user_id, status, lease_start_date, lease_end_date`;
+            let tenantValues = `VALUES (@user_id, 'active', @lease_start, @lease_end`;
+
+            if (parsedRoomId) {
+                tenantReq.input('room_id', sql.Int, parsedRoomId);
+                tenantQuery += `, room_id`;
+                tenantValues += `, @room_id`;
+            }
+
+            tenantQuery += `) ${tenantValues})`;
+            await tenantReq.query(tenantQuery);
+            console.log(`[Tenant Onboarding] Created tenant record for user #${userId}`);
+        }
 
         let setupUrl = null;
         let setupToken = null;
@@ -100,6 +158,11 @@ router.post('/create-account', async (req, res) => {
         if (isSelfService) {
             setupToken = crypto.randomBytes(32).toString('hex');
             const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+            // Invalidate any previous unused onboarding tokens for this user
+            await pool.request()
+                .input('user_id', sql.Int, userId)
+                .query(`UPDATE password_reset_tokens SET used = true WHERE user_id = @user_id AND token_type = 'tenant_onboarding' AND (used IS NULL OR used = false)`);
 
             await pool.request()
                 .input('user_id', sql.Int, userId)
@@ -114,17 +177,21 @@ router.post('/create-account', async (req, res) => {
 
             const protocol = req.protocol;
             const host = req.get('host');
-            setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(email)}`;
+            setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(cleanEmail)}`;
 
-            console.log(`[Tenant Onboarding] Created pending tenant for ${email}. Setup link: ${setupUrl}`);
+            console.log(`[Tenant Onboarding] Generated setup link for ${cleanEmail}: ${setupUrl}`);
 
             // Dispatch Onboarding Welcome Email
             try {
                 const { sendMailWithFallback } = require('../../utils/email');
+                const plainTextMessage = `Hello ${full_name},\n\nWelcome to EliteStay! Your room reservation has been approved by management.\n\nPlease set up your password to access your Tenant Portal using the link below:\n${setupUrl}\n\nSecurity Notice: This link is valid for 48 hours.\n\nEliteStay Management`;
+
                 const mailOptions = {
                     from: `"EliteStay Management" <${process.env.EMAIL_USER || 'no-reply@elitestay.com'}>`,
-                    to: email,
+                    to: cleanEmail,
                     subject: 'Welcome to EliteStay! Set up your tenant portal password',
+                    setupUrl: setupUrl,
+                    text: plainTextMessage,
                     html: `
                         <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e8e8e8;border-radius:10px;background-color:#ffffff;">
                             <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #c5a059;">
@@ -137,11 +204,11 @@ router.post('/create-account', async (req, res) => {
                                     Welcome to EliteStay! Your room reservation has been approved by the management.
                                 </p>
                                 <p style="font-size:14px;color:#555555;line-height:1.6;">
-                                    Please click the button below to create your password and access your Tenant Portal:
+                                    Please click the button below to create your password and access your Tenant Portal where you can view your bills, payments, room information, and submit requests:
                                 </p>
                                 <div style="text-align:center;margin:30px 0;">
                                     <a href="${setupUrl}" style="background-color:#c5a059;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:30px;font-weight:bold;font-size:15px;display:inline-block;box-shadow:0 4px 12px rgba(197,160,89,0.3);">
-                                        🔑 Set Up My Password & Access Portal
+                                        Set Up My Password & Access Portal
                                     </a>
                                 </div>
                                 <p style="font-size:12px;color:#888888;line-height:1.5;">
@@ -150,7 +217,7 @@ router.post('/create-account', async (req, res) => {
                                 </p>
                                 <div style="background-color:#f8f9fa;padding:12px 16px;border-radius:8px;margin-top:25px;border-left:4px solid #c5a059;">
                                     <p style="font-size:12px;color:#666666;margin:0;">
-                                        ⏰ <strong>Security Notice:</strong> This link is valid for 48 hours. If you did not apply for tenancy, please contact management immediately.
+                                        <strong>Security Notice:</strong> This link is valid for 48 hours. If you did not apply for tenancy, please contact management immediately.
                                     </p>
                                 </div>
                             </div>
@@ -161,9 +228,9 @@ router.post('/create-account', async (req, res) => {
                     `
                 };
                 await sendMailWithFallback(mailOptions);
-                console.log(`[Tenant Onboarding] Welcome email sent successfully to ${email}`);
+                console.log(`[Tenant Onboarding] Welcome email sent successfully to ${cleanEmail}`);
             } catch (mailErr) {
-                console.error(`[Tenant Onboarding] Could not send welcome email to ${email}:`, mailErr.message);
+                console.error(`[Tenant Onboarding] Could not send welcome email to ${cleanEmail}:`, mailErr.message);
             }
         }
 
@@ -174,18 +241,18 @@ router.post('/create-account', async (req, res) => {
                     .input('inq_id', sql.Int, parseInt(inquiry_id, 10))
                     .query(`UPDATE inquiries SET status = 'converted' WHERE id = @inq_id`);
                 console.log(`[Tenant Onboarding] Converted inquiry #${inquiry_id} to tenant.`);
-            } else if (email) {
-                // Fallback: check if any approved inquiry exists with this email
+            }
+            if (cleanEmail) {
                 await pool.request()
-                    .input('inq_email', sql.NVarChar, email)
-                    .query(`UPDATE inquiries SET status = 'converted' WHERE LOWER(email) = LOWER(@inq_email) AND status = 'approved'`);
+                    .input('inq_email', sql.NVarChar, cleanEmail)
+                    .query(`UPDATE inquiries SET status = 'converted' WHERE LOWER(email) = LOWER(@inq_email) AND status != 'converted'`);
             }
         } catch (inqErr) {
             console.error('[Tenant Onboarding] Error updating inquiry status:', inqErr.message);
         }
 
         res.status(201).json({
-            message: isSelfService ? `Tenant added! Password setup email sent to ${email}.` : 'Tenant added successfully.',
+            message: isSelfService ? `Tenant added! Password setup email sent to ${cleanEmail}.` : 'Tenant added successfully.',
             isPending: isSelfService,
             setupUrl: setupUrl,
             userId: userId
@@ -246,10 +313,14 @@ router.post('/:id/resend-invite', async (req, res) => {
         // Dispatch Email with Setup Link
         try {
             const { sendMailWithFallback } = require('../../utils/email');
+            const plainTextMessage = `Hello ${tenant.full_name},\n\nHere is your link to set up your password and access your EliteStay Tenant Portal:\n${setupUrl}\n\nSecurity Notice: This link is valid for 48 hours.\n\nEliteStay Management`;
+
             const mailOptions = {
                 from: `"EliteStay Management" <${process.env.EMAIL_USER || 'no-reply@elitestay.com'}>`,
                 to: tenant.email,
                 subject: 'EliteStay - Password Setup Link',
+                setupUrl: setupUrl,
+                text: plainTextMessage,
                 html: `
                     <div style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e8e8e8;border-radius:10px;background-color:#ffffff;">
                         <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #c5a059;">
@@ -263,7 +334,7 @@ router.post('/:id/resend-invite', async (req, res) => {
                             </p>
                             <div style="text-align:center;margin:30px 0;">
                                 <a href="${setupUrl}" style="background-color:#c5a059;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:30px;font-weight:bold;font-size:15px;display:inline-block;box-shadow:0 4px 12px rgba(197,160,89,0.3);">
-                                    🔑 Set Up My Password
+                                    Set Up My Password
                                 </a>
                             </div>
                             <p style="font-size:12px;color:#888888;line-height:1.5;">
@@ -272,7 +343,7 @@ router.post('/:id/resend-invite', async (req, res) => {
                             </p>
                             <div style="background-color:#f8f9fa;padding:12px 16px;border-radius:8px;margin-top:25px;border-left:4px solid #c5a059;">
                                 <p style="font-size:12px;color:#666666;margin:0;">
-                                    ⏰ <strong>Security Notice:</strong> This link is valid for 48 hours.
+                                    <strong>Security Notice:</strong> This link is valid for 48 hours.
                                 </p>
                             </div>
                         </div>
@@ -283,9 +354,9 @@ router.post('/:id/resend-invite', async (req, res) => {
                 `
             };
             await sendMailWithFallback(mailOptions);
-            console.log(`[Tenant Onboarding] ✅ Resent welcome email successfully to ${tenant.email}`);
+            console.log(`[Tenant Onboarding] Resent welcome email successfully to ${tenant.email}`);
         } catch (mailErr) {
-            console.error(`[Tenant Onboarding] ⚠️ Could not resend email to ${tenant.email}:`, mailErr.message);
+            console.error(`[Tenant Onboarding] Could not resend email to ${tenant.email}:`, mailErr.message);
         }
 
         res.json({

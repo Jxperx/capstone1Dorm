@@ -263,6 +263,7 @@ async function submitAddTenant() {
             form.reset();
 
             if (result.setupUrl) {
+                window.showEnterpriseToast(result.message || 'Tenant added! Setup link generated.', 'success');
                 prompt('Tenant Account Created.\n\nCopy and send this Password Setup Link to the tenant:', result.setupUrl);
             } else {
                 window.showEnterpriseToast(result.message || 'Tenant added successfully.');
