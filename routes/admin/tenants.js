@@ -464,10 +464,10 @@ router.delete('/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
         
-        // Find tenant by tenants.id OR users.id
+        // Find tenant by tenants.id OR tenants.user_id
         const tenantResult = await pool.request()
             .input('id', sql.Int, inputId)
-            .query('SELECT TOP 1 id AS tenant_id, user_id FROM tenants WHERE id = @id OR user_id = @id');
+            .query('SELECT id AS tenant_id, user_id FROM tenants WHERE id = @id OR user_id = @id LIMIT 1');
             
         let tenantId = null;
         let userId = null;
@@ -476,12 +476,18 @@ router.delete('/:id', async (req, res) => {
             tenantId = tenantResult.recordset[0].tenant_id;
             userId = tenantResult.recordset[0].user_id;
         } else {
-            // Check if user exists directly in users table
+            // Check if user exists directly in users table (e.g. pending tenant without tenants row)
             const userResult = await pool.request()
                 .input('id', sql.Int, inputId)
-                .query('SELECT TOP 1 id FROM users WHERE id = @id');
+                .query('SELECT id FROM users WHERE id = @id LIMIT 1');
             if (userResult.recordset.length > 0) {
                 userId = userResult.recordset[0].id;
+                const tCheck = await pool.request()
+                    .input('uid', sql.Int, userId)
+                    .query('SELECT id FROM tenants WHERE user_id = @uid LIMIT 1');
+                if (tCheck.recordset.length > 0) {
+                    tenantId = tCheck.recordset[0].id;
+                }
             } else {
                 return res.status(404).json({ error: 'Tenant not found' });
             }
@@ -492,20 +498,47 @@ router.delete('/:id', async (req, res) => {
 
         try {
             if (tenantId) {
-                // Delete associated records referencing tenant_id safely
-                await transaction.request().input('tId', sql.Int, tenantId).query("IF OBJECT_ID('tenant_feedback', 'U') IS NOT NULL DELETE FROM tenant_feedback WHERE tenant_id = @tId");
-                await transaction.request().input('tId', sql.Int, tenantId).query("IF OBJECT_ID('meter_readings', 'U') IS NOT NULL DELETE FROM meter_readings WHERE tenant_id = @tId");
-                await transaction.request().input('tId', sql.Int, tenantId).query("IF OBJECT_ID('payments', 'U') IS NOT NULL DELETE FROM payments WHERE tenant_id = @tId");
-                await transaction.request().input('tId', sql.Int, tenantId).query("IF OBJECT_ID('maintenance_requests', 'U') IS NOT NULL DELETE FROM maintenance_requests WHERE tenant_id = @tId");
-                await transaction.request().input('tId', sql.Int, tenantId).query("IF OBJECT_ID('tenants', 'U') IS NOT NULL DELETE FROM tenants WHERE id = @tId");
+                // 1. Fetch any payment IDs for this tenant to delete child records
+                const payRes = await transaction.request()
+                    .input('tId', sql.Int, tenantId)
+                    .query('SELECT id FROM payments WHERE tenant_id = @tId');
+                
+                if (payRes.recordset.length > 0) {
+                    for (const row of payRes.recordset) {
+                        const pId = row.id;
+                        await transaction.request().input('pId', sql.Int, pId).query('DELETE FROM payment_receipts WHERE payment_id = @pId');
+                        await transaction.request().input('pId', sql.Int, pId).query('DELETE FROM fraud_flags WHERE payment_id = @pId');
+                        await transaction.request().input('pId', sql.Int, pId).query('DELETE FROM fraud_scores WHERE payment_id = @pId');
+                    }
+                    await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM payments WHERE tenant_id = @tId');
+                }
+
+                // 2. Delete other tenant-dependent logs and records
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM payment_attempt_logs WHERE tenant_id = @tId');
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM checkout_otp_logs WHERE tenant_id = @tId');
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM device_fingerprints WHERE tenant_id = @tId');
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM maintenance_requests WHERE tenant_id = @tId');
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM tenant_feedback WHERE tenant_id = @tId');
+
+                // 3. Delete from tenants table
+                await transaction.request().input('tId', sql.Int, tenantId).query('DELETE FROM tenants WHERE id = @tId');
             }
 
             if (userId) {
-                await transaction.request().input('uId', sql.Int, userId).query("IF OBJECT_ID('tenants', 'U') IS NOT NULL DELETE FROM tenants WHERE user_id = @uId");
-                await transaction.request().input('uId', sql.Int, userId).query("IF OBJECT_ID('users', 'U') IS NOT NULL DELETE FROM users WHERE id = @uId");
+                // Ensure any tenant row referencing this user_id is removed
+                await transaction.request().input('uId', sql.Int, userId).query('DELETE FROM tenants WHERE user_id = @uId');
+
+                // Delete user-dependent records
+                await transaction.request().input('uId', sql.Int, userId).query('DELETE FROM password_reset_tokens WHERE user_id = @uId');
+                await transaction.request().input('uId', sql.Int, userId).query('DELETE FROM live_chat_messages WHERE tenant_id = @uId');
+                await transaction.request().input('uId', sql.Int, userId).query('UPDATE generated_reports SET generated_by = NULL WHERE generated_by = @uId');
+
+                // Delete user row
+                await transaction.request().input('uId', sql.Int, userId).query('DELETE FROM users WHERE id = @uId');
             }
 
             await transaction.commit();
+            console.log(`[Admin Tenants] Tenant deleted successfully (tenantId: ${tenantId}, userId: ${userId})`);
             res.json({ message: 'Tenant account and history removed successfully' });
         } catch (err) {
             await transaction.rollback();
@@ -513,7 +546,7 @@ router.delete('/:id', async (req, res) => {
         }
     } catch (err) {
         console.error('Error deleting tenant:', err);
-        res.status(500).json({ error: 'Database error while deleting tenant' });
+        res.status(500).json({ error: 'Database error while deleting tenant: ' + (err.message || 'Server error') });
     }
 });
 

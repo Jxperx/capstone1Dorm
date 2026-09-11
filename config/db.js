@@ -183,6 +183,45 @@ class PostgresRequest {
     }
 }
 
+class PostgresTransaction {
+    constructor(poolWrapper) {
+        this.pool = (poolWrapper && poolWrapper.pool) || pgPool;
+        this.client = null;
+    }
+
+    async begin() {
+        this.client = await this.pool.connect();
+        await this.client.query('BEGIN');
+    }
+
+    request() {
+        if (!this.client) {
+            throw new Error('Transaction not started. Call begin() first.');
+        }
+        return new PostgresRequest(this.client);
+    }
+
+    async commit() {
+        if (!this.client) return;
+        try {
+            await this.client.query('COMMIT');
+        } finally {
+            this.client.release();
+            this.client = null;
+        }
+    }
+
+    async rollback() {
+        if (!this.client) return;
+        try {
+            await this.client.query('ROLLBACK');
+        } finally {
+            this.client.release();
+            this.client = null;
+        }
+    }
+}
+
 class PostgresPoolWrapper {
     constructor(pool) {
         this.pool = pool;
@@ -190,6 +229,10 @@ class PostgresPoolWrapper {
 
     request() {
         return new PostgresRequest(this.pool);
+    }
+
+    transaction() {
+        return new PostgresTransaction(this);
     }
 
     async query(sqlText, params) {
@@ -205,9 +248,12 @@ class PostgresPoolWrapper {
 
 const poolWrapper = new PostgresPoolWrapper(pgPool);
 
-// Dummy MSSQL type proxy for backwards compatibility (e.g. sql.NVarChar, sql.Int)
-const dummySql = new Proxy({}, {
+// Dummy MSSQL type proxy for backwards compatibility (e.g. sql.NVarChar, sql.Int, sql.Transaction)
+const dummySql = new Proxy({
+    Transaction: PostgresTransaction
+}, {
     get: (target, prop) => {
+        if (prop in target) return target[prop];
         const fn = (val) => val;
         fn.type = prop;
         return fn;
@@ -220,6 +266,8 @@ logger.info(`[DB] PostgreSQL adapter connected to Supabase host '${hostName}'.`)
 
 module.exports = {
     sql: dummySql,
+    Transaction: PostgresTransaction,
+    pgPool: pgPool,
     get poolPromise() {
         return Promise.resolve(poolWrapper);
     },
