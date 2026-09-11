@@ -53,13 +53,13 @@
         .snap-section {
             scroll-snap-align: start;
             scroll-snap-stop: always;
-            min-height: calc(100vh - 134px);
+            min-height: calc(100vh - 74px);
             display: flex;
             flex-direction: column;
             justify-content: center;
             box-sizing: border-box;
             position: relative;
-            padding: clamp(10px, 2vh, 20px) 0;
+            padding: clamp(14px, 2.5vh, 28px) 0;
         }
 
         /* Section Specific Snap Offsets */
@@ -91,10 +91,10 @@
         #dorms.snap-section,
         #inquire.snap-section,
         #location.snap-section {
-            scroll-margin-top: 134px;
+            scroll-margin-top: 74px;
             scroll-snap-align: start;
             scroll-snap-stop: always;
-            min-height: calc(100vh - 134px);
+            min-height: calc(100vh - 74px);
             justify-content: center;
         }
 
@@ -494,79 +494,7 @@
             padding: 0 20px;
         }
 
-        /* Sticky Horizontal Editorial Navigation Ribbon */
-        .editorial-nav-ribbon {
-            position: sticky;
-            top: 74px;
-            z-index: 800;
-            background: rgba(13, 14, 16, 0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid var(--glass-border);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 12px 0;
-            margin-bottom: 60px;
-            transition: all var(--transition);
-        }
 
-        .editorial-nav-track {
-            max-width: 1640px;
-            width: 94%;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .editorial-nav-track::-webkit-scrollbar {
-            display: none;
-        }
-
-        .nav-pill-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 18px;
-            border-radius: 9999px;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--stone);
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            white-space: nowrap;
-            transition: all var(--transition);
-            flex-shrink: 0;
-        }
-
-        .nav-pill-link:hover {
-            color: var(--white);
-            border-color: rgba(197, 160, 89, 0.4);
-            background: rgba(197, 160, 89, 0.08);
-        }
-
-        .nav-pill-link.active {
-            color: var(--obsidian);
-            background: var(--linen);
-            border-color: var(--linen);
-            font-weight: 700;
-        }
-
-        .nav-pill-link .num {
-            color: var(--gold);
-            font-weight: 700;
-            font-size: 10px;
-        }
-
-        .nav-pill-link.active .num {
-            color: var(--obsidian);
-        }
 
         .editorial-content-stream {
             max-width: 1640px;
@@ -582,7 +510,7 @@
            SHOWCASE SECTIONS (CONDOS & DORMS)
         ══════════════════════════════════════ */
         .showcase-block {
-            scroll-margin-top: 136px;
+            scroll-margin-top: 74px;
         }
 
         .section-header {
@@ -735,7 +663,7 @@
            360 VIRTUAL TOUR SECTION
         ══════════════════════════════════════ */
         .tour-section {
-            scroll-margin-top: 120px;
+            scroll-margin-top: 74px;
         }
 
         .tour-wrapper {
@@ -991,7 +919,7 @@
             border: 1px solid var(--glass-border);
             background: var(--glass-card);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            scroll-margin-top: 136px;
+            scroll-margin-top: 74px;
             width: 100%;
         }
 
@@ -1296,7 +1224,7 @@
            LOCATION & MAPS
         ══════════════════════════════════════ */
         .location-section {
-            scroll-margin-top: 136px;
+            scroll-margin-top: 74px;
         }
 
         .location-cards-wrap {
@@ -1676,8 +1604,8 @@
            SECTION 02: DEDICATED 360 TOUR
         ══════════════════════════════════════ */
         #tour.snap-section {
-            scroll-margin-top: 134px;
-            min-height: calc(100vh - 134px);
+            scroll-margin-top: 74px;
+            min-height: calc(100vh - 74px);
             justify-content: center;
             padding: clamp(10px, 1.8vh, 20px) 0;
             width: 100%;
@@ -1827,17 +1755,7 @@
         </div>
     </section>
 
-    <!-- ══ STICKY EDITORIAL NAVIGATION RIBBON (FULL WIDTH EXPANSIVE) ══ -->
-    <div class="editorial-nav-ribbon">
-        <div class="editorial-nav-track">
-            <a href="#hero" class="nav-pill-link active"><span class="num">01</span> Overview</a>
-            <a href="#tour" class="nav-pill-link"><span class="num">02</span> 360 Tour</a>
-            <a href="#condos" class="nav-pill-link"><span class="num">03</span> Condos</a>
-            <a href="#dorms" class="nav-pill-link"><span class="num">04</span> Dormitories</a>
-            <a href="#inquire" class="nav-pill-link"><span class="num">05</span> Inquire</a>
-            <a href="#location" class="nav-pill-link"><span class="num">06</span> Location</a>
-        </div>
-    </div>
+
 
     <main class="editorial-content-stream">
 
@@ -2214,22 +2132,25 @@
     ══════════════════════════════════════ -->
     <script>
         
-        // ── Active Pill & Dot Scrollspy for Ribbon and Floating Dots ──
+        // ── Active Nav Link & Dot Scrollspy ──
         const navSections = ['hero', 'tour', 'condos', 'dorms', 'inquire', 'location'];
         function updateSnapSpy() {
-            const scrollPos = window.scrollY + 220;
+            const scrollPos = window.scrollY + 120;
             navSections.forEach(id => {
                 const el = document.getElementById(id);
-                const pill = document.querySelector(`.nav-pill-link[href="#${id}"]`);
                 const dot = document.querySelector(`.snap-dot[data-section="${id}"]`);
                 if (el) {
                     const top = el.offsetTop;
                     const height = el.offsetHeight;
                     if (scrollPos >= top && scrollPos < top + height) {
-                        document.querySelectorAll('.nav-pill-link').forEach(p => p.classList.remove('active'));
                         document.querySelectorAll('.snap-dot').forEach(d => d.classList.remove('active'));
-                        if (pill) pill.classList.add('active');
                         if (dot) dot.classList.add('active');
+
+                        // Highlight corresponding top navbar item
+                        document.querySelectorAll('#eliteNav .nav-center a').forEach(a => a.classList.remove('active'));
+                        const navTarget = (id === 'dorms') ? 'condos' : id;
+                        const topLink = document.querySelector(`#eliteNav .nav-center a[href="#${navTarget}"]`);
+                        if (topLink) topLink.classList.add('active');
                     }
                 }
             });
