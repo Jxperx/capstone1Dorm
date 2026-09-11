@@ -957,58 +957,125 @@
         }
 
         /* ══════════════════════════════════════
-           INQUIRE SECTION & FORM
+           INQUIRE TODAY — 50/50 SPLIT
         ══════════════════════════════════════ */
-        .inquire-section {
-            scroll-margin-top: 120px;
-        }
-
-        .inquire-layout {
+        .inquire {
             display: grid;
-            grid-template-columns: 1fr; grid-template-rows: auto 1fr;
-            gap: 40px;
-            align-items: start;
-        }
-
-        @media (max-width: 900px) {
-            .inquire-layout { grid-template-columns: 1fr; }
-        }
-
-        .inquire-visual-panel {
-            position: relative;
+            grid-template-columns: 1fr 1fr;
             border-radius: var(--radius-xl);
             overflow: hidden;
             border: 1px solid var(--glass-border);
-            height: 100%;
-            min-height: 480px;
-            background: #16171a;
+            background: var(--glass-card);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            scroll-margin-top: 136px;
+            width: 100%;
         }
 
-        .inquire-visual-img {
-            position: absolute;
-            inset: 0;
+        /* Left — luxury photo */
+        .inquire-photo {
+            position: relative;
+            overflow: hidden;
+            background: #101114;
+            min-height: 540px;
+        }
+
+        .inquire-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: brightness(0.7);
+            display: block;
+            transition: transform 0.9s ease;
         }
 
-        .inquire-visual-content {
+        .inquire-photo:hover img { transform: scale(1.04); }
+
+        .inquire-photo-overlay {
             position: absolute;
             inset: 0;
-            z-index: 10;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            background: linear-gradient(to top, rgba(13, 14, 16, 0.95) 0%, rgba(13, 14, 16, 0.3) 100%);
+            background: linear-gradient(135deg, rgba(13, 14, 16, 0.6) 0%, rgba(13, 14, 16, 0.15) 100%);
         }
 
-        .inquire-form-card {
-            background: var(--glass-card);
+        .inquire-photo-badge {
+            position: absolute;
+            top: 36px; left: 36px;
+            background: rgba(22, 23, 26, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            padding: clamp(24px, 4vw, 40px);
+            border-radius: var(--radius-sm);
+            padding: 14px 22px;
+        }
+
+        .inquire-photo-badge .badge-label {
+            font-size: 10px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .inquire-photo-badge .badge-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        /* Right — form side */
+        .inquire-form-side {
+            background: rgba(22, 23, 26, 0.65);
+            padding: clamp(32px, 4vw, 56px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .inquire-eyebrow {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inquire-eyebrow::before {
+            content: '';
+            width: 24px; height: 1px;
+            background: var(--gold);
+            opacity: 0.6;
+        }
+
+        .inquire-title {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: clamp(28px, 3.2vw, 42px);
+            font-weight: 400;
+            color: var(--white);
+            line-height: 1.15;
+            margin-bottom: 10px;
+        }
+
+        .inquire-title em { font-style: italic; color: var(--gold); }
+
+        .inquire-sub {
+            font-size: 13px;
+            color: var(--stone);
+            font-weight: 300;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        /* Form inputs */
+        .inquire-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .form-row {
@@ -1022,21 +1089,22 @@
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 4px;
         }
 
         .form-group label {
             display: block;
-            font-size: 11px;
+            font-size: 10px;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: var(--stone);
+            color: var(--gold);
             margin-bottom: 6px;
+            font-weight: 600;
         }
 
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            background: rgba(13, 14, 16, 0.8);
+            background: rgba(13, 14, 16, 0.85);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-md);
             padding: 12px 16px;
@@ -1059,28 +1127,34 @@
 
         /* ID Document Upload Cards */
         .id-upload-card {
-            border: 1px dashed rgba(197, 160, 89, 0.3);
+            border: 1px dashed rgba(197, 160, 89, 0.35);
             border-radius: var(--radius-md);
-            background: rgba(197, 160, 89, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             overflow: hidden;
-            transition: all var(--transition);
+            transition: border-color var(--transition);
         }
-
         .id-upload-card:hover {
             border-color: var(--gold);
-            background: rgba(197, 160, 89, 0.06);
         }
 
         .id-upload-placeholder {
-            padding: 18px;
-            text-align: center;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
             cursor: pointer;
         }
 
         .id-upload-icon {
-            font-size: 18px;
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            background: rgba(197, 160, 89, 0.1);
             color: var(--gold);
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
         }
 
         .id-upload-label {
@@ -1092,41 +1166,40 @@
         .id-upload-hint {
             font-size: 10px;
             color: var(--stone);
-            margin-top: 2px;
         }
 
         .id-upload-preview {
+            padding: 12px 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
-            background: rgba(13, 14, 16, 0.9);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .id-upload-preview img {
-            width: 50px;
-            height: 38px;
+            width: 48px;
+            height: 36px;
             object-fit: cover;
-            border-radius: var(--radius-sm);
+            border-radius: 4px;
             border: 1px solid var(--glass-border);
         }
 
         .id-upload-filename {
+            flex: 1;
             font-size: 11px;
-            color: var(--white);
-            flex-grow: 1;
+            color: var(--stone);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .id-remove-btn {
-            background: rgba(231, 76, 60, 0.15);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            color: #e74c3c;
-            width: 26px;
-            height: 26px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            color: var(--stone);
             border-radius: 50%;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1138,8 +1211,62 @@
         .id-remove-btn:hover {
             background: #e74c3c;
             color: var(--white);
+            border-color: #e74c3c;
         }
 
+        .cta-inquire {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 32px;
+            background: var(--gold);
+            color: var(--obsidian);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 8px;
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .cta-inquire:hover {
+            background: var(--gold-light);
+            box-shadow: 0 12px 32px var(--gold-glow);
+            transform: translateY(-2px);
+        }
+
+        .form-note {
+            text-align: center;
+            font-size: 11px;
+            color: var(--stone);
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        @media (max-width: 960px) {
+            .inquire {
+                grid-template-columns: 1fr;
+            }
+            .inquire-photo {
+                min-height: 320px;
+            }
+            .inquire-form-side {
+                border-left: none;
+                border-top: 1px solid var(--glass-border);
+                padding: 32px 20px;
+            }
+        }
+        
         /* ══════════════════════════════════════
            LOCATION & MAPS
         ══════════════════════════════════════ */
@@ -1418,40 +1545,31 @@
                 </div>
             </section>
 
-<!-- ── SECTION: INQUIRE TODAY FORM ── -->
-            <section class="inquire-section snap-section" id="inquire">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Book a Viewing</span>
-                    <h2 class="section-title">Inquire <em>Today</em></h2>
-                    <p class="section-desc">Our property concierge will reach out within 24 hours to schedule your private tour and discuss your requirements.</p>
+<!-- ── SECTION: INQUIRE TODAY — 50/50 SPLIT ── -->
+            <section class="inquire snap-section reveal" id="inquire">
+
+                <!-- Left: Luxury Photo -->
+                <div class="inquire-photo">
+                    <img src="luxury-interior.png"
+                         alt="EliteStay Luxury Interior"
+                         onerror="this.src='https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80'">
+                    <div class="inquire-photo-overlay"></div>
+                    <div class="inquire-photo-badge">
+                        <span class="badge-label">Now Available</span>
+                        <span class="badge-value">Condos &amp; Dorms</span>
+                    </div>
                 </div>
 
-                <div class="inquire-layout reveal">
-                    <!-- Visual Side -->
-                    <div class="inquire-visual-panel">
-                        <img src="luxury-interior.png"
-                             alt="EliteStay Suite"
-                             class="inquire-visual-img"
-                             onerror="this.src='https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80'">
-                        <div class="inquire-visual-content">
-                            <div class="pill-badge" style="align-self: flex-start;">
-                                Now Available &bull; Condos &amp; Dorms
-                            </div>
-                            <div>
-                                <div class="eyebrow" style="margin-bottom: 6px;">Book a Viewing</div>
-                                <h3 class="serif-display" style="font-size: 2.2rem; color: var(--white); line-height: 1.2; margin-bottom: 10px;">
-                                    Inquire <em>Today</em>
-                                </h3>
-                                <p style="font-size: 12px; color: var(--stone); font-weight: 300;">
-                                    Priority room allocation is assigned based on submission timestamp. Early applicants receive preferred floor and corner unit choices.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Right: Form -->
+                <div class="inquire-form-side">
+                    <div class="inquire-eyebrow">Book a Viewing</div>
+                    <h2 class="inquire-title">Inquire <em>Today</em></h2>
+                    <p class="inquire-sub">
+                        Our property concierge will reach out within 24 hours to schedule your private tour and discuss your requirements.
+                    </p>
 
-                    <!-- Form Side -->
-                    <div class="inquire-form-card">
-                        <form id="inquiryForm" onsubmit="handleInquiry(event)">
+                    <!-- Form -->
+                    <form class="inquire-form" id="inquiryForm" onsubmit="handleInquiry(event)">
                             <!-- Honeypot anti-bot field (hidden from real users) -->
                             <input type="text" name="hp_field" id="hp_field"
                                    style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;"
@@ -1561,16 +1679,15 @@
                             </button>
                         </form>
 
-                        <!-- Success message box -->
-                        <div id="formSuccess" style="display:none; text-align:center; padding:40px 20px;">
-                            <div style="width:48px; height:48px; border-radius:50%; background:rgba(197,160,89,0.15); border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px;">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <h3 class="serif-display" style="font-size:2rem; color:var(--white); margin-bottom:8px;">Inquiry Received</h3>
-                            <p style="font-size:12px; color:var(--stone); line-height:1.6; max-width:360px; margin:0 auto;">
-                                Thank you for your interest in EliteStay. Our admissions concierge will contact you via email and phone within 24 hours.
-                            </p>
+                    <!-- Success message box -->
+                    <div class="form-success" id="formSuccess" style="display:none; text-align:center; padding:40px 20px;">
+                        <div style="width:48px; height:48px; border-radius:50%; background:rgba(197,160,89,0.15); border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px;">
+                            <i class="fas fa-check"></i>
                         </div>
+                        <h3 class="serif-display" style="font-size:2rem; color:var(--white); margin-bottom:8px;">Inquiry Received</h3>
+                        <p style="font-size:12px; color:var(--stone); line-height:1.6; max-width:360px; margin:0 auto;">
+                            Thank you for your interest in EliteStay. Our admissions concierge will contact you via email and phone within 24 hours.
+                        </p>
                     </div>
                 </div>
             </section>
