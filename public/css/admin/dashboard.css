@@ -447,38 +447,14 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     border-radius: 20px 20px 0 0 !important;
 }
 
-/* Overview Metric Cards Styling */
-.card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
-    background: var(--white) !important;
-    border: 1px solid rgba(197, 160, 89, 0.15) !important;
-    border-top: 4px solid var(--accent) !important;
-    border-radius: 20px !important;
+/* Metric Stat Cards - Left Border Minimalist Design (Matching AI Rent Optimization) */
+.card[style*="border-left"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card.bg-success { border-top-color: #2ecc71 !important; }
-.card.bg-info { border-top-color: #3498db !important; }
-.card.bg-warning { border-top-color: #c5a059 !important; }
-.card.bg-danger { border-top-color: #e74c3c !important; }
-
-.card.bg-success .card-body, .card.bg-info .card-body, .card.bg-warning .card-body, .card.bg-danger .card-body {
-    color: var(--primary);
-    padding: 1.5rem;
-}
-
-.card.bg-success .card-title, .card.bg-info .card-title, .card.bg-warning .card-title, .card.bg-danger .card-title {
-    color: var(--gray);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-family: 'Poppins', sans-serif;
-}
-
-.card.bg-success .display-6, .card.bg-info .display-6, .card.bg-warning .display-6, .card.bg-danger .display-6 {
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    color: var(--primary);
-    margin-top: 0.2rem;
+.card[style*="border-left"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Luxury Buttons */
