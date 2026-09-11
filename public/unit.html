@@ -1490,10 +1490,10 @@
                     </div>
                 </div>
 
-                <!-- Photos View -->
+                <!-- Photos View (Strictly 5 pictures) -->
                 <div id="mediaPhotosView">
                     <div class="gallery-main" id="mainGalleryContainer">
-                        <img id="heroImage" src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1350&q=80" alt="Main View">
+                        <img id="heroImage" src="/images/gallery/bedroom.jpg" alt="Unit Photo" onerror="this.src='/images/gallery/bedroom.jpg'">
                     </div>
                     <div class="gallery-thumbs" id="galleryThumbs">
                         <!-- Populated dynamically by JS -->
@@ -1507,14 +1507,6 @@
                         <div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
                             <i class="fas fa-map-marked-alt fa-3x"></i>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Optional Video Walkthrough -->
-                <div id="unitVideoContainer" style="display:none; margin-top:24px;">
-                    <span class="media-label-v2"><i class="fas fa-video" style="margin-right:6px;"></i> Cinematic Video Walkthrough</span>
-                    <div style="border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--glass-border); background:#000;">
-                        <video id="unitVideoPlayer" controls playsinline style="width:100%; max-height:420px; display:block;"></video>
                     </div>
                 </div>
             </div>

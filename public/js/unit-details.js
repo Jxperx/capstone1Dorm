@@ -58,16 +58,27 @@ async function loadUnitDetails() {
         document.getElementById('infoCapacity').textContent = room.capacity;
         document.getElementById('infoRate').textContent = room.monthly_rate;
 
-        const dbGallery = (data.gallery || []).map(g => g.image_url);
+        const dbGallery = (data.gallery || []).map(g => g.image_url).filter(Boolean);
+        const standardGallery = [
+            '/images/gallery/bedroom.jpg',
+            '/images/gallery/kitchen.jpg',
+            '/images/gallery/bath.jpg',
+            '/images/gallery/hallway.jpg',
+            '/images/gallery/exterior.jpg'
+        ];
 
-        // Gallery Main Setup
+        // Gallery Main Setup — strictly 5 valid pictures
         const mainImg = document.getElementById('heroImage');
-        const defaultImg = '/images/gallery/bedroom.jpg';
-        const initialImg = dbGallery[0] || media.image_url || defaultImg;
-        mainImg.src = initialImg;
+        const galleryList = dbGallery.length >= 5 ? dbGallery.slice(0, 5) : standardGallery;
+        const initialImg = galleryList[0];
+        if (mainImg) {
+            mainImg.src = initialImg;
+            mainImg.alt = 'Unit Photo';
+            mainImg.onerror = function() { this.src = standardGallery[0]; };
+        }
 
-        // Initialize Thumbnails
-        initGalleryThumbnails(initialImg, dbGallery);
+        // Initialize Thumbnails (strictly 5 pictures)
+        initGalleryThumbnails(galleryList);
 
         // Fallback map embeds per property type
         const FALLBACK_MAPS = {
@@ -110,18 +121,6 @@ async function loadUnitDetails() {
             mapEl.innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-direction:column; gap:10px;"><i class="fas fa-map-marked-alt fa-3x"></i><span>Map Not Available</span></div>';
         }
 
-        // Walkthrough Video from property_media
-        const videoWrap = document.getElementById('unitVideoContainer');
-        const videoPlayer = document.getElementById('unitVideoPlayer');
-        if (videoWrap && videoPlayer) {
-            if (media.video_url) {
-                videoPlayer.src = media.video_url;
-                videoWrap.style.display = 'block';
-            } else {
-                videoWrap.style.display = 'none';
-            }
-        }
-
         // Fetch visit availability then initialize calendar
         const visitData = await fetchVisitAvailability(roomId);
         initCalendar(isOccupied, data.leases || [], visitData);
@@ -142,13 +141,11 @@ async function fetchVisitAvailability(roomId) {
     }
 }
 
-function initGalleryThumbnails(mainUrl, dbGallery = []) {
+function initGalleryThumbnails(images = []) {
     const thumbContainer = document.getElementById('galleryThumbs');
     if (!thumbContainer) return;
 
-    // Use DB gallery if present, otherwise fallback to local sample images
-    let images = dbGallery.length > 0 ? dbGallery : [
-        mainUrl,
+    const standardGallery = [
         '/images/gallery/bedroom.jpg',
         '/images/gallery/kitchen.jpg',
         '/images/gallery/bath.jpg',
@@ -156,20 +153,19 @@ function initGalleryThumbnails(mainUrl, dbGallery = []) {
         '/images/gallery/exterior.jpg'
     ];
 
-    images = images.filter(url => url && !url.includes('unsplash.com'));
-
-    // De-duplicate
-    const uniqueImages = [...new Set(images)];
+    let list = Array.isArray(images) && images.length > 0 ? images : standardGallery;
+    list = list.filter(url => url && !url.includes('unsplash.com'));
+    if (list.length === 0) list = standardGallery;
+    list = list.slice(0, 5); // Strictly 5 pictures
 
     thumbContainer.innerHTML = '';
-    uniqueImages.forEach((url, index) => {
+    list.forEach((url, index) => {
         const thumb = document.createElement('div');
         thumb.className = `thumb-item ${index === 0 ? 'active' : ''}`;
-        thumb.innerHTML = `<img src="${url}" alt="Unit View">`;
+        thumb.innerHTML = `<img src="${url}" alt="Unit Photo ${index + 1}" onerror="this.src='${standardGallery[index % standardGallery.length]}'">`;
         thumb.onclick = () => {
-            // Update main image
-            document.getElementById('heroImage').src = url;
-            // Update active state
+            const mainImg = document.getElementById('heroImage');
+            if (mainImg) mainImg.src = url;
             document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
             thumb.classList.add('active');
         };
