@@ -45,43 +45,56 @@
         ══════════════════════════════════════ */
         html {
             scroll-behavior: smooth;
-            scroll-snap-type: y mandatory;
-            scroll-padding-top: 74px;
+            scroll-snap-type: y proximity;
+            scroll-padding-top: 136px;
         }
 
         /* Snap Section Base */
         .snap-section {
             scroll-snap-align: start;
             scroll-snap-stop: normal;
-            min-height: calc(100vh - 74px);
+            min-height: calc(100vh - 136px);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             box-sizing: border-box;
             position: relative;
-            padding: clamp(24px, 4vh, 48px) 0;
+            padding: clamp(24px, 4vh, 44px) 0;
         }
 
         /* Section Specific Snap Offsets */
-        #tour.snap-section {
+        #hero.snap-section {
             scroll-margin-top: 74px;
+            scroll-snap-align: start;
             min-height: calc(100vh - 74px);
+            display: flex;
+            align-items: center;
             justify-content: center;
+            padding: clamp(20px, 3vh, 40px) 24px;
+            max-width: 1640px;
+            width: 94%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        @media (max-height: 760px) {
+            #hero.snap-section {
+                align-items: flex-start;
+                padding-top: 24px;
+            }
         }
 
         #tour.snap-section,
         #condos.snap-section,
         #dorms.snap-section,
-        #inquire.snap-section {
+        #inquire.snap-section,
+        #location.snap-section {
             scroll-margin-top: 136px;
+            scroll-snap-align: start;
             min-height: calc(100vh - 136px);
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         #location.snap-section {
-            scroll-margin-top: 136px;
-            min-height: calc(100vh - 136px);
-            justify-content: flex-start;
             padding: clamp(32px, 5vh, 60px) 0 0 0;
         }
 
@@ -565,7 +578,7 @@
            SHOWCASE SECTIONS (CONDOS & DORMS)
         ══════════════════════════════════════ */
         .showcase-block {
-            scroll-margin-top: 120px;
+            scroll-margin-top: 136px;
         }
 
         .section-header {
@@ -1033,10 +1046,10 @@
         /* Right — form side */
         .inquire-form-side {
             background: rgba(22, 23, 26, 0.65);
-            padding: clamp(32px, 4vw, 56px);
+            padding: clamp(24px, 3vw, 40px);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             border-left: 1px solid var(--glass-border);
         }
 
@@ -1654,14 +1667,14 @@
         #tour.snap-section {
             scroll-margin-top: 136px;
             min-height: calc(100vh - 136px);
-            justify-content: center;
-            padding: clamp(20px, 3vh, 40px) 0;
+            justify-content: flex-start;
+            padding: clamp(16px, 2.5vh, 32px) 0;
             width: 100%;
             margin: 0 auto;
         }
 
         .expanded-tour-window {
-            height: clamp(480px, 64vh, 720px) !important;
+            height: clamp(360px, 50vh, 560px) !important;
         }
 
     </style>
