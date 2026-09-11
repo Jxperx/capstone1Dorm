@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/admin/dashboard.css?v=2.2">
+    <link rel="stylesheet" href="css/admin/dashboard.css?v=2.3">
     <link rel="stylesheet" href="css/admin/fraud.css">
     <link rel="stylesheet" href="css/admin/inquiries.css">
     <link rel="stylesheet" href="css/admin/reports.css?v=2.0">
@@ -145,37 +145,45 @@
                 <!-- SECTION: Dashboard Overview -->
                 <div id="section-dashboard" class="content-section active">
                     <!-- Quick Stats -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="card text-white bg-success mb-3 shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">Total Revenue</h5>
-                                    <p class="card-text display-6" id="totalRevenue">$0</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #10b981 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Total Revenue</span>
+                                    <i class="fas fa-coins text-success"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="totalRevenue">$0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Collected this period</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card text-white bg-info mb-3 shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">Occupancy</h5>
-                                    <p class="card-text display-6" id="occupancy">0/0</p>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Occupancy</span>
+                                    <i class="fas fa-bed text-primary"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="occupancy">0/0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Current active leases</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card text-white bg-warning mb-3 shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">Pending Payments</h5>
-                                    <p class="card-text display-6" id="pendingCount">0</p>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Pending Payments</span>
+                                    <i class="fas fa-receipt text-warning"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="pendingCount">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Awaiting settlement</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card text-white bg-danger mb-3 shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">Open Issues</h5>
-                                    <p class="card-text display-6" id="openIssues">0</p>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Open Issues</span>
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="openIssues">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Requires attention</div>
                             </div>
                         </div>
                     </div>
@@ -254,73 +262,53 @@
                     <!-- Inventory Metric Ribbon -->
                     <div class="row g-3 mb-4" id="roomInventoryMetrics">
                         <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.8;">Total Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.1);">
-                                        <i class="fas fa-cubes text-info fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #1e293b !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Total Units</span>
+                                    <i class="fas fa-cubes text-secondary"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricUnitsSub">Dorms &amp; Condos</div>
+                                <div class="fs-4 fw-bold text-dark" id="metricTotalUnits">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="metricUnitsSub">Dorms &amp; Condos</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #065f46, #047857); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Available Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricAvailableUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-door-open text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #10b981 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Available Units</span>
+                                    <i class="fas fa-door-open text-success"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricAvailableSub">With open capacity</div>
+                                <div class="fs-4 fw-bold text-dark" id="metricAvailableUnits">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="metricAvailableSub">With open capacity</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #991b1b, #b91c1c); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupied Units</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupiedUnits">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-door-closed text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Occupied Units</span>
+                                    <i class="fas fa-door-closed text-danger"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricOccupiedSub">Full occupancy</div>
+                                <div class="fs-4 fw-bold text-dark" id="metricOccupiedUnits">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="metricOccupiedSub">Full occupancy</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Total Residents</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricTotalResidents">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-users text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Total Residents</span>
+                                    <i class="fas fa-users text-primary"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricResidentsSub">Across all units</div>
+                                <div class="fs-4 fw-bold text-dark" id="metricTotalResidents">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="metricResidentsSub">Across all units</div>
                             </div>
                         </div>
                         <div class="col-12 col-lg">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #854d0e, #ca8a04); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Occupancy Rate</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="metricOccupancyRate">0%</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-chart-pie text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Occupancy Rate</span>
+                                    <i class="fas fa-chart-pie text-warning"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;" id="metricRateSub">Capacity utilization</div>
+                                <div class="fs-4 fw-bold text-dark" id="metricOccupancyRate">0%</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="metricRateSub">Capacity utilization</div>
                             </div>
                         </div>
                     </div>
@@ -421,62 +409,46 @@
                         </button>
                     </div>
 
-                    <!-- Metric Ribbon (Matching Room Management) -->
+                    <!-- Metric Ribbon (Matching AI Rent Optimization) -->
                     <div class="row g-3 mb-4" id="maintenanceStats">
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #854d0e, #ca8a04); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Pending Triage</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-pending">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-clock text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Pending Triage</span>
+                                    <i class="fas fa-clock text-warning"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Awaiting response</div>
+                                <div class="fs-4 fw-bold text-dark" id="maint-stat-pending">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Awaiting response</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #991b1b, #b91c1c); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Emergency &amp; High</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-critical">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-exclamation-triangle text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Emergency &amp; High</span>
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Immediate attention</div>
+                                <div class="fs-4 fw-bold text-dark" id="maint-stat-critical">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Immediate attention</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">In Progress</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-progress">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-tools text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">In Progress</span>
+                                    <i class="fas fa-tools text-primary"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Active repairs</div>
+                                <div class="fs-4 fw-bold text-dark" id="maint-stat-progress">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Active repairs</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #4c1d95, #6d28d9); color: #fff;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; opacity: 0.85;">Overdue</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="maint-stat-overdue">0</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15);">
-                                        <i class="fas fa-calendar-times text-white fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #6f42c1 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Overdue</span>
+                                    <i class="fas fa-calendar-times" style="color:#6f42c1;"></i>
                                 </div>
-                                <div class="small text-white-50 mt-2" style="font-size: 0.75rem;">Past target window</div>
+                                <div class="fs-4 fw-bold text-dark" id="maint-stat-overdue">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Past target window</div>
                             </div>
                         </div>
                     </div>
@@ -649,70 +621,54 @@
                         </button>
                     </div>
 
-                    <!-- 4-Card Luxury Metric Ribbon (Room Management Design) -->
+                    <!-- 4-Card Luxury Metric Ribbon (Matching AI Rent Optimization) -->
                     <div class="row g-3 mb-4">
                         <!-- Metric 1: Dorm Health Score -->
                         <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #10b981 !important;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">DORM HEALTH INDEX</span>
-                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;"><span id="feedbackHealthScore">--</span><small class="fs-6 text-muted">/100</small></h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #047857;" id="feedbackHealthCaption">High Resident Satisfaction</div>
-                                        <div class="small text-muted mt-1" style="font-size: 0.72rem;" id="feedbackResolutionSla">Avg Resolution: -- hrs</div>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.15);">
-                                        <i class="fas fa-heartbeat" style="color: #10b981; font-size: 1.25rem;"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #10b981 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Dorm Health Index</span>
+                                    <i class="fas fa-heartbeat text-success"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark"><span id="feedbackHealthScore">--</span><small class="fs-6 text-muted">/100</small></div>
+                                <div class="small text-success fw-semibold" style="font-size:0.75rem;" id="feedbackHealthCaption">High Resident Satisfaction</div>
+                                <div class="small text-muted mt-1" style="font-size:0.72rem;" id="feedbackResolutionSla">Avg Resolution: -- hrs</div>
                             </div>
                         </div>
 
                         <!-- Metric 2: Net Positive Sentiment -->
                         <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0284c7 !important;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">POSITIVE SENTIMENT</span>
-                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackPositiveRate">--%</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #0369a1;" id="feedbackNetRatio">-- Pos / -- Action Required</div>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(2, 132, 199, 0.15);">
-                                        <i class="fas fa-smile" style="color: #0284c7; font-size: 1.25rem;"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Positive Sentiment</span>
+                                    <i class="fas fa-smile text-primary"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="feedbackPositiveRate">--%</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="feedbackNetRatio">-- Pos / -- Action Required</div>
                             </div>
                         </div>
 
                         <!-- Metric 3: Active AI Alerts -->
                         <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 4px solid #f59e0b !important;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">ACTIVE TREND ALERTS</span>
-                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackActiveAlertsCount">0</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #b45309;" id="feedbackActiveAlertsCaption">Correlated Patterns</div>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.15);">
-                                        <i class="fas fa-chart-line" style="color: #f59e0b; font-size: 1.25rem;"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Active Trend Alerts</span>
+                                    <i class="fas fa-chart-line text-warning"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="feedbackActiveAlertsCount">0</div>
+                                <div class="small text-muted" style="font-size:0.75rem;" id="feedbackActiveAlertsCaption">Correlated Patterns</div>
                             </div>
                         </div>
 
                         <!-- Metric 4: Tenants At-Risk (Churn Radar) -->
                         <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 4px solid #ef4444 !important;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <span class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.8px;">CHURN RADAR</span>
-                                        <h3 class="fw-bold my-1" style="font-size: 1.6rem; color: #1a1a2e;" id="feedbackChurnCount">0 Flagged</h3>
-                                        <div class="small" style="font-size: 0.75rem; color: #b91c1c;">Move-Out Risk Alert</div>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(239, 68, 68, 0.15);">
-                                        <i class="fas fa-user-shield" style="color: #ef4444; font-size: 1.25rem;"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Churn Radar</span>
+                                    <i class="fas fa-user-shield text-danger"></i>
                                 </div>
+                                <div class="fs-4 fw-bold text-dark" id="feedbackChurnCount">0 Flagged</div>
+                                <div class="small text-danger fw-semibold" style="font-size:0.75rem;">Move-Out Risk Alert</div>
                             </div>
                         </div>
                     </div>
@@ -861,62 +817,46 @@
                         </div>
                     </div>
 
-                    <!-- Metric Ribbon (Clean White Cards with Top Accent Stripes) -->
+                    <!-- Metric Ribbon (Matching AI Rent Optimization) -->
                     <div class="row g-3 mb-4" id="fraudStats">
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #3b82f6 !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Total Analyzed</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="fd-total" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-                                        <i class="fas fa-shield-alt fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Total Analyzed</span>
+                                    <i class="fas fa-shield-alt text-primary"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Transactions processed</div>
+                                <div class="fs-4 fw-bold text-dark" id="fd-total">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Transactions processed</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #e74c3c !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">High-Risk Flagged</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="fd-flagged" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(231, 76, 60, 0.1); color: #e74c3c;">
-                                        <i class="fas fa-exclamation-triangle fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">High-Risk Flagged</span>
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">High &amp; critical risks</div>
+                                <div class="fs-4 fw-bold text-dark" id="fd-flagged">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">High &amp; critical risks</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #7c3aed !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Blocked</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="fd-blocked" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
-                                        <i class="fas fa-ban fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #6f42c1 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Blocked</span>
+                                    <i class="fas fa-ban" style="color:#6f42c1;"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Suspicious attempts prevented</div>
+                                <div class="fs-4 fw-bold text-dark" id="fd-blocked">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Suspicious attempts prevented</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #c5a059 !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Pending Review</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="fd-review" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(197, 160, 89, 0.12); color: #c5a059;">
-                                        <i class="fas fa-clock fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Pending Review</span>
+                                    <i class="fas fa-clock text-warning"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Awaiting administrator decision</div>
+                                <div class="fs-4 fw-bold text-dark" id="fd-review">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Awaiting administrator decision</div>
                             </div>
                         </div>
                     </div>
@@ -1062,62 +1002,46 @@
                         </div>
                     </div>
 
-                    <!-- Metric Ribbon (Clean White Cards with Top Accent Stripes) -->
+                    <!-- Metric Ribbon (Matching AI Rent Optimization) -->
                     <div class="row g-3 mb-4" id="inqStats">
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #3b82f6 !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Total Inquiries</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="inq-total" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-                                        <i class="fas fa-envelope-open-text fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Total Inquiries</span>
+                                    <i class="fas fa-envelope-open-text text-primary"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">All received inquiries</div>
+                                <div class="fs-4 fw-bold text-dark" id="inq-total">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">All received inquiries</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #10b981 !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Approved Prospects</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="inq-approved" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                                        <i class="fas fa-check-circle fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #10b981 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Approved Prospects</span>
+                                    <i class="fas fa-check-circle text-success"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Verified applicants</div>
+                                <div class="fs-4 fw-bold text-dark" id="inq-approved">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Verified applicants</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #c5a059 !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">Pending Review</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="inq-pending" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(197, 160, 89, 0.12); color: #c5a059;">
-                                        <i class="fas fa-clock fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #c5a059 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Pending Review</span>
+                                    <i class="fas fa-clock text-warning"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Awaiting qualification</div>
+                                <div class="fs-4 fw-bold text-dark" id="inq-pending">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Awaiting qualification</div>
                             </div>
                         </div>
                         <div class="col-6 col-lg-3">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-white" style="border: 1px solid rgba(197, 160, 89, 0.15) !important; border-top: 4px solid #e74c3c !important; border-radius: 20px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.8px; color: #64748b; font-family: 'Poppins', sans-serif;">AI Flagged (Spam)</div>
-                                        <h3 class="fw-bold mb-0 mt-1" id="inq-flagged" style="font-family: 'Playfair Display', serif; color: #1a1a2e; font-size: 1.85rem;">—</h3>
-                                    </div>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(231, 76, 60, 0.1); color: #e74c3c;">
-                                        <i class="fas fa-flag fs-5"></i>
-                                    </div>
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-3" style="background:#fff; border-left: 4px solid #ef4444 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small fw-semibold text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">AI Flagged (Spam)</span>
+                                    <i class="fas fa-flag text-danger"></i>
                                 </div>
-                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">Filtered spam &amp; low trust</div>
+                                <div class="fs-4 fw-bold text-dark" id="inq-flagged">—</div>
+                                <div class="small text-muted" style="font-size:0.75rem;">Filtered spam &amp; low trust</div>
                             </div>
                         </div>
                     </div>
@@ -2729,7 +2653,7 @@
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=3.7"></script>
+    <script src="js/admin/main.js?v=3.8"></script>
 </body>
 </html>
 
