@@ -159,11 +159,6 @@ router.post('/create-account', async (req, res) => {
             setupToken = crypto.randomBytes(32).toString('hex');
             const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
 
-            // Invalidate any previous unused onboarding tokens for this user
-            await pool.request()
-                .input('user_id', sql.Int, userId)
-                .query(`UPDATE password_reset_tokens SET used = true WHERE user_id = @user_id AND token_type = 'tenant_onboarding' AND (used IS NULL OR used = false)`);
-
             await pool.request()
                 .input('user_id', sql.Int, userId)
                 .input('token', sql.NVarChar, setupToken)

@@ -245,8 +245,20 @@ async function prepareAddTenant(preselectedRoomId = null) {
 
 async function submitAddTenant() {
     const form = document.getElementById('addTenantForm');
+    const modalEl = document.getElementById('addTenantModal');
+    const submitBtn = modalEl ? modalEl.querySelector('.modal-footer .btn-primary') : null;
+
+    if (submitBtn && submitBtn.disabled) return;
+
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
+
+    let originalBtnHtml = '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Adding Tenant...';
+    }
 
     try {
         const res = await fetch('/api/admin/tenants/create-account', {
@@ -258,7 +270,7 @@ async function submitAddTenant() {
         const result = await res.json();
         
         if (res.ok) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addTenantModal'));
+            const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
             form.reset();
 
@@ -282,6 +294,11 @@ async function submitAddTenant() {
     } catch (err) {
         console.error('Error adding tenant:', err);
         window.showEnterpriseToast('An error occurred while adding tenant.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
     }
 }
 

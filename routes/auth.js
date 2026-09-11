@@ -503,12 +503,12 @@ router.get(['/verify-setup-token', '/auth/verify-setup-token'], async (req, res)
     try {
         const pool = await poolPromise;
         const result = await pool.request()
-            .input('token', sql.NVarChar, token)
+            .input('token', sql.NVarChar, token.trim())
             .query(`
-                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, u.email, u.full_name
+                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, t.token_type, u.email, u.full_name, u.status
                 FROM password_reset_tokens t
                 JOIN users u ON t.user_id = u.id
-                WHERE t.token = @token AND (t.used IS NULL OR t.used = 0 OR t.used = false)
+                WHERE t.token = @token
             `);
 
         if (result.recordset.length === 0) {
@@ -516,6 +516,13 @@ router.get(['/verify-setup-token', '/auth/verify-setup-token'], async (req, res)
         }
 
         const record = result.recordset[0];
+
+        // If user already activated their account with a password, direct them to login
+        if (record.status === 'active') {
+            return res.status(400).json({ error: 'This account has already been activated. Please log in with your password.' });
+        }
+
+        // Check if token has passed its 48-hour expiration
         if (new Date(record.expires_at) < new Date()) {
             return res.status(400).json({ error: 'This setup link has expired. Please ask your administrator for a new setup link.' });
         }
@@ -544,12 +551,12 @@ router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, r
 
         // Verify Token
         const tokenRes = await pool.request()
-            .input('token', sql.NVarChar, token)
+            .input('token', sql.NVarChar, token.trim())
             .query(`
-                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, u.email, u.full_name, u.role
+                SELECT t.id as token_id, t.user_id, t.expires_at, t.used, t.token_type, u.email, u.full_name, u.role, u.status
                 FROM password_reset_tokens t
                 JOIN users u ON t.user_id = u.id
-                WHERE t.token = @token AND (t.used IS NULL OR t.used = 0 OR t.used = false)
+                WHERE t.token = @token
             `);
 
         if (tokenRes.recordset.length === 0) {
@@ -557,6 +564,11 @@ router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, r
         }
 
         const record = tokenRes.recordset[0];
+
+        if (record.status === 'active') {
+            return res.status(400).json({ error: 'This account has already been activated. Please log in.' });
+        }
+
         if (new Date(record.expires_at) < new Date()) {
             return res.status(400).json({ error: 'Setup link has expired. Please ask your administrator to resend an invite.' });
         }
@@ -569,10 +581,10 @@ router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, r
             .input('user_id', sql.Int, record.user_id)
             .query(`UPDATE users SET password_hash = @password_hash, status = 'active' WHERE id = @user_id`);
 
-        // Mark token as used
+        // Mark all onboarding tokens for this user as used
         await pool.request()
-            .input('token_id', sql.Int, record.token_id)
-            .query(`UPDATE password_reset_tokens SET used = true WHERE id = @token_id`);
+            .input('user_id', sql.Int, record.user_id)
+            .query(`UPDATE password_reset_tokens SET used = true WHERE user_id = @user_id AND token_type = 'tenant_onboarding'`);
 
         // Create Tenant Auth Session
         req.session.user = {
@@ -583,16 +595,13 @@ router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, r
         };
 
         req.session.save((err) => {
-            if (err) {
-                logger.error('[Auth] Session save error on set-tenant-password:', err);
-            }
-            res.json({
+            if (err) logger.error('[Auth] Session Save Error (Tenant Onboard):', err);
+            return res.json({
                 success: true,
-                message: 'Password created successfully! Welcome to your Tenant Portal.',
+                message: 'Password set successfully! Logging you into the Tenant Portal...',
                 redirectUrl: '/tenant-dashboard.html'
             });
         });
-
     } catch (err) {
         logger.error('[Auth] set-tenant-password error:', err.message);
         res.status(500).json({ error: 'Server error setting password.' });
@@ -600,3 +609,4 @@ router.post(['/set-tenant-password', '/auth/set-tenant-password'], async (req, r
 });
 
 module.exports = router;
+
