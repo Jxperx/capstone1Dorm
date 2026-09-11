@@ -99,7 +99,13 @@
         }
 
         #location.snap-section {
-            padding: clamp(14px, 2.2vh, 24px) 0 0 0;
+            scroll-margin-top: 74px;
+            min-height: calc(100vh - 74px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: clamp(20px, 3vh, 36px) 0 clamp(16px, 2vh, 24px) 0;
+            box-sizing: border-box;
         }
 
         /* Floating Right Navigation Dots */
@@ -519,7 +525,7 @@
 
         .section-title {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-size: clamp(2.2rem, 3.6vw, 3.2rem);
             font-weight: 500;
             color: var(--white);
             margin-top: 4px;
@@ -1230,10 +1236,12 @@
         .location-cards-wrap {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            max-width: 1560px;
+            gap: 28px;
+            max-width: 1640px;
             width: 100%;
             margin: 0 auto;
+            flex-grow: 1;
+            align-items: stretch;
         }
 
         .location-card {
@@ -1242,13 +1250,20 @@
             border-radius: var(--radius-xl);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            height: clamp(260px, 34vh, 320px);
-            min-height: 260px;
+            grid-template-columns: 1fr 1.35fr;
+            height: clamp(420px, 54vh, 580px);
+            min-height: 420px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            transition: border-color var(--transition), transform var(--transition);
+        }
+
+        .location-card:hover {
+            border-color: rgba(197, 160, 89, 0.4);
+            transform: translateY(-2px);
         }
 
         .location-card.reverse {
-            grid-template-columns: 1fr 1.2fr;
+            grid-template-columns: 1fr 1.35fr;
         }
 
         @media (max-width: 960px) {
@@ -1272,17 +1287,17 @@
         }
 
         .location-info-panel {
-            padding: clamp(14px, 2vw, 22px);
+            padding: clamp(24px, 2.6vw, 38px);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 8px;
+            gap: 16px;
         }
 
         .location-map-wrap {
             position: relative;
             height: 100%;
-            min-height: 180px;
+            min-height: 100%;
             background: #141518;
             overflow: hidden;
         }
@@ -1292,10 +1307,10 @@
         ══════════════════════════════════════ */
         footer.editorial-footer {
             border-top: 1px solid var(--glass-border);
-            padding: 14px 20px;
+            padding: 18px 24px;
             max-width: 1640px;
-            width: 94%;
-            margin: 12px auto 0 auto;
+            width: 100%;
+            margin: 16px auto 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -2036,25 +2051,25 @@
                     <div class="location-card">
                         <div class="location-info-panel">
                             <div>
-                                <div class="eyebrow" style="margin-bottom: 6px;"><i class="fas fa-bed"></i> EliteStay Dorm</div>
-                                <h3 class="serif-display" style="font-size: 1.7rem; color: var(--white); line-height: 1.15; margin-bottom: 6px;">
-                                    Dorm A1<br><span style="font-size: 1.05rem; color: var(--stone); font-weight: 300;">Student Accommodation</span>
+                                <div class="eyebrow" style="margin-bottom: 8px;"><i class="fas fa-bed"></i> EliteStay Dorm</div>
+                                <h3 class="serif-display" style="font-size: clamp(2rem, 2.4vw, 2.5rem); color: var(--white); line-height: 1.15; margin-bottom: 8px;">
+                                    Dorm A1<br><span style="font-size: clamp(1.2rem, 1.3vw, 1.35rem); color: var(--stone); font-weight: 300;">Student Accommodation</span>
                                 </h3>
-                                <p style="font-size: 11px; color: var(--stone); line-height: 1.5; font-weight: 300;">
-                                    Conveniently located near major universities — offering premium dorm living with easy access to campus and transport.
+                                <p style="font-size: 13px; color: var(--stone); line-height: 1.65; font-weight: 300;">
+                                    Conveniently located near major universities &mdash; offering premium dorm living with seamless access to campus, transport hubs, and dining.
                                 </p>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px; padding: 12px 0; border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
                                 <div>
-                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
-                                    <span style="color: var(--white);">Turbina, Calamba City, Philippines</span>
+                                    <span style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: block; font-weight: 600; margin-bottom: 3px;">Address</span>
+                                    <span style="color: var(--white); font-size: 13px;">Turbina, Calamba City, Philippines</span>
                                 </div>
                                 <div>
-                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
-                                    <span style="color: var(--white);">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
+                                    <span style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: block; font-weight: 600; margin-bottom: 3px;">Viewing Hours</span>
+                                    <span style="color: var(--white); font-size: 13px;">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
                                 </div>
                             </div>
-                            <a href="#inquire" class="nav-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 10px;">Schedule Viewing</a>
+                            <a href="#inquire" class="nav-btn" style="align-self: flex-start; padding: 10px 22px; font-size: 11px; letter-spacing: 1.5px;">Schedule Viewing</a>
                         </div>
                         <div class="location-map-wrap" id="landingDormMapWrap">
                             <iframe id="landingDormMapIframe"
@@ -2071,25 +2086,25 @@
                     <div class="location-card">
                         <div class="location-info-panel">
                             <div>
-                                <div class="eyebrow" style="margin-bottom: 6px;"><i class="fas fa-building"></i> EliteStay Condo</div>
-                                <h3 class="serif-display" style="font-size: 1.7rem; color: var(--white); line-height: 1.15; margin-bottom: 6px;">
-                                    Condo Units<br><span style="font-size: 1.05rem; color: var(--stone); font-weight: 300;">Luxury Living</span>
+                                <div class="eyebrow" style="margin-bottom: 8px;"><i class="fas fa-building"></i> EliteStay Condo</div>
+                                <h3 class="serif-display" style="font-size: clamp(2rem, 2.4vw, 2.5rem); color: var(--white); line-height: 1.15; margin-bottom: 8px;">
+                                    Condo Units<br><span style="font-size: clamp(1.2rem, 1.3vw, 1.35rem); color: var(--stone); font-weight: 300;">Luxury Living</span>
                                 </h3>
-                                <p style="font-size: 11px; color: var(--stone); line-height: 1.5; font-weight: 300;">
-                                    Premium condo units designed for modern academic living — fully furnished, secure, and beautifully appointed.
+                                <p style="font-size: 13px; color: var(--stone); line-height: 1.65; font-weight: 300;">
+                                    Premium condo units designed for elevated academic living &mdash; fully furnished, 24/7 guarded, and appointed in a prime accessible enclave.
                                 </p>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px; padding: 12px 0; border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
                                 <div>
-                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
-                                    <span style="color: var(--white);">South Blvd, Silang, Calabarzon</span>
+                                    <span style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: block; font-weight: 600; margin-bottom: 3px;">Address</span>
+                                    <span style="color: var(--white); font-size: 13px;">South Blvd, Silang, Calabarzon</span>
                                 </div>
                                 <div>
-                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
-                                    <span style="color: var(--white);">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
+                                    <span style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: block; font-weight: 600; margin-bottom: 3px;">Viewing Hours</span>
+                                    <span style="color: var(--white); font-size: 13px;">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
                                 </div>
                             </div>
-                            <a href="#inquire" class="nav-btn solid" style="align-self: flex-start; padding: 6px 14px; font-size: 10px;">Schedule Viewing</a>
+                            <a href="#inquire" class="nav-btn solid" style="align-self: flex-start; padding: 10px 22px; font-size: 11px; letter-spacing: 1.5px;">Schedule Viewing</a>
                         </div>
                         <div class="location-map-wrap" id="landingCondoMapWrap">
                             <iframe id="landingCondoMapIframe"
