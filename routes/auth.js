@@ -260,16 +260,21 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
 });
 
 // API: Logout
-router.get('/logout', (req, res) => {
+router.all('/logout', (req, res) => {
     // Destroy session fully before redirecting; the callback guarantees the store write completes
-    req.session.destroy((err) => {
-        if (err) {
-            console.error('Session destroy error on logout:', err);
-            // Still redirect — the user cannot use a destroyed-request session anyway
-        }
-        res.clearCookie('connect.sid'); // Belt-and-suspenders: clear the cookie client-side too
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Session destroy error on logout:', err);
+                // Still redirect — the user cannot use a destroyed-request session anyway
+            }
+            res.clearCookie('connect.sid'); // Belt-and-suspenders: clear the cookie client-side too
+            res.redirect('/login');
+        });
+    } else {
+        res.clearCookie('connect.sid');
         res.redirect('/login');
-    });
+    }
 });
 
 // API: Get Current User Info

@@ -233,6 +233,22 @@ app.get('/tenant', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'tenant-dashboard.html'));
 });
 
+// Root Logout Route
+app.all('/logout', (req, res) => {
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                logger.error('Session destroy error on /logout:', err);
+            }
+            res.clearCookie('connect.sid');
+            res.redirect('/login');
+        });
+    } else {
+        res.clearCookie('connect.sid');
+        res.redirect('/login');
+    }
+});
+
 // Health check — used by keep-alive pings, uptime monitors, and load balancers
 // Also warms up the database connection to prevent Azure SQL auto-pause
 app.get('/health', async (req, res) => {
