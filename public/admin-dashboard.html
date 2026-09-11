@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/admin/dashboard.css">
+    <link rel="stylesheet" href="css/admin/dashboard.css?v=2.2">
     <link rel="stylesheet" href="css/admin/fraud.css">
     <link rel="stylesheet" href="css/admin/inquiries.css">
     <link rel="stylesheet" href="css/admin/reports.css?v=2.0">
@@ -24,42 +24,100 @@
 
         <!-- Sidebar -->
         <div class="border-end" id="sidebar-wrapper">
+            <!-- Sidebar Heading -->
             <div class="sidebar-heading border-bottom">
-                ELITESTAY MANAGER
+                <div class="d-flex align-items-center gap-2">
+                    <div class="sidebar-brand-badge">ES</div>
+                    <div>
+                        <div class="sidebar-brand-title">ELITESTAY</div>
+                        <div class="sidebar-brand-sub">LUXURY RESIDENCES</div>
+                    </div>
+                </div>
             </div>
-            <div class="list-group list-group-flush">
-                <a href="#" class="list-group-item list-group-item-action active" onclick="showSection('dashboard', this)">
-                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rooms', this)">
-                    <i class="fas fa-door-open me-2"></i>Room Management
-                </a>
 
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('maintenance', this)">
-                    <i class="fas fa-tools me-2"></i>Maintenance
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('feedback', this)">
-                    <i class="fas fa-comment-alt me-2"></i>Feedback & AI
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('fraud', this); initFraudSection()">
-                    <i class="fas fa-shield-alt me-2"></i>Fraud Detection
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('inquiries', this); initInquirySection()">
-                    <i class="fas fa-envelope-open-text me-2"></i>Inquiries
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('rent-optimization', this); RentPricingModule.init()">
-                    <i class="fas fa-coins me-2" style="color:#c5a059"></i>Rent Optimization
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" onclick="showSection('reports', this); ReportModule.init()">
-                    <i class="fas fa-file-alt me-2" style="color:#c5a059"></i>Reports & Analytics
-                </a>
-                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showSection('live-chat', this); LiveChatAdmin.init()">
-                    <i class="fas fa-comments me-2" style="color:#22c55e"></i>Live Chat
-                    <span id="lc-sidebar-badge" style="display:none;"></span>
-                </a>
-                <div class="mt-4 border-top border-secondary pt-2">
-                    <a href="/logout" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+            <!-- Scrollable Navigation Area -->
+            <div class="sidebar-nav-scroll" id="sidebarNavScroll">
+                <!-- Group 1: Operations -->
+                <div class="sidebar-category-header">OPERATIONS</div>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action active d-flex align-items-center justify-content-between" onclick="showSection('dashboard', this)">
+                        <span><i class="fas fa-tachometer-alt me-2"></i>Dashboard</span>
+                        <span class="sidebar-badge-live">Live</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('rooms', this)">
+                        <span><i class="fas fa-door-open me-2"></i>Room Management</span>
+                        <span class="sidebar-counter-badge" id="sidebarRoomsBadge">Units</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('maintenance', this)">
+                        <span><i class="fas fa-tools me-2"></i>Maintenance</span>
+                        <span class="sidebar-alert-badge" id="sidebarMaintenanceBadge" style="display:none;"></span>
+                    </a>
+                </div>
+
+                <!-- Group 2: AI & Analytics -->
+                <div class="sidebar-category-header mt-2">AI &amp; ANALYTICS</div>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('feedback', this)">
+                        <span><i class="fas fa-comment-alt me-2"></i>Feedback &amp; AI</span>
+                        <span class="sidebar-pill-badge badge-ai">AI</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('fraud', this); initFraudSection()">
+                        <span><i class="fas fa-shield-alt me-2"></i>Fraud Detection</span>
+                        <span class="sidebar-status-dot" title="Fraud Monitoring Active"></span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('rent-optimization', this); RentPricingModule.init()">
+                        <span><i class="fas fa-coins me-2" style="color:#c5a059"></i>Rent Optimization</span>
+                        <span class="sidebar-pill-badge badge-smart">Smart</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('reports', this); ReportModule.init()">
+                        <span><i class="fas fa-file-alt me-2" style="color:#c5a059"></i>Reports &amp; Analytics</span>
+                    </a>
+                </div>
+
+                <!-- Group 3: Relations -->
+                <div class="sidebar-category-header mt-2">RELATIONS</div>
+                <div class="list-group list-group-flush mb-2">
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('inquiries', this); initInquirySection()">
+                        <span><i class="fas fa-envelope-open-text me-2"></i>Inquiries</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" onclick="showSection('live-chat', this); LiveChatAdmin.init()">
+                        <span><i class="fas fa-comments me-2" style="color:#22c55e"></i>Live Chat</span>
+                        <span class="d-flex align-items-center gap-1">
+                            <span class="sidebar-pulse-dot" title="Chat Online"></span>
+                            <span id="lc-sidebar-badge" style="display:none;"></span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pinned Bottom Widget Area -->
+            <div class="sidebar-footer-widget" id="sidebarFooterWidget">
+                <!-- Mini Occupancy Rate Widget -->
+                <div class="sidebar-occupancy-card mb-2 p-2 rounded-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="sidebar-widget-label">Occupancy Rate</span>
+                        <span class="sidebar-widget-value" id="sidebarOccupancyRate">--%</span>
+                    </div>
+                    <div class="sidebar-progress-track">
+                        <div id="sidebarOccupancyBar" class="sidebar-progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-1 text-white-50" style="font-size: 0.65rem;">
+                        <span id="sidebarOccupancyRatio">Live Loading</span>
+                        <span class="text-success fw-medium">Optimal</span>
+                    </div>
+                </div>
+
+                <!-- Admin Profile Card with One-Click Modal & Logout -->
+                <div class="sidebar-user-card p-2 rounded-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2" role="button" onclick="openProfileModal()" title="View and Edit Profile" style="cursor: pointer;">
+                        <img id="sidebarAdminAvatar" src="https://via.placeholder.com/150" class="rounded-circle border" width="30" height="30" style="object-fit: cover; border-color: #c5a059 !important;" onerror="this.src='https://via.placeholder.com/150'">
+                        <div class="text-start" style="line-height: 1.15;">
+                            <span id="sidebarAdminName" class="text-white fw-semibold small d-block" style="font-size: 0.8rem;">Admin</span>
+                            <span class="text-white-50 d-block" style="font-size: 0.68rem;">Administrator</span>
+                        </div>
+                    </div>
+                    <a href="/logout" class="btn-sidebar-logout" title="Sign Out Session">
+                        <i class="fas fa-sign-out-alt"></i>
                     </a>
                 </div>
             </div>
@@ -2655,13 +2713,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- Admin Modules -->
-    <script src="js/admin/modules/stats.js"></script>
+    <script src="js/admin/modules/stats.js?v=1.1"></script>
     <script src="js/admin/modules/rooms.js?v=3.3"></script>
     <script src="js/admin/modules/tenants.js?v=3.3"></script>
     <script src="js/admin/modules/payments.js"></script>
     <script src="js/admin/modules/maintenance.js?v=2.5"></script>
     <script src="js/admin/modules/feedback.js?v=2.9"></script>
-    <script src="js/admin/modules/profile.js?v=2.0"></script>
+    <script src="js/admin/modules/profile.js?v=2.1"></script>
     <script src="js/admin/modules/fraud.js?v=2.0"></script>
     <script src="js/admin/modules/inquiries.js"></script>
     <script src="js/admin/modules/vacancyAnalytics.js?v=3.3"></script>
@@ -2671,7 +2729,7 @@
 
     
     <!-- Main Entry Point -->
-    <script src="js/admin/main.js?v=3.6"></script>
+    <script src="js/admin/main.js?v=3.7"></script>
 </body>
 </html>
 

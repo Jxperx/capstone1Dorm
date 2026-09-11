@@ -10,6 +10,16 @@ function syncTopNavProfile(data) {
     if (avatarEl && data.profile_image_url) {
         avatarEl.src = data.profile_image_url;
     }
+
+    // Also sync sidebar bottom user card
+    const sidebarNameEl = document.getElementById('sidebarAdminName');
+    if (sidebarNameEl && data.full_name) {
+        sidebarNameEl.textContent = data.full_name;
+    }
+    const sidebarAvatarEl = document.getElementById('sidebarAdminAvatar');
+    if (sidebarAvatarEl && data.profile_image_url) {
+        sidebarAvatarEl.src = data.profile_image_url;
+    }
 }
 
 async function loadTopNavProfile() {
