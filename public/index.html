@@ -249,7 +249,7 @@
         section.hero-greensward {
             padding-top: 140px;
             padding-bottom: 60px;
-            max-width: 1280px;
+            max-width: 1640px; width: 94%;
             margin: 0 auto;
             padding-left: 24px;
             padding-right: 24px;
@@ -349,7 +349,7 @@
            STATISTICS RIBBON
         ══════════════════════════════════════ */
         .stats-ribbon {
-            max-width: 1280px;
+            max-width: 1640px; width: 94%;
             margin: 0 auto 60px;
             padding: 0 24px;
         }
@@ -357,8 +357,8 @@
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            padding: 28px;
+            gap: 32px;
+            padding: 36px 40px;
             background: var(--glass-card);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-lg);
@@ -386,86 +386,97 @@
         }
 
         /* ══════════════════════════════════════
-           STICKY EDITORIAL SECTION (GREENSWARD)
+           EXPANSIVE FULL-WIDTH EDITORIAL LAYOUT
         ══════════════════════════════════════ */
-        .editorial-wrapper {
-            max-width: 1280px;
+        .content-container {
+            max-width: 1640px;
+            width: 94%;
             margin: 0 auto;
-            padding: 40px 24px 80px;
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 48px;
-            align-items: start;
+            padding: 0 20px;
         }
 
-        @media (max-width: 1024px) {
-            .editorial-wrapper { grid-template-columns: 1fr; gap: 40px; }
-        }
-
-        .editorial-sidebar {
+        /* Sticky Horizontal Editorial Navigation Ribbon */
+        .editorial-nav-ribbon {
             position: sticky;
-            top: 110px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .sidebar-title {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 2.2rem;
-            font-weight: 500;
-            color: var(--white);
-            line-height: 1.2;
-        }
-
-        .sidebar-desc {
-            font-size: 0.9rem;
-            color: var(--stone);
-            line-height: 1.7;
-            font-weight: 300;
-        }
-
-        .directory-nav {
+            top: 74px;
+            z-index: 800;
+            background: rgba(13, 14, 16, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid var(--glass-border);
-            padding-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 0;
+            margin-bottom: 60px;
+            transition: all var(--transition);
         }
 
-        .directory-item {
+        .editorial-nav-track {
+            max-width: 1640px;
+            width: 94%;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .editorial-nav-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-pill-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 9999px;
             text-decoration: none;
             font-size: 11px;
+            font-weight: 600;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             color: var(--stone);
-            transition: color var(--transition);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            white-space: nowrap;
+            transition: all var(--transition);
+            flex-shrink: 0;
         }
 
-        .directory-item:hover, .directory-item.active {
+        .nav-pill-link:hover {
             color: var(--white);
+            border-color: rgba(197, 160, 89, 0.4);
+            background: rgba(197, 160, 89, 0.08);
         }
 
-        .directory-item .num {
+        .nav-pill-link.active {
+            color: var(--obsidian);
+            background: var(--linen);
+            border-color: var(--linen);
+            font-weight: 700;
+        }
+
+        .nav-pill-link .num {
             color: var(--gold);
-            font-weight: 600;
-            margin-right: 10px;
-        }
-
-        .directory-item .tag {
+            font-weight: 700;
             font-size: 10px;
-            color: var(--stone-dark);
         }
 
-        .editorial-content {
+        .nav-pill-link.active .num {
+            color: var(--obsidian);
+        }
+
+        .editorial-content-stream {
+            max-width: 1640px;
+            width: 94%;
+            margin: 0 auto;
+            padding: 0 20px 80px;
             display: flex;
             flex-direction: column;
-            gap: 80px;
+            gap: 100px;
         }
 
         /* ══════════════════════════════════════
@@ -504,7 +515,7 @@
         /* Dynamic Grid Containers */
         .condo-cards, .dorm-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 32px;
             gap: 28px;
         }
 
@@ -690,7 +701,7 @@
         .tour-window {
             position: relative;
             width: 100%;
-            height: clamp(400px, 50vw, 620px);
+            height: clamp(480px, 55vw, 680px);
             background: #101114;
             border-radius: var(--radius-lg);
             overflow: hidden;
@@ -848,8 +859,14 @@
         ══════════════════════════════════════ */
         .proximity-grid, .trust-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 1200px) {
+            .proximity-grid, .trust-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .proximity-grid, .trust-grid { grid-template-columns: 1fr; }
         }
 
         .feature-card {
@@ -1116,8 +1133,8 @@
             border-radius: var(--radius-xl);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 400px;
+            grid-template-columns: 1.1fr 1.4fr;
+            min-height: 440px;
         }
 
         .location-card.reverse {
@@ -1148,7 +1165,7 @@
         footer.editorial-footer {
             border-top: 1px solid var(--glass-border);
             padding: 48px 24px;
-            max-width: 1280px;
+            max-width: 1640px; width: 94%;
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -1291,69 +1308,23 @@
         </div>
     </div>
 
-    <!-- ══ EDITORIAL MAIN WRAPPER (STICKY DIRECTORY + CONTENT STREAM) ══ -->
-    <div class="editorial-wrapper">
+    <!-- ══ STICKY EDITORIAL NAVIGATION RIBBON (FULL WIDTH EXPANSIVE) ══ -->
+    <div class="editorial-nav-ribbon">
+        <div class="editorial-nav-track">
+            <a href="#condos" class="nav-pill-link active"><span class="num">01</span> Condos</a>
+            <a href="#dorms" class="nav-pill-link"><span class="num">02</span> Dormitories</a>
+            <a href="#floorplans" class="nav-pill-link"><span class="num">03</span> Floor Plans</a>
+            <a href="#tour" class="nav-pill-link"><span class="num">04</span> 360 VR Tour</a>
+            <a href="#proximity" class="nav-pill-link"><span class="num">05</span> Campus Proximity</a>
+            <a href="#trust" class="nav-pill-link"><span class="num">06</span> Safety Standards</a>
+            <a href="#calculator" class="nav-pill-link"><span class="num">07</span> Lease Estimator</a>
+            <a href="#inquire" class="nav-pill-link"><span class="num">08</span> Schedule Tour</a>
+            <a href="#location" class="nav-pill-link"><span class="num">09</span> Property Locations</a>
+        </div>
+    </div>
 
-        <!-- Sticky Left Directory (Greensward Architecture) -->
-        <aside class="editorial-sidebar">
-            <div>
-                <span class="eyebrow" style="margin-bottom: 8px;">The Directory</span>
-                <h2 class="sidebar-title">Residence &amp; Amenity Index</h2>
-            </div>
-
-            <p class="sidebar-desc">
-                Every residential format is carefully proportioned for hygiene, quiet study, and restorative sleep. Utilities, high-speed fiber, and building privileges are completely bundled.
-            </p>
-
-            <nav class="directory-nav">
-                <a href="#condos" class="directory-item active">
-                    <span><span class="num">01</span>Condo Residences</span>
-                    <span class="tag">Studio Suites</span>
-                </a>
-                <a href="#dorms" class="directory-item">
-                    <span><span class="num">02</span>Standard Dormitories</span>
-                    <span class="tag">Shared Pods</span>
-                </a>
-                <a href="#floorplans" class="directory-item">
-                    <span><span class="num">03</span>Architectural Floor Plans</span>
-                    <span class="tag">2D Blueprints</span>
-                </a>
-                <a href="#tour" class="directory-item">
-                    <span><span class="num">04</span>360 Virtual Immersion</span>
-                    <span class="tag">Interactive VR</span>
-                </a>
-                <a href="#proximity" class="directory-item">
-                    <span><span class="num">05</span>Campus Transit Proximity</span>
-                    <span class="tag">Walking Matrix</span>
-                </a>
-                <a href="#trust" class="directory-item">
-                    <span><span class="num">06</span>Safety &amp; Infrastructure</span>
-                    <span class="tag">Power &amp; Security</span>
-                </a>
-                <a href="#calculator" class="directory-item">
-                    <span><span class="num">07</span>Lease Estimator</span>
-                    <span class="tag">Instant Quote</span>
-                </a>
-                <a href="#inquire" class="directory-item">
-                    <span><span class="num">08</span>Direct Inquiry &amp; Booking</span>
-                    <span class="tag">Private Tour</span>
-                </a>
-                <a href="#location" class="directory-item">
-                    <span><span class="num">09</span>Property Locations</span>
-                    <span class="tag">Live Maps</span>
-                </a>
-            </nav>
-
-            <div class="card-glass" style="padding: 20px;">
-                <span class="eyebrow" style="margin-bottom: 6px;">Institutional Accreditation</span>
-                <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;">
-                    Officially endorsed student housing partner. Compliant with university health and safety standards.
-                </p>
-            </div>
-        </aside>
-
-        <!-- Right Content Stream -->
-        <main class="editorial-content">
+    <!-- ══ FULL-WIDTH EXPANSIVE CONTENT STREAM ══ -->
+    <main class="editorial-content-stream">
 
             <!-- ── SECTION: CONDOS ── -->
             <section class="showcase-block" id="condos">
@@ -1399,7 +1370,7 @@
                         <button class="blueprint-btn" onclick="switchPlan('condo2')">Condo 2 (48 SQ.M Shared)</button>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: center;" id="blueprintInnerGrid">
+                    <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; gap: 32px; align-items: center;" id="blueprintInnerGrid">
                         <!-- Blueprint schematic container -->
                         <div style="background: #0f1013; border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 24px;">
                             <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 11px; color: var(--stone); border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 20px;">
@@ -1905,7 +1876,6 @@
             </section>
 
         </main>
-    </div>
 
     <!-- ══ EDITORIAL FOOTER ══ -->
     <footer class="editorial-footer">
@@ -1928,6 +1898,27 @@
        CLIENT JAVASCRIPT & BACKEND INTEGRATION
     ══════════════════════════════════════ -->
     <script>
+        
+        // ── Active Pill Scrollspy for Horizontal Navigation Ribbon ──
+        const navSections = [
+            'condos', 'dorms', 'floorplans', 'tour', 'proximity', 'trust', 'calculator', 'inquire', 'location'
+        ];
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY + 200;
+            navSections.forEach(id => {
+                const el = document.getElementById(id);
+                const pill = document.querySelector(`.nav-pill-link[href="#${id}"]`);
+                if (el && pill) {
+                    const top = el.offsetTop;
+                    const height = el.offsetHeight;
+                    if (scrollPos >= top && scrollPos < top + height) {
+                        document.querySelectorAll('.nav-pill-link').forEach(p => p.classList.remove('active'));
+                        pill.classList.add('active');
+                    }
+                }
+            });
+        });
+
         // ── Nav scroll listener ──
         const nav = document.getElementById('eliteNav');
         window.addEventListener('scroll', () => {
