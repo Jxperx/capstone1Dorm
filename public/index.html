@@ -345,45 +345,7 @@
             background: linear-gradient(to top, rgba(13, 14, 16, 0.92) 0%, rgba(13, 14, 16, 0.2) 60%, rgba(13, 14, 16, 0.4) 100%);
         }
 
-        /* ══════════════════════════════════════
-           STATISTICS RIBBON
-        ══════════════════════════════════════ */
-        .stats-ribbon {
-            max-width: 1640px; width: 94%;
-            margin: 0 auto 60px;
-            padding: 0 24px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 32px;
-            padding: 36px 40px;
-            background: var(--glass-card);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            text-align: center;
-        }
-
-        .stat-num {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(2rem, 3.5vw, 2.8rem);
-            font-weight: 500;
-            color: var(--white);
-            line-height: 1.1;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--stone);
-            margin-top: 4px;
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        }
+        
 
         /* ══════════════════════════════════════
            EXPANSIVE FULL-WIDTH EDITORIAL LAYOUT
@@ -818,20 +780,7 @@
 
 
 
-        /* ══════════════════════════════════════
-           PROXIMITY & TRUST GRIDS
-        ══════════════════════════════════════ */
-        .proximity-grid, .trust-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-        }
-        @media (max-width: 1200px) {
-            .proximity-grid, .trust-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 640px) {
-            .proximity-grid, .trust-grid { grid-template-columns: 1fr; }
-        }
+        
 
         .feature-card {
             background: var(--glass-card);
@@ -1175,125 +1124,145 @@
 
     <!-- ══ NAVIGATION ══ -->
     <nav id="eliteNav">
-        <a href="#overview" class="nav-logo">
+        <a href="#tour" class="nav-logo">
             <span class="diamond"></span>
             <span>EliteStay</span>
-            <span class="tagline">Student Residences</span>
+            <span class="tagline">Student Housing</span>
         </a>
 
         <div class="nav-center">
-            <a href="#overview">Overview</a>
-            <a href="#condos">Residences</a>
-            <a href="#tour">360 Tour</a>
-            <a href="#proximity">Proximity</a>
-            <a href="#trust">Safety</a>
-            <a href="#calculator">Calculator</a>
+            <a href="#tour">Virtual Tour</a>
+            <a href="#condos">Our Units</a>
             <a href="#inquire">Inquire</a>
+            <a href="#location">Location</a>
         </div>
 
         <div class="nav-right">
-            <a href="#inquire" class="nav-btn solid">Schedule Tour</a>
+            <a href="#inquire" class="nav-btn" id="ctaNavBtn">Schedule Visit</a>
+            <a href="/login" class="nav-btn solid">Tenant Portal</a>
+            <div class="nav-social">
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
         </div>
     </nav>
 
-    <!-- ══ HERO SECTION ══ -->
-    <section class="hero-greensward" id="overview">
-        <div class="campaign-badge">
+    <!-- ══ HERO — 360 VIRTUAL TOUR ══ -->
+    <section class="hero-stage" id="tour" style="text-align: center; padding: clamp(40px, 6vw, 80px) 24px 40px; max-width: 1640px; width: 94%; margin: 0 auto;">
+        <div class="campaign-badge" style="margin-bottom: 24px;">
             <span class="dot"></span>
             <span>Semester 2026-2027 Reservation Now Open</span>
         </div>
 
-        <h1 class="hero-title">
-            Elevated Student Living,<br>
-            <em>Crafted with Quiet Intention.</em>
+        <div class="hero-eyebrow" style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px;">
+            <span style="height: 1px; width: 40px; background: var(--gold); opacity: 0.5;"></span>
+            <span style="font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gold);">Premium Condo Living &bull; EliteStay</span>
+            <span style="height: 1px; width: 40px; background: var(--gold); opacity: 0.5;"></span>
+        </div>
+
+        <h1 class="hero-title" style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.8rem, 5.5vw, 4.8rem); font-weight: 400; line-height: 1.08; color: var(--white); margin-bottom: 16px; letter-spacing: -0.5px;">
+            Your <em>Dream Home</em><br>Awaits
         </h1>
 
-        <p class="hero-desc">
-            An architectural sanctuary designed for focused university scholars. Featuring curated private suites, acoustic privacy, 100% generator power backup, and full 360 spherical virtual previews.
+        <p class="hero-desc" style="font-size: clamp(14px, 1.5vw, 16px); color: var(--stone); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; font-weight: 300;">
+            Explore All Units &mdash; Condos &amp; Dorms in Immersive 360&deg;
         </p>
 
-        <!-- Architectural Hero Frame -->
-        <div class="hero-frame">
-            <img src="luxury-interior.png"
-                 alt="EliteStay Architectural Showcase"
-                 class="hero-frame-bg"
-                 onerror="this.src='https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1600&q=80'">
-            
-            <div class="hero-frame-content">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                    <div class="pill-badge">
-                        Showcase Suite 01 &bull; Executive Studio
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <span class="pill-badge" style="color: var(--gold);">Acoustic Glazing</span>
-                        <span class="pill-badge" style="color: var(--gold);">400 Mbps Fiber</span>
+        <!-- 360 Virtual Tour Window -->
+        <div class="tour-wrapper reveal" style="text-align: left;">
+            <div class="tour-header-bar">
+                <div class="tour-label">
+                    <i class="fas fa-sync-alt"></i>
+                    360&deg; Virtual Tour
+                </div>
+                <!-- Tour tabs injected dynamically by JS -->
+                <div class="tour-tabs" id="tourTabs"></div>
+            </div>
+
+            <div class="tour-window" id="tourWindow">
+                <!-- Tour panels injected by JS -->
+                <div class="tour-panel active" id="panel-loading">
+                    <div class="tour-placeholder">
+                        <div class="tour-360-icon">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                        </div>
+                        <h3>Loading Tours…</h3>
+                        <p>Fetching unit information</p>
                     </div>
                 </div>
 
-                <div style="max-width: 520px;">
-                    <div class="eyebrow" style="margin-bottom: 8px;">Architectural Materials &amp; Natural Light</div>
-                    <h3 class="serif-display" style="font-size: clamp(1.8rem, 3vw, 2.6rem); color: var(--white); line-height: 1.15; margin-bottom: 12px;">
-                        Designed to Support Rigorous Academic Focus
-                    </h3>
-                    <p style="font-size: 13px; color: var(--stone); margin-bottom: 18px; font-weight: 300;">
-                        Custom acoustic insulation, circadian task lighting, private ensuite bathroom, and ergonomic study zones situated 3 minutes from university lecture gates.
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <a href="#tour" class="nav-btn solid" style="padding: 8px 20px; font-size: 10px;">
-                            Enter 360 Immersion &rarr;
-                        </a>
-                        <span style="font-size: 11px; color: var(--stone);">Verified Academic Partner</span>
+                <!-- Controls -->
+                <div class="tour-controls">
+                    <div class="tour-ctrl-btn" title="Fullscreen" onclick="requestFullscreen()">
+                        <i class="fas fa-expand"></i>
+                    </div>
+                    <div class="tour-ctrl-btn" title="Share">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highlights strip below tour -->
+            <div class="highlights">
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-bed"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Bedrooms</span>
+                        <span class="value">Studio / 1BR</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-ruler-combined"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Floor Area</span>
+                        <span class="value">28–42 sqm</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-snowflake"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Amenities</span>
+                        <span class="value">Fully Fitted</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Security</span>
+                        <span class="value">24/7 CCTV</span>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon"><i class="fas fa-wifi"></i></div>
+                    <div class="highlight-text">
+                        <span class="label">Internet</span>
+                        <span class="value">Fiber Optic</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ══ STATISTICS BAR ══ -->
-    <div class="stats-ribbon">
-        <div class="stats-grid">
-            <div>
-                <div class="stat-num">3 Mins</div>
-                <div class="stat-label">Walk to Campus Gates</div>
-            </div>
-            <div>
-                <div class="stat-num">400 Mbps</div>
-                <div class="stat-label">Dual-WAN Redundant Fiber</div>
-            </div>
-            <div>
-                <div class="stat-num">100%</div>
-                <div class="stat-label">Generator Power Backup</div>
-            </div>
-            <div>
-                <div class="stat-num" style="color: var(--gold);">24 / 7</div>
-                <div class="stat-label">Biometric Security &amp; Concierge</div>
-            </div>
-        </div>
-    </div>
-
     <!-- ══ STICKY EDITORIAL NAVIGATION RIBBON (FULL WIDTH EXPANSIVE) ══ -->
     <div class="editorial-nav-ribbon">
         <div class="editorial-nav-track">
-            <a href="#condos" class="nav-pill-link active"><span class="num">01</span> Condos</a>
-            <a href="#dorms" class="nav-pill-link"><span class="num">02</span> Dormitories</a>
-            <a href="#tour" class="nav-pill-link"><span class="num">03</span> 360 VR Tour</a>
-            <a href="#proximity" class="nav-pill-link"><span class="num">04</span> Campus Proximity</a>
-            <a href="#trust" class="nav-pill-link"><span class="num">05</span> Safety Standards</a>
-            <a href="#calculator" class="nav-pill-link"><span class="num">06</span> Lease Estimator</a>
-            <a href="#inquire" class="nav-pill-link"><span class="num">07</span> Schedule Tour</a>
-            <a href="#location" class="nav-pill-link"><span class="num">08</span> Property Locations</a>
+            <a href="#tour" class="nav-pill-link active"><span class="num">01</span> Virtual Tour</a>
+            <a href="#condos" class="nav-pill-link"><span class="num">02</span> Condos</a>
+            <a href="#dorms" class="nav-pill-link"><span class="num">03</span> Dormitories</a>
+            <a href="#inquire" class="nav-pill-link"><span class="num">04</span> Inquire</a>
+            <a href="#location" class="nav-pill-link"><span class="num">05</span> Location</a>
         </div>
     </div>
 
-    <!-- ══ FULL-WIDTH EXPANSIVE CONTENT STREAM ══ -->
     <main class="editorial-content-stream">
 
             <!-- ── SECTION: CONDOS ── -->
             <section class="showcase-block" id="condos">
                 <div class="section-header reveal">
-                    <span class="eyebrow">Format A</span>
+                    <span class="eyebrow">Our Premium Units</span>
                     <h2 class="section-title">Condo <em>Collection</em></h2>
-                    <p class="section-desc">Single and dual executive suites configured for high-performing scholars, medical interns, and board reviewees requiring privacy.</p>
+                    
                 </div>
                 <!-- Dynamic condo cards injected by loadAllRooms() -->
                 <div class="condo-cards reveal" id="condoCards">
@@ -1306,9 +1275,9 @@
             <!-- ── SECTION: DORMS ── -->
             <section class="showcase-block" id="dorms">
                 <div class="section-header reveal">
-                    <span class="eyebrow">Format B</span>
+                    <span class="eyebrow">Affordable Comfort</span>
                     <h2 class="section-title">Standard <em>Dormitories</em></h2>
-                    <p class="section-desc">Community-focused student accommodation designed with acoustic sleep curtains, personal lockers, and shared workstations.</p>
+                    <p class="section-desc">Community-focused accommodation designed for students — comfortable, secure, and fully equipped.</p>
                 </div>
                 <!-- Dynamic dorm cards injected by loadAllRooms() -->
                 <div class="dorm-cards reveal" id="dormCards">
@@ -1318,218 +1287,12 @@
                 </div>
             </section>
 
-
-
-            <!-- ── SECTION: 360 TOUR ── -->
-            <section class="tour-section" id="tour">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Virtual Immersion</span>
-                    <h2 class="section-title">360° Spherical <em>Walkthrough</em></h2>
-                    <p class="section-desc">Experience every angle of the residences in high resolution before scheduling your on-site viewing.</p>
-                </div>
-
-                <div class="tour-wrapper reveal">
-                    <div class="tour-header-bar">
-                        <div class="tour-label">
-                            <i class="fas fa-sync-alt"></i>
-                            Interactive 360° Panorama
-                        </div>
-                        <!-- Tour tabs injected dynamically by JS -->
-                        <div class="tour-tabs" id="tourTabs"></div>
-                    </div>
-
-                    <div class="tour-window" id="tourWindow">
-                        <!-- Tour panels injected by JS -->
-                        <div class="tour-panel active" id="panel-loading">
-                            <div class="tour-placeholder">
-                                <div class="tour-360-icon">
-                                    <i class="fas fa-circle-notch fa-spin"></i>
-                                </div>
-                                <h3>Loading Tours…</h3>
-                                <p>Fetching unit information</p>
-                            </div>
-                        </div>
-
-                        <!-- Controls -->
-                        <div class="tour-controls">
-                            <div class="tour-ctrl-btn" title="Fullscreen" onclick="requestFullscreen()">
-                                <i class="fas fa-expand"></i>
-                            </div>
-                            <div class="tour-ctrl-btn" title="Share">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Highlights strip below tour -->
-                    <div class="highlights">
-                        <div class="highlight-item">
-                            <div class="highlight-icon"><i class="fas fa-bed"></i></div>
-                            <div class="highlight-text">
-                                <span class="label">Bedrooms</span>
-                                <span class="value">Studio / 1BR</span>
-                            </div>
-                        </div>
-                        <div class="highlight-item">
-                            <div class="highlight-icon"><i class="fas fa-ruler-combined"></i></div>
-                            <div class="highlight-text">
-                                <span class="label">Floor Area</span>
-                                <span class="value">32–48 sqm</span>
-                            </div>
-                        </div>
-                        <div class="highlight-item">
-                            <div class="highlight-icon"><i class="fas fa-snowflake"></i></div>
-                            <div class="highlight-text">
-                                <span class="label">Amenities</span>
-                                <span class="value">Fully Fitted</span>
-                            </div>
-                        </div>
-                        <div class="highlight-item">
-                            <div class="highlight-icon"><i class="fas fa-shield-alt"></i></div>
-                            <div class="highlight-text">
-                                <span class="label">Security</span>
-                                <span class="value">24/7 CCTV</span>
-                            </div>
-                        </div>
-                        <div class="highlight-item">
-                            <div class="highlight-icon"><i class="fas fa-wifi"></i></div>
-                            <div class="highlight-text">
-                                <span class="label">Internet</span>
-                                <span class="value">Dual-WAN Fiber</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── SECTION: CAMPUS PROXIMITY ── -->
-            <section class="showcase-block" id="proximity">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Geographic Advantage</span>
-                    <h2 class="section-title">Campus Transit <em>Proximity</em></h2>
-                    <p class="section-desc">Conveniently situated outside noisy commercial traffic while providing quick, well-lit pedestrian access to university facilities.</p>
-                </div>
-
-                <div class="proximity-grid reveal">
-                    <div class="feature-card">
-                        <div class="eyebrow">01 &bull; Walk Route</div>
-                        <div class="time-metric">3 Mins</div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px;">University Main Gate</div>
-                        <p style="font-size: 12px; color: var(--stone); font-weight: 300;">Direct, illuminated pedestrian walkway under university guard watch.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="eyebrow">02 &bull; Walk Route</div>
-                        <div class="time-metric">5 Mins</div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px;">College of Medicine</div>
-                        <p style="font-size: 12px; color: var(--stone); font-weight: 300;">Optimal for medical interns, hospital rotations, and laboratory research.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="eyebrow">03 &bull; Walk Route</div>
-                        <div class="time-metric">4 Mins</div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px;">Central Library &amp; Commons</div>
-                        <p style="font-size: 12px; color: var(--stone); font-weight: 300;">Quick access to university archives, research hubs, and reading pods.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="eyebrow">04 &bull; Walk Route</div>
-                        <div class="time-metric">2 Mins</div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px;">Grocer &amp; Pharmacy</div>
-                        <p style="font-size: 12px; color: var(--stone); font-weight: 300;">24-hour convenience market, fresh food pantry, and prescription pharmacy.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── SECTION: SAFETY & TRUST STANDARDS ── -->
-            <section class="showcase-block" id="trust">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Parent &amp; Scholar Peace-of-Mind</span>
-                    <h2 class="section-title">Infrastructure <em>Guarantees</em></h2>
-                    <p class="section-desc">Engineered for uncompromising security, continuous utility availability, and zero examination interruptions.</p>
-                </div>
-
-                <div class="trust-grid reveal">
-                    <div class="feature-card" style="border-left: 3px solid var(--gold);">
-                        <h4 class="serif-display" style="font-size: 1.5rem; color: var(--white); margin-bottom: 6px;">100% Full Generator</h4>
-                        <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;">
-                            Automatic transfer switch activates in 8 seconds during power interruptions, powering all bedroom ACs, Wi-Fi routers, and lighting.
-                        </p>
-                    </div>
-                    <div class="feature-card" style="border-left: 3px solid var(--gold);">
-                        <h4 class="serif-display" style="font-size: 1.5rem; color: var(--white); margin-bottom: 6px;">Drinking Water Purification</h4>
-                        <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;">
-                            Centralized 5-stage reverse osmosis and UV filtration stations located on every floor. Unlimited complimentary drinking water for residents.
-                        </p>
-                    </div>
-                    <div class="feature-card" style="border-left: 3px solid var(--gold);">
-                        <h4 class="serif-display" style="font-size: 1.5rem; color: var(--white); margin-bottom: 6px;">Dual 24/7 Security Marshals</h4>
-                        <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;">
-                            Dedicated female and male security officers stationed around the clock with RFID electronic entry turnstiles and CCTV recording.
-                        </p>
-                    </div>
-                    <div class="feature-card" style="border-left: 3px solid var(--gold);">
-                        <h4 class="serif-display" style="font-size: 1.5rem; color: var(--white); margin-bottom: 6px;">Dual-WAN Fiber Failover</h4>
-                        <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;">
-                            Dual enterprise fiber-optic lines (PLDT + Globe). Automatic sub-second failover prevents dropped exams and thesis submissions.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── SECTION: LEASE ESTIMATOR CALCULATOR ── -->
-            <section class="showcase-block" id="calculator">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Financial Transparency</span>
-                    <h2 class="section-title">Lease Commitment <em>Estimator</em></h2>
-                    <p class="section-desc">Calculate your exact semester commitment. All packages bundle high-speed fiber, air conditioning, and building amenities.</p>
-                </div>
-
-                <div class="calc-wrapper reveal">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
-                        <div>
-                            <div class="calc-field">
-                                <label for="calcType">Select Unit Format</label>
-                                <select id="calcType" onchange="updateCalc()">
-                                    <option value="condo1">Condo 1 — Executive Studio (&#8369;8,500/mo)</option>
-                                    <option value="condo2">Condo 2 — Quad Shared Residence (&#8369;5,200/mo)</option>
-                                </select>
-                            </div>
-                            <div class="calc-field">
-                                <label for="calcDuration">Lease Commitment Duration</label>
-                                <select id="calcDuration" onchange="updateCalc()">
-                                    <option value="5">One Academic Semester (5 Months)</option>
-                                    <option value="10" selected>Full Academic Year (10 Months — 5% Term Discount)</option>
-                                    <option value="12">Full Calendar Year (12 Months — 10% Term Discount)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style="background: #111215; border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 24px;">
-                            <div style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--stone);">Estimated Monthly Rent</div>
-                            <div class="serif-display" style="font-size: 2.8rem; font-weight: 500; color: var(--gold); margin: 6px 0;" id="calcMonthly">
-                                &#8369;8,075 <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:var(--stone);">/ mo</span>
-                            </div>
-                            <div style="font-size: 11px; color: var(--stone);" id="calcSavings">Includes 5% Academic Term Discount</div>
-
-                            <div style="border-top: 1px solid var(--glass-border); margin-top: 18px; padding-top: 14px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Refundable Security Deposit:</span>
-                                    <span style="color: var(--white); font-weight: 600;" id="calcDeposit">&#8369;16,150</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Fiber Wi-Fi &amp; Facilities:</span>
-                                    <span style="color: var(--gold);">100% Inclusive</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── SECTION: INQUIRE TODAY FORM ── -->
+<!-- ── SECTION: INQUIRE TODAY FORM ── -->
             <section class="inquire-section" id="inquire">
                 <div class="section-header reveal">
-                    <span class="eyebrow">Reservation Pipeline</span>
-                    <h2 class="section-title">Schedule a <em>Private Tour</em></h2>
-                    <p class="section-desc">Submit your application details below. The resident concierge will review your schedule and respond within 24 hours.</p>
+                    <span class="eyebrow">Book a Viewing</span>
+                    <h2 class="section-title">Inquire <em>Today</em></h2>
+                    <p class="section-desc">Our property concierge will reach out within 24 hours to schedule your private tour and discuss your requirements.</p>
                 </div>
 
                 <div class="inquire-layout reveal">
@@ -1541,12 +1304,12 @@
                              onerror="this.src='https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80'">
                         <div class="inquire-visual-content">
                             <div class="pill-badge" style="align-self: flex-start;">
-                                2026-2027 Admissions
+                                Now Available &bull; Condos &amp; Dorms
                             </div>
                             <div>
-                                <div class="eyebrow" style="margin-bottom: 6px;">Admissions &bull; Inquiries</div>
+                                <div class="eyebrow" style="margin-bottom: 6px;">Book a Viewing</div>
                                 <h3 class="serif-display" style="font-size: 2.2rem; color: var(--white); line-height: 1.2; margin-bottom: 10px;">
-                                    Begin Your Academic Residency
+                                    Inquire <em>Today</em>
                                 </h3>
                                 <p style="font-size: 12px; color: var(--stone); font-weight: 300;">
                                     Priority room allocation is assigned based on submission timestamp. Early applicants receive preferred floor and corner unit choices.
@@ -1764,18 +1527,20 @@
 
         </main>
 
-    <!-- ══ EDITORIAL FOOTER ══ -->
+        <!-- ══ EDITORIAL FOOTER ══ -->
     <footer class="editorial-footer">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span class="diamond"></span>
             <span class="serif-display" style="font-size: 16px; font-weight: 700; color: var(--white); letter-spacing: 2px;">ELITESTAY</span>
-            <span style="color: var(--stone); font-size: 11px;">&copy; 2026 EliteStay Residence Systems. All rights reserved.</span>
+            <span style="color: var(--stone); font-size: 11px;">&copy; 2026 EliteStay Student Housing. All rights reserved.</span>
         </div>
 
         <div class="footer-links">
-            <a href="#overview">Overview</a>
-            <a href="#condos">Residences</a>
-            <a href="#tour">360 VR</a>
+            <a href="#tour">Virtual Tour</a>
+            <a href="#condos">Condos</a>
+            <a href="#dorms">Dormitories</a>
+            <a href="#inquire">Inquire</a>
+            <a href="#location">Location</a>
             <a href="/admin-dashboard.html">Admin Portal</a>
         </div>
     </footer>
@@ -1787,7 +1552,7 @@
         
         // ── Active Pill Scrollspy for Horizontal Navigation Ribbon ──
         const navSections = [
-            'condos', 'dorms', 'tour', 'proximity', 'trust', 'calculator', 'inquire', 'location'
+            'tour', 'condos', 'dorms', 'inquire', 'location'
         ];
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY + 200;
@@ -2309,30 +2074,7 @@
 
 
 
-        // ── Lease Estimator Calculation ──
-        function updateCalc() {
-            const typeEl = document.getElementById('calcType');
-            const durationEl = document.getElementById('calcDuration');
-            if (!typeEl || !durationEl) return;
-
-            const type = typeEl.value;
-            const duration = parseInt(durationEl.value);
-            let base = type === 'condo1' ? 8500 : 5200;
-            let discount = 0;
-            if (duration === 10) discount = 0.05;
-            if (duration === 12) discount = 0.10;
-
-            const monthly = Math.round(base * (1 - discount));
-            const deposit = monthly * 2;
-
-            const monthlyEl = document.getElementById('calcMonthly');
-            const depositEl = document.getElementById('calcDeposit');
-            const savingsEl = document.getElementById('calcSavings');
-
-            if (monthlyEl) monthlyEl.innerHTML = '&#8369;' + monthly.toLocaleString() + ' <span style="font-family:sans-serif; font-size:12px; color:var(--stone);">/ mo</span>';
-            if (depositEl) depositEl.innerText = '&#8369;' + deposit.toLocaleString();
-            if (savingsEl) savingsEl.innerText = discount > 0 ? 'Includes ' + (discount * 100) + '% Academic Term Discount' : 'Standard Semester Rate';
-        }
+        
 
         // ── Initialization ──
         document.addEventListener('DOMContentLoaded', () => {
