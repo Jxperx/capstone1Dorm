@@ -545,38 +545,57 @@
             max-width: 720px;
         }
 
-        /* Dynamic Grid Containers */
+        /* Dynamic Grid Containers (Matching 2-Column Widescreen Layout) */
         .condo-cards, .dorm-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-            gap: 32px;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
             width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
         }
 
-        /* Card Styles */
+        /* Card Styles - Horizontal 2-Column Split Matching Location Cards */
         .condo-card, .dorm-card {
             background: var(--glass-card);
             border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-xl);
             overflow: hidden;
             position: relative;
             cursor: pointer;
             transition: all var(--transition);
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            height: clamp(380px, 48vh, 520px);
+            min-height: 380px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
         }
 
         .condo-card:hover, .dorm-card:hover {
-            border-color: rgba(197, 160, 89, 0.35);
-            transform: translateY(-4px);
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(197, 160, 89, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55);
+        }
+
+        .condo-card-content, .dorm-card-content {
+            order: 1;
+            padding: clamp(24px, 2.6vw, 36px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            box-sizing: border-box;
+            background: rgba(22, 23, 26, 0.5);
         }
 
         .condo-card-bg, .dorm-card-bg {
+            order: 2;
             width: 100%;
-            height: clamp(220px, 28vh, 300px);
+            height: 100%;
+            min-height: 100%;
             object-fit: cover;
-            border-bottom: 1px solid var(--glass-border);
+            border-left: 1px solid var(--glass-border);
+            border-bottom: none;
             transition: transform 0.6s ease;
         }
 
@@ -584,39 +603,33 @@
             transform: scale(1.04);
         }
 
-        .condo-card-content, .dorm-card-content {
-            padding: 20px 24px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
         .condo-badge, .dorm-card-badge {
             align-self: flex-start;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 9999px;
-            background: rgba(197, 160, 89, 0.1);
-            border: 1px solid rgba(197, 160, 89, 0.25);
+            background: rgba(197, 160, 89, 0.12);
+            border: 1px solid rgba(197, 160, 89, 0.3);
             color: var(--gold);
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .condo-name, .dorm-card-name {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 1.7rem;
+            font-size: clamp(2rem, 2.4vw, 2.5rem);
             color: var(--white);
             font-weight: 500;
+            line-height: 1.15;
             margin-bottom: 8px;
         }
 
         .condo-desc, .dorm-card-desc {
             font-size: 13px;
             color: var(--stone);
-            line-height: 1.6;
+            line-height: 1.65;
             margin-bottom: 16px;
             font-weight: 300;
             flex-grow: 1;
@@ -626,44 +639,69 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: 10px;
+            padding-top: 14px;
             border-top: 1px solid var(--glass-border);
+            margin-top: auto;
         }
 
         .condo-price, .dorm-card-price {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: 600;
             color: var(--gold);
         }
 
         .condo-price span, .dorm-card-price span {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--stone);
             font-weight: 400;
-            margin-left: 2px;
+            margin-left: 3px;
         }
 
         .condo-cta, .dorm-cta {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
+            font-weight: 700;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            color: var(--white);
+            color: var(--obsidian);
+            background: var(--linen);
             text-decoration: none;
-            padding: 8px 16px;
+            padding: 10px 22px;
             border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.08);
             transition: all var(--transition);
         }
 
         .condo-cta:hover, .dorm-cta:hover {
             background: var(--gold);
             color: var(--obsidian);
+            box-shadow: 0 4px 16px var(--gold-glow);
+        }
+
+        @media (max-width: 960px) {
+            .condo-cards, .dorm-cards {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .condo-card, .dorm-card {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                min-height: auto;
+            }
+            .condo-card-bg, .dorm-card-bg {
+                order: 1;
+                height: 240px;
+                border-left: none;
+                border-bottom: 1px solid var(--glass-border);
+            }
+            .condo-card-content, .dorm-card-content {
+                order: 2;
+                padding: 24px;
+            }
         }
 
         /* ══════════════════════════════════════
