@@ -765,6 +765,23 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     margin-top: 0 !important;
 }
 
+/* Universal Section Spacing for all Admin Pages */
+.content-section {
+    padding-left: var(--admin-content-px) !important;
+    padding-right: var(--admin-content-px) !important;
+    padding-top: var(--admin-content-py) !important;
+    padding-bottom: 48px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#page-content-wrapper > .container-fluid > .content-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
 /* Top Navbar Horizontal Alignment with Content */
 .navbar {
     padding-top: 0.85rem;
