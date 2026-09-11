@@ -13,6 +13,34 @@
     --sidebar-width: 260px;
     --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.05), 0 2px 10px rgba(197, 160, 89, 0.04);
     --card-shadow-hover: 0 18px 50px rgba(0, 0, 0, 0.10), 0 4px 16px rgba(197, 160, 89, 0.12);
+
+    /* Global Admin Spacing Tokens */
+    --admin-content-px: 28px;
+    --admin-content-py: 26px;
+    --admin-section-gap: 28px;
+    --admin-card-padding: 22px;
+    --admin-grid-gap: 22px;
+    --admin-table-cell-py: 14px;
+    --admin-table-cell-px: 18px;
+}
+
+@media (min-width: 1200px) {
+    :root {
+        --admin-content-px: 32px;
+        --admin-content-py: 28px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --admin-content-px: 16px;
+        --admin-content-py: 16px;
+        --admin-section-gap: 20px;
+        --admin-card-padding: 16px;
+        --admin-grid-gap: 16px;
+        --admin-table-cell-py: 10px;
+        --admin-table-cell-px: 12px;
+    }
 }
 
 body {
@@ -450,11 +478,32 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
 /* Metric Stat Cards - Left Border Minimalist Design (Matching AI Rent Optimization) */
 .card[style*="border-left"] {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 1.15rem 1.25rem !important;
 }
 
 .card[style*="border-left"]:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Card & Section Spacing Standards across all Admin Modules */
+.content-section > .row.mb-4,
+.content-section > .card.mb-4,
+.content-section > .d-flex.mb-4 {
+    margin-bottom: var(--admin-section-gap) !important;
+}
+
+/* Card Internal Breathing Room */
+.card.rounded-4 {
+    border-radius: 18px !important;
+}
+
+.card.rounded-4.p-3 {
+    padding: 1.25rem 1.35rem !important;
+}
+
+.card.rounded-4.p-4 {
+    padding: var(--admin-card-padding) !important;
 }
 
 /* Luxury Buttons */
@@ -544,13 +593,14 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     font-family: 'Playfair Display', serif;
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    padding: 14px 1rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+    padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
 }
 
 .table tbody td {
     vertical-align: middle;
-    padding: 14px 1rem;
+    padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
     border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 
@@ -699,6 +749,47 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     .modal-header, .modal-footer {
         padding: 1rem;
     }
+}
+
+/* Global Admin Content Layout & Breathing Room */
+#page-content-wrapper > .container-fluid {
+    padding-left: var(--admin-content-px) !important;
+    padding-right: var(--admin-content-px) !important;
+    padding-top: var(--admin-content-py) !important;
+    padding-bottom: 48px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#page-content-wrapper > .container-fluid.mt-4 {
+    margin-top: 0 !important;
+}
+
+/* Top Navbar Horizontal Alignment with Content */
+.navbar {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.navbar > .container-fluid {
+    padding-left: var(--admin-content-px) !important;
+    padding-right: var(--admin-content-px) !important;
+}
+
+/* Standardize Card Grid Gutters across all Admin Modules */
+#page-content-wrapper .row.g-2 {
+    --bs-gutter-x: 16px !important;
+    --bs-gutter-y: 16px !important;
+}
+
+#page-content-wrapper .row.g-3 {
+    --bs-gutter-x: var(--admin-grid-gap) !important;
+    --bs-gutter-y: var(--admin-grid-gap) !important;
+}
+
+#page-content-wrapper .row.g-4 {
+    --bs-gutter-x: 24px !important;
+    --bs-gutter-y: 24px !important;
 }
 
 /* Ultrawide screen container constraint */
