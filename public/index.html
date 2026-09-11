@@ -816,43 +816,7 @@
             font-weight: 600;
         }
 
-        /* ══════════════════════════════════════
-           ARCHITECTURAL BLUEPRINT VIEWER
-        ══════════════════════════════════════ */
-        .blueprint-card {
-            background-color: #111215;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-            background-size: 20px 20px;
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            padding: clamp(24px, 4vw, 44px);
-        }
 
-        .blueprint-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-
-        .blueprint-btn {
-            padding: 8px 20px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all var(--transition);
-            border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--stone);
-        }
-
-        .blueprint-btn.active {
-            background: var(--linen);
-            color: var(--obsidian);
-            border-color: var(--linen);
-        }
 
         /* ══════════════════════════════════════
            PROXIMITY & TRUST GRIDS
@@ -1220,7 +1184,6 @@
         <div class="nav-center">
             <a href="#overview">Overview</a>
             <a href="#condos">Residences</a>
-            <a href="#floorplans">Floor Plans</a>
             <a href="#tour">360 Tour</a>
             <a href="#proximity">Proximity</a>
             <a href="#trust">Safety</a>
@@ -1313,13 +1276,12 @@
         <div class="editorial-nav-track">
             <a href="#condos" class="nav-pill-link active"><span class="num">01</span> Condos</a>
             <a href="#dorms" class="nav-pill-link"><span class="num">02</span> Dormitories</a>
-            <a href="#floorplans" class="nav-pill-link"><span class="num">03</span> Floor Plans</a>
-            <a href="#tour" class="nav-pill-link"><span class="num">04</span> 360 VR Tour</a>
-            <a href="#proximity" class="nav-pill-link"><span class="num">05</span> Campus Proximity</a>
-            <a href="#trust" class="nav-pill-link"><span class="num">06</span> Safety Standards</a>
-            <a href="#calculator" class="nav-pill-link"><span class="num">07</span> Lease Estimator</a>
-            <a href="#inquire" class="nav-pill-link"><span class="num">08</span> Schedule Tour</a>
-            <a href="#location" class="nav-pill-link"><span class="num">09</span> Property Locations</a>
+            <a href="#tour" class="nav-pill-link"><span class="num">03</span> 360 VR Tour</a>
+            <a href="#proximity" class="nav-pill-link"><span class="num">04</span> Campus Proximity</a>
+            <a href="#trust" class="nav-pill-link"><span class="num">05</span> Safety Standards</a>
+            <a href="#calculator" class="nav-pill-link"><span class="num">06</span> Lease Estimator</a>
+            <a href="#inquire" class="nav-pill-link"><span class="num">07</span> Schedule Tour</a>
+            <a href="#location" class="nav-pill-link"><span class="num">08</span> Property Locations</a>
         </div>
     </div>
 
@@ -1356,82 +1318,7 @@
                 </div>
             </section>
 
-            <!-- ── SECTION: ARCHITECTURAL FLOOR PLANS ── -->
-            <section class="showcase-block" id="floorplans">
-                <div class="section-header reveal">
-                    <span class="eyebrow">Architectural Drawings</span>
-                    <h2 class="section-title">Floor Plans &amp; <em>Dimensions</em></h2>
-                    <p class="section-desc">Inspect room proportions, circulation paths, furniture layouts, and window orientations before your in-person viewing.</p>
-                </div>
 
-                <div class="blueprint-card reveal">
-                    <div class="blueprint-tabs" id="planSwitcher">
-                        <button class="blueprint-btn active" onclick="switchPlan('condo1')">Condo 1 (32 SQ.M Studio)</button>
-                        <button class="blueprint-btn" onclick="switchPlan('condo2')">Condo 2 (48 SQ.M Shared)</button>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; gap: 32px; align-items: center;" id="blueprintInnerGrid">
-                        <!-- Blueprint schematic container -->
-                        <div style="background: #0f1013; border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 24px;">
-                            <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 11px; color: var(--stone); border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 20px;">
-                                <span style="color: var(--gold);" id="planCode">PLAN 01-A // EXECUTIVE STUDIO SUITE</span>
-                                <span>SCALE 1:50 &bull; CEILING 2.80M</span>
-                            </div>
-
-                            <div style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 20px; height: 260px; display: flex; flex-direction: column; justify-content: space-between;" id="blueprintBox">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <div style="border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 6px; text-align: center;">
-                                        <span style="font-size: 9px; color: var(--gold); display: block; font-family: monospace;">ENSUITE BATH</span>
-                                        <span style="font-size: 11px; color: var(--white);">2.2m &times; 1.8m</span>
-                                    </div>
-                                    <div style="border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 6px; text-align: center;">
-                                        <span style="font-size: 9px; color: var(--gold); display: block; font-family: monospace;">KITCHENETTE</span>
-                                        <span style="font-size: 11px; color: var(--white);">Induction &amp; Sink</span>
-                                    </div>
-                                </div>
-
-                                <div style="text-align: center; padding: 14px; background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 8px; margin: 0 auto; max-width: 320px; width: 100%;">
-                                    <span style="font-size: 11px; font-weight: 600; color: var(--white); display: block; text-transform: uppercase;">Primary Sleep &amp; Study Zone</span>
-                                    <span style="font-size: 10px; color: var(--stone); font-family: monospace;">Semi-Double Bed + 1.4m Hardwood Workstation</span>
-                                </div>
-
-                                <div style="display: flex; justify-content: flex-end;">
-                                    <div style="border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 6px; text-align: center;">
-                                        <span style="font-size: 9px; color: var(--white); display: block; font-family: monospace;">BALCONY GLAZING</span>
-                                        <span style="font-size: 10px; color: var(--gold);">Natural Circadian Light</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Dimension Spec List -->
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
-                            <h4 class="serif-display" style="font-size: 1.8rem; color: var(--white);" id="planTitle">Executive Suite Layout</h4>
-                            <p style="font-size: 12px; color: var(--stone); line-height: 1.6; font-weight: 300;" id="planDesc">
-                                Configured with clean zoning: entry foyer with hygienic footwear cabinet, private enclosed bath, ergonomic study desk, and balcony view.
-                            </p>
-                            <div style="border-top: 1px solid var(--glass-border); padding-top: 12px; font-family: monospace; font-size: 11px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Usable Floor Area:</span>
-                                    <span style="color: var(--white); font-weight: 600;" id="planArea">32.00 SQ.M</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Ceiling Height:</span>
-                                    <span style="color: var(--white);">2.80 Meters</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Window Glazing:</span>
-                                    <span style="color: var(--white);">Acoustic Double Low-E</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--stone);">Power Receptacles:</span>
-                                    <span style="color: var(--white);">8 Outlets (2 at Desk)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <!-- ── SECTION: 360 TOUR ── -->
             <section class="tour-section" id="tour">
@@ -1888,7 +1775,6 @@
         <div class="footer-links">
             <a href="#overview">Overview</a>
             <a href="#condos">Residences</a>
-            <a href="#floorplans">Floor Plans</a>
             <a href="#tour">360 VR</a>
             <a href="/admin-dashboard.html">Admin Portal</a>
         </div>
@@ -1901,7 +1787,7 @@
         
         // ── Active Pill Scrollspy for Horizontal Navigation Ribbon ──
         const navSections = [
-            'condos', 'dorms', 'floorplans', 'tour', 'proximity', 'trust', 'calculator', 'inquire', 'location'
+            'condos', 'dorms', 'tour', 'proximity', 'trust', 'calculator', 'inquire', 'location'
         ];
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY + 200;
@@ -2421,30 +2307,7 @@
             doSelect();
         }
 
-        // ── Blueprint Switcher ──
-        function switchPlan(type) {
-            const code = document.getElementById('planCode');
-            const title = document.getElementById('planTitle');
-            const desc = document.getElementById('planDesc');
-            const area = document.getElementById('planArea');
-            const btns = document.querySelectorAll('.blueprint-btn');
 
-            btns.forEach(b => b.classList.remove('active'));
-
-            if (type === 'condo1') {
-                if (btns[0]) btns[0].classList.add('active');
-                if (code) code.innerText = 'PLAN 01-A // EXECUTIVE STUDIO SUITE';
-                if (title) title.innerText = 'Executive Suite Layout';
-                if (desc) desc.innerText = 'Configured with clean zoning: entry foyer with hygienic footwear cabinet, private enclosed bath, ergonomic study desk, and balcony view.';
-                if (area) area.innerText = '32.00 SQ.M';
-            } else {
-                if (btns[1]) btns[1].classList.add('active');
-                if (code) code.innerText = 'PLAN 02-B // QUAD SHARED RESIDENCE';
-                if (title) title.innerText = 'Quad Shared Loft Layout';
-                if (desc) desc.innerText = 'Engineered for high-performing quad-resident cohorts. Features dual private hygiene suites, centralized collaborative table, and 4 acoustic privacy sleep pods.';
-                if (area) area.innerText = '48.00 SQ.M';
-            }
-        }
 
         // ── Lease Estimator Calculation ──
         function updateCalc() {
