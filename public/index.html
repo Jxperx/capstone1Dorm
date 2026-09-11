@@ -2377,7 +2377,11 @@
         ];
 
         function buildTourPanel(room, panelId, isCondo, imgUrl, tourSrc) {
-            const num = room.room_number.replace(/^(condo|dorm)\s*/i, '').trim();
+            let num = room.room_number.replace(/^(condo|dorm)[-_\s]*/i, '').trim();
+            if (isCondo) {
+                const parsed = parseInt(num, 10);
+                if (!isNaN(parsed)) num = parsed;
+            }
             const label = isCondo ? `Condo Unit ${num}` : `Dorm Room ${num}`;
             const sub = isCondo ? 'Luxury Condo Living' : 'Student Accommodation';
 
@@ -2430,8 +2434,18 @@
                 const data = await fetchWithRetry('/api/rooms');
                 const rooms = Array.isArray(data) ? data : (data.rooms || []);
 
-                const condos = rooms.filter(r => (r.room_type || '').toLowerCase() === 'condo');
-                const dorms  = rooms.filter(r => (r.room_type || '').toLowerCase() !== 'condo');
+                // Sort numerically by room number
+                const getRoomNum = (r) => {
+                    const num = parseInt((r.room_number || '').replace(/\D/g, ''), 10);
+                    return isNaN(num) ? 999 : num;
+                };
+
+                const condos = rooms
+                    .filter(r => (r.room_type || '').toLowerCase() === 'condo')
+                    .sort((a, b) => getRoomNum(a) - getRoomNum(b));
+                const dorms  = rooms
+                    .filter(r => (r.room_type || '').toLowerCase() !== 'condo')
+                    .sort((a, b) => getRoomNum(a) - getRoomNum(b));
 
                 const condoGrid = document.getElementById('condoCards');
                 const dormGrid  = document.getElementById('dormCards');
@@ -2447,14 +2461,25 @@
 
                 let tabIndex = 0;
 
-                // 360 Tour paths
-                const condoTourSrcs = [
-                    '/360/unit1/index.html', // Condo 1
-                    '/360/unit2/index.html'  // Condo 2
-                ];
-                const dormTourSrcs = [
-                    '/360/dorma1/index.html' // Dorm A1
-                ];
+                // Explicit 360 Tour mapping: strictly Condo 1 and Condo 2 for condos, and Dorm A1 for dorms
+                function getTourSrc(room) {
+                    const rnum = (room.room_number || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const isCondo = (room.room_type || '').toLowerCase() === 'condo';
+                    if (isCondo) {
+                        if (rnum === 'condo01' || rnum === 'condo1' || rnum === '01' || rnum === '1') {
+                            return '/360/unit1/index.html';
+                        }
+                        if (rnum === 'condo02' || rnum === 'condo2' || rnum === '02' || rnum === '2') {
+                            return '/360/unit2/index.html';
+                        }
+                        return null;
+                    } else {
+                        if (rnum === 'dorma1' || rnum === 'dorm1' || rnum === 'a1' || rnum === '1') {
+                            return '/360/dorma1/index.html';
+                        }
+                        return null;
+                    }
+                }
 
                 // Build Condo Tour Tabs
                 condos.forEach((room, i) => {
@@ -2462,12 +2487,13 @@
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
                     const img = room.cover_image || condoImgs[i % condoImgs.length];
-                    const tourSrc = condoTourSrcs[i] || null;
+                    const tourSrc = getTourSrc(room);
+                    const condoNum = getRoomNum(room);
 
                     if (tabsEl) {
                         const tab = document.createElement('div');
                         tab.className = 'tour-tab' + (idx === 0 ? ' active' : '');
-                        tab.textContent = 'Condo ' + room.room_number.replace(/^condo/i, '').trim();
+                        tab.textContent = 'Condo ' + condoNum;
                         tab.onclick = () => switchTourByIndex(idx);
                         tabsEl.appendChild(tab);
                     }
@@ -2486,12 +2512,13 @@
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
                     const img = room.cover_image || dormImgs[i % dormImgs.length];
-                    const tourSrc = dormTourSrcs[i] || null;
+                    const tourSrc = getTourSrc(room);
+                    const dormLabel = 'Dorm ' + (room.room_number.replace(/^dorm/i, '').trim() || (i + 1));
 
                     if (tabsEl) {
                         const tab = document.createElement('div');
                         tab.className = 'tour-tab' + (idx === 0 ? ' active' : '');
-                        tab.textContent = 'Dorm ' + room.room_number.replace(/^dorm/i, '').trim();
+                        tab.textContent = dormLabel;
                         tab.onclick = () => switchTourByIndex(idx);
                         tabsEl.appendChild(tab);
                     }
@@ -2512,13 +2539,14 @@
                         condoGrid.innerHTML = condos.map((room, i) => {
                             const img = room.cover_image || condoImgs[i % condoImgs.length];
                             const tourIdx = i;
+                            const condoNum = getRoomNum(room);
                             return `
                             <div class="condo-card" onclick="switchTourAndScroll(${tourIdx})">
                                 <img src="${img}" alt="Condo ${room.room_number}" class="condo-card-bg"
                                      onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80'">
                                 <div class="condo-card-content">
                                     <div class="condo-badge">Unit ${room.room_number}</div>
-                                    <div class="condo-name">Condo ${i + 1}</div>
+                                    <div class="condo-name">Condo ${condoNum}</div>
                                     <div class="condo-desc">Executive studio format &bull; Max capacity: ${room.capacity} resident(s) &bull; Acoustic soundproofing and high-speed fiber inclusive.</div>
                                     <div class="condo-meta">
                                         <div class="condo-price">&#8369;${Number(room.monthly_rate).toLocaleString()}<span>/mo</span></div>
@@ -2540,13 +2568,14 @@
                         dormGrid.innerHTML = dorms.map((room, i) => {
                             const img  = room.cover_image || dormImgs[i % dormImgs.length];
                             const tidx = condos.length + i;
+                            const dormName = 'Dorm ' + (room.room_number.replace(/^dorm/i, '').trim() || (i + 1));
                             return `
                             <div class="dorm-card" onclick="switchTourAndScroll(${tidx})">
                                 <img src="${img}" alt="Dorm ${room.room_number}" class="dorm-card-bg"
                                      onerror="this.src='https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80'">
                                 <div class="dorm-card-content">
                                     <div class="dorm-card-badge">Room ${room.room_number}</div>
-                                    <div class="dorm-card-name">Dorm ${i + 1}</div>
+                                    <div class="dorm-card-name">${dormName}</div>
                                     <div class="dorm-card-desc">Academic community loft &bull; Dedicated sleep pods &bull; Dual bathrooms &bull; Individual lockers &bull; Capacity: ${room.capacity} residents.</div>
                                     <div class="dorm-card-meta">
                                         <div class="dorm-card-price">&#8369;${Number(room.monthly_rate).toLocaleString()}<span>/mo</span></div>
