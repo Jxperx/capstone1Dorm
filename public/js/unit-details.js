@@ -4,6 +4,17 @@ function getRoomIdFromQuery() {
     return id ? parseInt(id, 10) : null;
 }
 
+const STANDARD_GALLERY_ITEMS = [
+    { url: '/images/gallery/bedroom.jpg', title: 'Bedroom Suite' },
+    { url: '/images/gallery/kitchen.jpg', title: 'Kitchen & Dining Area' },
+    { url: '/images/gallery/bath.jpg', title: 'Private Bathroom' },
+    { url: '/images/gallery/hallway.jpg', title: 'Corridor & Hallway' },
+    { url: '/images/gallery/exterior.jpg', title: 'Exterior & Courtyard' }
+];
+
+let currentGalleryList = [...STANDARD_GALLERY_ITEMS];
+let currentPhotoIndex = 0;
+let isGalleryCoverMode = false;
 let currentRoomId = null;
 
 async function loadUnitDetails() {
@@ -59,25 +70,9 @@ async function loadUnitDetails() {
         document.getElementById('infoRate').textContent = room.monthly_rate;
 
         const dbGallery = (data.gallery || []).map(g => g.image_url).filter(Boolean);
-        const standardGallery = [
-            '/images/gallery/bedroom.jpg',
-            '/images/gallery/kitchen.jpg',
-            '/images/gallery/bath.jpg',
-            '/images/gallery/hallway.jpg',
-            '/images/gallery/exterior.jpg'
-        ];
+        const galleryList = dbGallery.length >= 5 ? dbGallery.slice(0, 5) : STANDARD_GALLERY_ITEMS.map(i => i.url);
 
-        // Gallery Main Setup — strictly 5 valid pictures
-        const mainImg = document.getElementById('heroImage');
-        const galleryList = dbGallery.length >= 5 ? dbGallery.slice(0, 5) : standardGallery;
-        const initialImg = galleryList[0];
-        if (mainImg) {
-            mainImg.src = initialImg;
-            mainImg.alt = 'Unit Photo';
-            mainImg.onerror = function() { this.src = standardGallery[0]; };
-        }
-
-        // Initialize Thumbnails (strictly 5 pictures)
+        // Initialize Thumbnails & Showcase (strictly 5 pictures)
         initGalleryThumbnails(galleryList);
 
         // Fallback map embeds per property type
@@ -141,36 +136,186 @@ async function fetchVisitAvailability(roomId) {
     }
 }
 
+// ─── Gallery & Lightbox Controller ──────────────────────────────────────────
+function syncActivePhoto(index) {
+    if (!currentGalleryList || currentGalleryList.length === 0) return;
+    currentPhotoIndex = ((index % currentGalleryList.length) + currentGalleryList.length) % currentGalleryList.length;
+    const item = currentGalleryList[currentPhotoIndex];
+    if (!item) return;
+
+    // Update main showcase
+    const mainImg = document.getElementById('heroImage');
+    if (mainImg) {
+        mainImg.src = item.url;
+        mainImg.alt = item.title || 'Unit Photo';
+        mainImg.onerror = function() {
+            this.src = STANDARD_GALLERY_ITEMS[currentPhotoIndex % 5].url;
+        };
+    }
+    const bgBlur = document.getElementById('galleryBgBlur');
+    if (bgBlur) {
+        bgBlur.style.backgroundImage = `url("${item.url}")`;
+    }
+
+    // Update main page thumbnail active classes
+    const mainThumbs = document.querySelectorAll('#galleryThumbs .thumb-item');
+    mainThumbs.forEach((thumb, idx) => {
+        if (idx === currentPhotoIndex) {
+            thumb.classList.add('active');
+        } else {
+            thumb.classList.remove('active');
+        }
+    });
+
+    // Update Lightbox if elements exist
+    const lbImg = document.getElementById('lightboxImage');
+    if (lbImg) {
+        lbImg.src = item.url;
+        lbImg.alt = item.title || 'Unit Photo';
+        lbImg.onerror = function() {
+            this.src = STANDARD_GALLERY_ITEMS[currentPhotoIndex % 5].url;
+        };
+    }
+    const lbCat = document.getElementById('lightboxCategory');
+    if (lbCat) {
+        lbCat.textContent = item.title || 'Unit Photo';
+    }
+    const lbCounter = document.getElementById('lightboxCounter');
+    if (lbCounter) {
+        lbCounter.textContent = `Photo ${currentPhotoIndex + 1} of ${currentGalleryList.length}`;
+    }
+
+    // Update Lightbox thumbnail active classes
+    const lbThumbs = document.querySelectorAll('#lightboxThumbsBar .lightbox-thumb-item');
+    lbThumbs.forEach((thumb, idx) => {
+        if (idx === currentPhotoIndex) {
+            thumb.classList.add('active');
+            thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+            thumb.classList.remove('active');
+        }
+    });
+}
+
+function toggleGalleryFit(e) {
+    if (e) e.stopPropagation();
+    isGalleryCoverMode = !isGalleryCoverMode;
+    const mainImg = document.getElementById('heroImage');
+    const fitLabel = document.getElementById('fitLabel');
+    const fitIcon = document.getElementById('fitIcon');
+
+    if (mainImg) {
+        if (isGalleryCoverMode) {
+            mainImg.classList.add('fill-mode');
+        } else {
+            mainImg.classList.remove('fill-mode');
+        }
+    }
+    if (fitLabel) {
+        fitLabel.textContent = isGalleryCoverMode ? 'Fit' : 'Fill';
+    }
+    if (fitIcon) {
+        fitIcon.className = isGalleryCoverMode ? 'fas fa-compress-arrows-alt' : 'fas fa-expand-arrows-alt';
+    }
+}
+
+function openGalleryLightbox(index) {
+    if (typeof index === 'number') {
+        syncActivePhoto(index);
+    } else {
+        syncActivePhoto(currentPhotoIndex);
+    }
+    const modal = document.getElementById('imageLightboxModal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeGalleryLightbox() {
+    const modal = document.getElementById('imageLightboxModal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+
+function prevLightboxPhoto(e) {
+    if (e) e.stopPropagation();
+    syncActivePhoto(currentPhotoIndex - 1);
+}
+
+function nextLightboxPhoto(e) {
+    if (e) e.stopPropagation();
+    syncActivePhoto(currentPhotoIndex + 1);
+}
+
+function handleLightboxBackdropClick(e) {
+    if (e.target.id === 'imageLightboxModal' || e.target.classList.contains('lightbox-viewport') || e.target.classList.contains('lightbox-image-wrap')) {
+        closeGalleryLightbox();
+    }
+}
+
 function initGalleryThumbnails(images = []) {
     const thumbContainer = document.getElementById('galleryThumbs');
-    if (!thumbContainer) return;
+    const lbThumbsBar = document.getElementById('lightboxThumbsBar');
 
-    const standardGallery = [
-        '/images/gallery/bedroom.jpg',
-        '/images/gallery/kitchen.jpg',
-        '/images/gallery/bath.jpg',
-        '/images/gallery/hallway.jpg',
-        '/images/gallery/exterior.jpg'
+    const defaultTitles = [
+        'Bedroom Suite',
+        'Kitchen & Dining Area',
+        'Private Bathroom',
+        'Corridor & Hallway',
+        'Exterior & Courtyard'
     ];
 
-    let list = Array.isArray(images) && images.length > 0 ? images : standardGallery;
-    list = list.filter(url => url && !url.includes('unsplash.com'));
-    if (list.length === 0) list = standardGallery;
-    list = list.slice(0, 5); // Strictly 5 pictures
+    let list = [];
+    if (Array.isArray(images) && images.length > 0) {
+        images.forEach((img, idx) => {
+            const url = typeof img === 'string' ? img : (img.url || img.image_url);
+            if (url && !url.includes('unsplash.com')) {
+                list.push({
+                    url: url,
+                    title: (typeof img === 'object' && img.title) ? img.title : (defaultTitles[idx] || `Unit Photo ${idx + 1}`)
+                });
+            }
+        });
+    }
 
-    thumbContainer.innerHTML = '';
-    list.forEach((url, index) => {
-        const thumb = document.createElement('div');
-        thumb.className = `thumb-item ${index === 0 ? 'active' : ''}`;
-        thumb.innerHTML = `<img src="${url}" alt="Unit Photo ${index + 1}" onerror="this.src='${standardGallery[index % standardGallery.length]}'">`;
-        thumb.onclick = () => {
-            const mainImg = document.getElementById('heroImage');
-            if (mainImg) mainImg.src = url;
-            document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
-            thumb.classList.add('active');
-        };
-        thumbContainer.appendChild(thumb);
-    });
+    if (list.length === 0) {
+        list = [...STANDARD_GALLERY_ITEMS];
+    }
+    currentGalleryList = list.slice(0, 5); // Strictly 5 pictures
+
+    if (thumbContainer) {
+        thumbContainer.innerHTML = '';
+        currentGalleryList.forEach((item, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = `thumb-item ${index === 0 ? 'active' : ''}`;
+            thumb.title = `${item.title} (Click to switch, click big image for full view)`;
+            thumb.innerHTML = `<img src="${item.url}" alt="${item.title}" onerror="this.src='${STANDARD_GALLERY_ITEMS[index % 5].url}'">`;
+            thumb.onclick = () => {
+                syncActivePhoto(index);
+            };
+            thumbContainer.appendChild(thumb);
+        });
+    }
+
+    if (lbThumbsBar) {
+        lbThumbsBar.innerHTML = '';
+        currentGalleryList.forEach((item, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = `lightbox-thumb-item ${index === 0 ? 'active' : ''}`;
+            thumb.title = item.title;
+            thumb.innerHTML = `<img src="${item.url}" alt="${item.title}" onerror="this.src='${STANDARD_GALLERY_ITEMS[index % 5].url}'">`;
+            thumb.onclick = (e) => {
+                e.stopPropagation();
+                syncActivePhoto(index);
+            };
+            lbThumbsBar.appendChild(thumb);
+        });
+    }
+
+    syncActivePhoto(0);
 }
 
 function initCalendar(isOccupied, leases = [], visitData = {}) {
@@ -562,5 +707,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('rentModal')?.addEventListener('click', e => {
         if (e.target === e.currentTarget) closeRentModal();
+    });
+
+    // Keyboard navigation for Lightbox
+    document.addEventListener('keydown', e => {
+        const modal = document.getElementById('imageLightboxModal');
+        if (!modal || !modal.classList.contains('open')) return;
+
+        if (e.key === 'Escape') {
+            closeGalleryLightbox();
+        } else if (e.key === 'ArrowLeft') {
+            prevLightboxPhoto();
+        } else if (e.key === 'ArrowRight') {
+            nextLightboxPhoto();
+        }
     });
 });

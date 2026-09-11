@@ -401,24 +401,105 @@
         /* Photo View */
         .gallery-main {
             width: 100%;
-            height: clamp(380px, 48vh, 520px);
+            height: clamp(400px, 52vh, 580px);
             border-radius: var(--radius-lg);
             overflow: hidden;
-            background: #0d0e11;
+            background: #08090b;
             margin-bottom: 16px;
             position: relative;
             border: 1px solid var(--glass-border);
+            cursor: zoom-in;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gallery-bg-blur {
+            position: absolute;
+            inset: -25px;
+            background-size: cover;
+            background-position: center;
+            filter: blur(36px) brightness(0.32) saturate(1.25);
+            transform: scale(1.15);
+            pointer-events: none;
+            z-index: 1;
+            transition: background-image 0.4s ease;
         }
 
         .gallery-main img {
             width: 100%;
             height: 100%;
+            object-fit: contain;
+            position: relative;
+            z-index: 2;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gallery-main img.fill-mode {
             object-fit: cover;
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .gallery-main:hover img {
-            transform: scale(1.02);
+            transform: scale(1.015);
+        }
+
+        .gallery-overlay-controls {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .gallery-tool-btn {
+            background: rgba(13, 15, 18, 0.78);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            color: #f1f5f9;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 6px 13px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all var(--transition);
+        }
+
+        .gallery-tool-btn:hover {
+            background: var(--gold);
+            color: var(--obsidian);
+            border-color: var(--gold);
+            box-shadow: 0 2px 10px var(--gold-glow);
+        }
+
+        .gallery-expand-hint {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            background: rgba(13, 15, 18, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all var(--transition);
+        }
+
+        .gallery-main:hover .gallery-expand-hint {
+            color: #fff;
+            border-color: rgba(197, 160, 89, 0.5);
+            background: rgba(13, 15, 18, 0.9);
         }
 
         .gallery-thumbs {
@@ -453,6 +534,200 @@
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        /* ═══ FULLSCREEN IMAGE LIGHTBOX MODAL ═══ */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 6, 8, 0.95);
+            backdrop-filter: blur(14px);
+            z-index: 99999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .lightbox-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-dialog {
+            width: 100%;
+            max-width: 1320px;
+            height: 94vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .lightbox-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+
+        .lightbox-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lightbox-tag {
+            background: rgba(197, 160, 89, 0.15);
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            color: var(--gold-light);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 4px 14px;
+            border-radius: var(--radius-full);
+        }
+
+        .lightbox-counter {
+            color: #94a3b8;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        .lightbox-btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f1f5f9;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all var(--transition);
+        }
+
+        .lightbox-btn-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            transform: scale(1.05);
+        }
+
+        .lightbox-viewport {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px 0;
+        }
+
+        .lightbox-image-wrap {
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-image-wrap img {
+            max-width: 88vw;
+            max-height: 72vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: var(--radius-md);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            user-select: none;
+            transition: transform 0.25s ease;
+        }
+
+        .lightbox-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(13, 15, 18, 0.78);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            color: #f1f5f9;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            z-index: 20;
+        }
+
+        .lightbox-arrow:hover {
+            background: var(--gold);
+            color: var(--obsidian);
+            border-color: var(--gold);
+            box-shadow: 0 0 16px var(--gold-glow);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .lightbox-arrow-prev {
+            left: 12px;
+        }
+
+        .lightbox-arrow-next {
+            right: 12px;
+        }
+
+        .lightbox-thumbs-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding-top: 10px;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        .lightbox-thumb-item {
+            width: 74px;
+            height: 52px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: 0.55;
+            transition: all var(--transition);
+            flex-shrink: 0;
+            background: #0d0e11;
+        }
+
+        .lightbox-thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .lightbox-thumb-item:hover {
+            opacity: 0.85;
+            transform: translateY(-2px);
+            border-color: rgba(197, 160, 89, 0.4);
+        }
+
+        .lightbox-thumb-item.active {
+            opacity: 1;
+            border-color: var(--gold);
+            box-shadow: 0 0 12px var(--gold-glow);
+            transform: scale(1.05);
         }
 
         /* 360 Tour / Map View */
@@ -1386,7 +1661,13 @@
                 grid-template-columns: 1fr;
             }
             .gallery-main {
-                height: 280px;
+                height: clamp(300px, 46vh, 380px);
+            }
+            .gallery-expand-hint {
+                display: none;
+            }
+            .gallery-tool-btn span {
+                display: none;
             }
             .tour-container-v2 {
                 height: 320px;
@@ -1492,8 +1773,20 @@
 
                 <!-- Photos View (Strictly 5 pictures) -->
                 <div id="mediaPhotosView">
-                    <div class="gallery-main" id="mainGalleryContainer">
+                    <div class="gallery-main" id="mainGalleryContainer" onclick="openGalleryLightbox()" title="Click to view full uncropped photo">
+                        <div class="gallery-bg-blur" id="galleryBgBlur" style="background-image: url('/images/gallery/bedroom.jpg');"></div>
                         <img id="heroImage" src="/images/gallery/bedroom.jpg" alt="Unit Photo" onerror="this.src='/images/gallery/bedroom.jpg'">
+                        <div class="gallery-overlay-controls" onclick="event.stopPropagation()">
+                            <button type="button" class="gallery-tool-btn" id="btnToggleFit" onclick="toggleGalleryFit(event)" title="Toggle uncropped / filled view">
+                                <i class="fas fa-expand-arrows-alt" id="fitIcon"></i> <span id="fitLabel">Fill</span>
+                            </button>
+                            <button type="button" class="gallery-tool-btn" onclick="openGalleryLightbox()" title="Open Fullscreen Lightbox">
+                                <i class="fas fa-search-plus"></i> <span>Fullscreen</span>
+                            </button>
+                        </div>
+                        <div class="gallery-expand-hint">
+                            <i class="fas fa-expand"></i> Click to view full uncropped photo
+                        </div>
                     </div>
                     <div class="gallery-thumbs" id="galleryThumbs">
                         <!-- Populated dynamically by JS -->
@@ -1873,6 +2166,34 @@
         </div>
     </div>
 
+    <!-- ═══ FULLSCREEN IMAGE LIGHTBOX MODAL ═══ -->
+    <div class="lightbox-overlay" id="imageLightboxModal" onclick="handleLightboxBackdropClick(event)">
+        <div class="lightbox-dialog" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <div class="lightbox-meta">
+                    <span class="lightbox-tag" id="lightboxCategory">Bedroom Suite</span>
+                    <span class="lightbox-counter" id="lightboxCounter">Photo 1 of 5</span>
+                </div>
+                <button type="button" class="lightbox-btn-close" onclick="closeGalleryLightbox()" title="Close (Esc)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="lightbox-viewport">
+                <button type="button" class="lightbox-arrow lightbox-arrow-prev" onclick="prevLightboxPhoto(event)" title="Previous Photo (Left Arrow)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="lightbox-image-wrap">
+                    <img id="lightboxImage" src="/images/gallery/bedroom.jpg" alt="Full Unit Photo">
+                </div>
+                <button type="button" class="lightbox-arrow lightbox-arrow-next" onclick="nextLightboxPhoto(event)" title="Next Photo (Right Arrow)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="lightbox-thumbs-bar" id="lightboxThumbsBar">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </div>
+    </div>
 
     <!-- ═══ FOOTER ═══ -->
     <footer>
