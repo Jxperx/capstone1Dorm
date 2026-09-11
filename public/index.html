@@ -45,32 +45,35 @@
         ══════════════════════════════════════ */
         html {
             scroll-behavior: smooth;
-            scroll-snap-type: y proximity;
-            scroll-padding-top: 136px;
+            scroll-snap-type: y mandatory;
+            scroll-padding-top: 0;
         }
 
         /* Snap Section Base */
         .snap-section {
             scroll-snap-align: start;
-            scroll-snap-stop: normal;
-            min-height: calc(100vh - 136px);
+            scroll-snap-stop: always;
+            min-height: calc(100vh - 134px);
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             box-sizing: border-box;
             position: relative;
-            padding: clamp(24px, 4vh, 44px) 0;
+            padding: clamp(10px, 2vh, 20px) 0;
         }
 
         /* Section Specific Snap Offsets */
         #hero.snap-section {
-            scroll-margin-top: 74px;
             scroll-snap-align: start;
-            min-height: calc(100vh - 74px);
+            scroll-snap-stop: always;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(20px, 3vh, 40px) 24px;
+            padding-top: calc(74px + clamp(10px, 2vh, 24px));
+            padding-bottom: clamp(14px, 2.5vh, 28px);
+            padding-left: 24px;
+            padding-right: 24px;
             max-width: 1640px;
             width: 94%;
             margin: 0 auto;
@@ -78,8 +81,8 @@
         }
         @media (max-height: 760px) {
             #hero.snap-section {
-                align-items: flex-start;
-                padding-top: 24px;
+                align-items: center;
+                padding-top: calc(74px + 8px);
             }
         }
 
@@ -88,14 +91,15 @@
         #dorms.snap-section,
         #inquire.snap-section,
         #location.snap-section {
-            scroll-margin-top: 136px;
+            scroll-margin-top: 134px;
             scroll-snap-align: start;
-            min-height: calc(100vh - 136px);
-            justify-content: flex-start;
+            scroll-snap-stop: always;
+            min-height: calc(100vh - 134px);
+            justify-content: center;
         }
 
         #location.snap-section {
-            padding: clamp(32px, 5vh, 60px) 0 0 0;
+            padding: clamp(14px, 2.2vh, 24px) 0 0 0;
         }
 
         /* Floating Right Navigation Dots */
@@ -635,7 +639,7 @@
 
         .condo-card-bg, .dorm-card-bg {
             width: 100%;
-            height: 240px;
+            height: clamp(130px, 17vh, 175px);
             object-fit: cover;
             border-bottom: 1px solid var(--glass-border);
             transition: transform 0.6s ease;
@@ -646,7 +650,7 @@
         }
 
         .condo-card-content, .dorm-card-content {
-            padding: 24px;
+            padding: 12px 18px;
             display: flex;
             flex-direction: column;
             flex-grow: 1;
@@ -675,10 +679,10 @@
         }
 
         .condo-desc, .dorm-card-desc {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--stone);
-            line-height: 1.6;
-            margin-bottom: 20px;
+            line-height: 1.5;
+            margin-bottom: 12px;
             font-weight: 300;
             flex-grow: 1;
         }
@@ -687,7 +691,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: 16px;
+            padding-top: 10px;
             border-top: 1px solid var(--glass-border);
         }
 
@@ -738,7 +742,7 @@
             background: var(--glass-card);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-xl);
-            padding: 24px;
+            padding: 16px 22px;
         }
 
         .tour-header-bar {
@@ -870,10 +874,10 @@
 
         .highlights {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
-            padding-top: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
             border-top: 1px solid var(--glass-border);
         }
 
@@ -1046,7 +1050,7 @@
         /* Right — form side */
         .inquire-form-side {
             background: rgba(22, 23, 26, 0.65);
-            padding: clamp(24px, 3vw, 40px);
+            padding: clamp(14px, 2vw, 24px);
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -1074,7 +1078,7 @@
 
         .inquire-title {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(28px, 3.2vw, 42px);
+            font-size: clamp(22px, 2.4vw, 30px);
             font-weight: 400;
             color: var(--white);
             line-height: 1.15;
@@ -1084,24 +1088,24 @@
         .inquire-title em { font-style: italic; color: var(--gold); }
 
         .inquire-sub {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--stone);
             font-weight: 300;
-            margin-bottom: 32px;
-            line-height: 1.6;
+            margin-bottom: 10px;
+            line-height: 1.4;
         }
 
         /* Form inputs */
         .inquire-form {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 8px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
         }
 
         @media (max-width: 600px) {
@@ -1127,8 +1131,8 @@
             background: rgba(13, 14, 16, 0.85);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-md);
-            padding: 12px 16px;
-            font-size: 13px;
+            padding: 8px 12px;
+            font-size: 12px;
             color: var(--white);
             outline: none;
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -1158,16 +1162,17 @@
         }
 
         .id-upload-placeholder {
-            padding: 16px;
+            padding: 8px 12px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
             cursor: pointer;
         }
 
         .id-upload-icon {
-            width: 38px;
-            height: 38px;
+            width: 28px;
+            height: 28px;
+            font-size: 13px;
             border-radius: var(--radius-sm);
             background: rgba(197, 160, 89, 0.1);
             color: var(--gold);
@@ -1240,7 +1245,7 @@
             justify-content: center;
             gap: 10px;
             width: 100%;
-            padding: 16px 32px;
+            padding: 10px 20px;
             background: var(--gold);
             color: var(--obsidian);
             border: none;
@@ -1295,10 +1300,10 @@
         }
 
         .location-cards-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 36px;
-            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1560px;
             width: 100%;
             margin: 0 auto;
         }
@@ -1309,12 +1314,13 @@
             border-radius: var(--radius-xl);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            min-height: 420px;
+            grid-template-columns: 1fr 1.2fr;
+            height: clamp(260px, 34vh, 320px);
+            min-height: 260px;
         }
 
         .location-card.reverse {
-            grid-template-columns: 1.5fr 1fr;
+            grid-template-columns: 1fr 1.2fr;
         }
 
         @media (max-width: 960px) {
@@ -1338,16 +1344,17 @@
         }
 
         .location-info-panel {
-            padding: clamp(32px, 4vw, 48px);
+            padding: clamp(14px, 2vw, 22px);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            gap: 24px;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         .location-map-wrap {
             position: relative;
-            min-height: 380px;
+            height: 100%;
+            min-height: 180px;
             background: #141518;
             overflow: hidden;
         }
@@ -1357,9 +1364,10 @@
         ══════════════════════════════════════ */
         footer.editorial-footer {
             border-top: 1px solid var(--glass-border);
-            padding: 48px 24px;
-            max-width: 1640px; width: 94%;
-            margin: 60px auto 0 auto;
+            padding: 14px 20px;
+            max-width: 1640px;
+            width: 94%;
+            margin: 12px auto 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1403,12 +1411,16 @@
            SECTION 01: HERO / BUSINESS INTRODUCTION
         ══════════════════════════════════════ */
         #hero.snap-section {
-            scroll-margin-top: 74px;
-            min-height: calc(100vh - 74px);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(20px, 3vh, 40px) 24px;
+            padding-top: calc(74px + clamp(10px, 2vh, 24px));
+            padding-bottom: clamp(14px, 2.5vh, 28px);
+            padding-left: 24px;
+            padding-right: 24px;
             max-width: 1640px;
             width: 94%;
             margin: 0 auto;
@@ -1439,7 +1451,7 @@
 
         .hero-intro-title {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+            font-size: clamp(2rem, 3.2vw, 3.2rem);
             font-weight: 400;
             line-height: 1.16;
             color: var(--white);
@@ -1453,9 +1465,9 @@
         }
 
         .hero-intro-desc {
-            font-size: clamp(14px, 1.2vw, 16px);
+            font-size: clamp(13px, 1.1vw, 15px);
             color: var(--stone);
-            line-height: 1.7;
+            line-height: 1.6;
             font-weight: 300;
             max-width: 620px;
             margin: 0;
@@ -1478,10 +1490,10 @@
             background: var(--glass-card);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-md);
-            padding: 14px 18px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             transition: all var(--transition);
         }
 
@@ -1551,8 +1563,7 @@
             border: 1px solid var(--glass-border);
             background: #141518;
             box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-            aspect-ratio: 4 / 3.4;
-            max-height: 520px;
+            aspect-ratio: 4 / 3.2; max-height: clamp(300px, 40vh, 440px);
         }
 
         .hero-main-img {
@@ -1665,16 +1676,16 @@
            SECTION 02: DEDICATED 360 TOUR
         ══════════════════════════════════════ */
         #tour.snap-section {
-            scroll-margin-top: 136px;
-            min-height: calc(100vh - 136px);
-            justify-content: flex-start;
-            padding: clamp(16px, 2.5vh, 32px) 0;
+            scroll-margin-top: 134px;
+            min-height: calc(100vh - 134px);
+            justify-content: center;
+            padding: clamp(10px, 1.8vh, 20px) 0;
             width: 100%;
             margin: 0 auto;
         }
 
         .expanded-tour-window {
-            height: clamp(360px, 50vh, 560px) !important;
+            height: clamp(280px, 38vh, 430px) !important;
         }
 
     </style>
@@ -1984,74 +1995,78 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="emailAddr">Email Address</label>
-                                <input type="email" id="emailAddr" name="email" placeholder="scholar@university.edu" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="emailAddr">Email Address</label>
+                                    <input type="email" id="emailAddr" name="email" placeholder="scholar@university.edu" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unitPref">Preferred Unit Format</label>
+                                    <select id="unitPref" name="preferred_unit">
+                                        <option value="" disabled selected>Select a unit</option>
+                                        <option value="condo1">Condo Unit 1</option>
+                                        <option value="condo2">Condo Unit 2</option>
+                                        <option value="dorm">Standard Dorm Room</option>
+                                        <option value="either">Open to Any Unit</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="phoneNum">Student Mobile Contact</label>
-                                <input type="tel" id="phoneNum" name="phone" placeholder="+63 9XX XXX XXXX" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="guardianPhone">Parent / Guardian Contact Number</label>
-                                <input type="tel" id="guardianPhone" name="guardian_phone" placeholder="+63 9XX XXX XXXX">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="phoneNum">Student Mobile Contact</label>
+                                    <input type="tel" id="phoneNum" name="phone" placeholder="+63 9XX XXX XXXX" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="guardianPhone">Parent / Guardian Phone</label>
+                                    <input type="tel" id="guardianPhone" name="guardian_phone" placeholder="+63 9XX XXX XXXX">
+                                </div>
                             </div>
 
                             <!-- ID Document Uploads -->
-                            <div class="form-group" id="idUploadSection">
-                                <label style="font-size:11px; font-weight:700; color:var(--gold); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; display:block">
+                            <div class="form-group" id="idUploadSection" style="margin-bottom: 2px;">
+                                <label style="font-size:10px; font-weight:700; color:var(--gold); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; display:block">
                                     <i class="fas fa-id-card me-1"></i> Verification Documents
                                 </label>
-                                <p style="font-size:11px; color:var(--stone); margin-bottom:12px; font-weight:300;">
-                                    Upload at least one valid identification document (JPG or PNG, max 5MB).
-                                </p>
-
-                                <!-- School ID -->
-                                <div class="id-upload-card" id="schoolIdCard">
-                                    <input type="file" id="schoolIdInput" name="school_id" accept="image/jpeg,image/png" style="display:none">
-                                    <div class="id-upload-placeholder" id="schoolIdPlaceholder" onclick="document.getElementById('schoolIdInput').click()">
-                                        <div class="id-upload-icon"><i class="fas fa-graduation-cap"></i></div>
-                                        <div class="id-upload-label">School ID / Enrollment Document</div>
-                                        <div class="id-upload-hint">Click to attach photo</div>
+                                <div class="form-row" style="gap: 10px;">
+                                    <!-- School ID -->
+                                    <div class="id-upload-card" id="schoolIdCard">
+                                        <input type="file" id="schoolIdInput" name="school_id" accept="image/jpeg,image/png" style="display:none">
+                                        <div class="id-upload-placeholder" id="schoolIdPlaceholder" onclick="document.getElementById('schoolIdInput').click()">
+                                            <div class="id-upload-icon"><i class="fas fa-graduation-cap"></i></div>
+                                            <div>
+                                                <div class="id-upload-label" style="font-size:11px;">School ID</div>
+                                                <div class="id-upload-hint" style="font-size:9px;">Attach photo</div>
+                                            </div>
+                                        </div>
+                                        <div class="id-upload-preview" id="schoolIdPreview" style="display:none; padding:8px 12px;">
+                                            <img id="schoolIdImg" src="" alt="School ID preview" style="width:36px; height:26px;">
+                                            <div class="id-upload-filename" id="schoolIdName" style="font-size:10px;"></div>
+                                            <button type="button" class="id-remove-btn" onclick="removeIdUpload('school')" title="Remove">&times;</button>
+                                        </div>
                                     </div>
-                                    <div class="id-upload-preview" id="schoolIdPreview" style="display:none">
-                                        <img id="schoolIdImg" src="" alt="School ID preview">
-                                        <div class="id-upload-filename" id="schoolIdName"></div>
-                                        <button type="button" class="id-remove-btn" onclick="removeIdUpload('school')" title="Remove">&times;</button>
+
+                                    <!-- Government ID -->
+                                    <div class="id-upload-card" id="govtIdCard">
+                                        <input type="file" id="govtIdInput" name="govt_id" accept="image/jpeg,image/png" style="display:none">
+                                        <div class="id-upload-placeholder" id="govtIdPlaceholder" onclick="document.getElementById('govtIdInput').click()">
+                                            <div class="id-upload-icon"><i class="fas fa-id-card"></i></div>
+                                            <div>
+                                                <div class="id-upload-label" style="font-size:11px;">Govt ID</div>
+                                                <div class="id-upload-hint" style="font-size:9px;">Attach photo</div>
+                                            </div>
+                                        </div>
+                                        <div class="id-upload-preview" id="govtIdPreview" style="display:none; padding:8px 12px;">
+                                            <img id="govtIdImg" src="" alt="Government ID preview" style="width:36px; height:26px;">
+                                            <div class="id-upload-filename" id="govtIdName" style="font-size:10px;"></div>
+                                            <button type="button" class="id-remove-btn" onclick="removeIdUpload('govt')" title="Remove">&times;</button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <!-- Government ID -->
-                                <div class="id-upload-card" id="govtIdCard" style="margin-top:10px">
-                                    <input type="file" id="govtIdInput" name="govt_id" accept="image/jpeg,image/png" style="display:none">
-                                    <div class="id-upload-placeholder" id="govtIdPlaceholder" onclick="document.getElementById('govtIdInput').click()">
-                                        <div class="id-upload-icon"><i class="fas fa-id-card"></i></div>
-                                        <div class="id-upload-label">Government ID (PhilSys / Passport / Driver's)</div>
-                                        <div class="id-upload-hint">Click to attach photo</div>
-                                    </div>
-                                    <div class="id-upload-preview" id="govtIdPreview" style="display:none">
-                                        <img id="govtIdImg" src="" alt="Government ID preview">
-                                        <div class="id-upload-filename" id="govtIdName"></div>
-                                        <button type="button" class="id-remove-btn" onclick="removeIdUpload('govt')" title="Remove">&times;</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="unitPref">Preferred Unit Format</label>
-                                <select id="unitPref" name="preferred_unit">
-                                    <option value="" disabled selected>Select a unit</option>
-                                    <option value="condo1">Condo Unit 1</option>
-                                    <option value="condo2">Condo Unit 2</option>
-                                    <option value="dorm">Standard Dorm Room</option>
-                                    <option value="either">Open to Any Unit</option>
-                                </select>
                             </div>
 
                             <!-- Live Availability Info Panel -->
-                            <div id="unitAvailabilityPanel" style="display:none; margin-bottom:18px; padding:14px 18px; background:rgba(197,160,89,0.06); border:1px solid rgba(197,160,89,0.25); border-radius:12px;">
+                            <div id="unitAvailabilityPanel" style="display:none; margin-bottom:10px; padding:10px 14px; background:rgba(197,160,89,0.06); border:1px solid rgba(197,160,89,0.25); border-radius:10px;">
                                 <div id="availContent"></div>
                             </div>
 
@@ -2060,8 +2075,8 @@
                             <input type="hidden" id="rq-hidden-score" name="quiz_score">
 
                             <!-- Room Matching Quiz module container -->
-                            <div id="room-matching-quiz" aria-label="Room Matching Quiz" style="display:none; margin-bottom:18px;">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <div id="room-matching-quiz" aria-label="Room Matching Quiz" style="display:none; margin-bottom:12px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                                     <span class="eyebrow"><i class="fas fa-user-friends me-1"></i> Roommate Compatibility Quiz</span>
                                     <span style="font-size:10px; color:var(--stone);">Optional 2-minute assessment</span>
                                 </div>
@@ -2069,10 +2084,10 @@
 
                             <div class="form-group">
                                 <label for="inquiryMessage">Academic Focus &amp; Special Requests</label>
-                                <textarea id="inquiryMessage" name="message" rows="3" placeholder="Tell us about your degree program, target move-in date, or specific study requirements..."></textarea>
+                                <textarea id="inquiryMessage" name="message" rows="2" placeholder="Degree program, target move-in date, or study requests..."></textarea>
                             </div>
 
-                            <button type="submit" id="inquirySubmitBtn" class="nav-btn solid" style="width:100%; justify-content:center; padding:14px; border-radius:12px;">
+                            <button type="submit" id="inquirySubmitBtn" class="nav-btn solid" style="width:100%; justify-content:center; padding:11px 20px; border-radius:10px; font-size:12px; margin-top:4px;">
                                 Submit Reservation Inquiry
                             </button>
                         </form>
@@ -2103,25 +2118,25 @@
                     <div class="location-card">
                         <div class="location-info-panel">
                             <div>
-                                <div class="eyebrow" style="margin-bottom: 12px;"><i class="fas fa-bed"></i> EliteStay Dorm</div>
-                                <h3 class="serif-display" style="font-size: 2.2rem; color: var(--white); line-height: 1.2; margin-bottom: 12px;">
-                                    Dorm A1<br><span style="font-size: 1.3rem; color: var(--stone); font-weight: 300;">Student Accommodation</span>
+                                <div class="eyebrow" style="margin-bottom: 6px;"><i class="fas fa-bed"></i> EliteStay Dorm</div>
+                                <h3 class="serif-display" style="font-size: 1.7rem; color: var(--white); line-height: 1.15; margin-bottom: 6px;">
+                                    Dorm A1<br><span style="font-size: 1.05rem; color: var(--stone); font-weight: 300;">Student Accommodation</span>
                                 </h3>
-                                <p style="font-size: 12px; color: var(--stone); line-height: 1.7; font-weight: 300;">
-                                    Conveniently located near major universities — offering premium dorm living with easy access to campus, transport, and lifestyle hubs.
+                                <p style="font-size: 11px; color: var(--stone); line-height: 1.5; font-weight: 300;">
+                                    Conveniently located near major universities — offering premium dorm living with easy access to campus and transport.
                                 </p>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
+                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
                                 <div>
-                                    <span style="font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
+                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
                                     <span style="color: var(--white);">Turbina, Calamba City, Philippines</span>
                                 </div>
                                 <div>
-                                    <span style="font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
+                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
                                     <span style="color: var(--white);">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
                                 </div>
                             </div>
-                            <a href="#inquire" class="nav-btn" style="align-self: flex-start;">Schedule Viewing</a>
+                            <a href="#inquire" class="nav-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 10px;">Schedule Viewing</a>
                         </div>
                         <div class="location-map-wrap" id="landingDormMapWrap">
                             <iframe id="landingDormMapIframe"
@@ -2135,7 +2150,29 @@
                     </div>
 
                     <!-- Condo Location -->
-                    <div class="location-card reverse">
+                    <div class="location-card">
+                        <div class="location-info-panel">
+                            <div>
+                                <div class="eyebrow" style="margin-bottom: 6px;"><i class="fas fa-building"></i> EliteStay Condo</div>
+                                <h3 class="serif-display" style="font-size: 1.7rem; color: var(--white); line-height: 1.15; margin-bottom: 6px;">
+                                    Condo Units<br><span style="font-size: 1.05rem; color: var(--stone); font-weight: 300;">Luxury Living</span>
+                                </h3>
+                                <p style="font-size: 11px; color: var(--stone); line-height: 1.5; font-weight: 300;">
+                                    Premium condo units designed for modern academic living — fully furnished, secure, and beautifully appointed.
+                                </p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                                <div>
+                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
+                                    <span style="color: var(--white);">South Blvd, Silang, Calabarzon</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
+                                    <span style="color: var(--white);">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
+                                </div>
+                            </div>
+                            <a href="#inquire" class="nav-btn solid" style="align-self: flex-start; padding: 6px 14px; font-size: 10px;">Schedule Viewing</a>
+                        </div>
                         <div class="location-map-wrap" id="landingCondoMapWrap">
                             <iframe id="landingCondoMapIframe"
                                     src="https://www.google.com/maps/embed?pb=!3m2!1sen!2sph!4v1775685884257!5m2!1sen!2sph!6m8!1m7!1sriOdGSCtvHmZQKl0O6Aauw!2m2!1d14.24048350795415!2d121.0425856352331!3f129.15545414837314!4f-2.0124363928627105!5f0.7820865974627469"
@@ -2144,28 +2181,6 @@
                                     allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
                                     title="EliteStay Condo Location">
                             </iframe>
-                        </div>
-                        <div class="location-info-panel">
-                            <div>
-                                <div class="eyebrow" style="margin-bottom: 12px;"><i class="fas fa-building"></i> EliteStay Condo</div>
-                                <h3 class="serif-display" style="font-size: 2.2rem; color: var(--white); line-height: 1.2; margin-bottom: 12px;">
-                                    Condo Units<br><span style="font-size: 1.3rem; color: var(--stone); font-weight: 300;">Luxury Living</span>
-                                </h3>
-                                <p style="font-size: 12px; color: var(--stone); line-height: 1.7; font-weight: 300;">
-                                    Premium condo units designed for modern academic living — fully furnished, secure, and beautifully appointed in a prime accessible location.
-                                </p>
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
-                                <div>
-                                    <span style="font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Address</span>
-                                    <span style="color: var(--white);">South Blvd, Silang, Calabarzon, Philippines</span>
-                                </div>
-                                <div>
-                                    <span style="font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: block;">Viewing Hours</span>
-                                    <span style="color: var(--white);">Mon &ndash; Sat &bull; 9:00 AM &ndash; 5:00 PM</span>
-                                </div>
-                            </div>
-                            <a href="#inquire" class="nav-btn solid" style="align-self: flex-start;">Schedule Viewing</a>
                         </div>
                     </div>
                 </div>
