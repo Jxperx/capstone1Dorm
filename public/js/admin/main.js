@@ -144,6 +144,7 @@ function initAdminMain() {
     if(typeof loadTenantsForCalc === 'function') loadTenantsForCalc();
     if(typeof loadAdminFeedback === 'function') loadAdminFeedback();
     if(typeof loadPropertyMediaAdmin === 'function') loadPropertyMediaAdmin();
+    if(typeof loadTopNavProfile === 'function') loadTopNavProfile();
 }
 
 if (document.readyState === 'loading') {
