@@ -170,9 +170,17 @@ router.post('/create-account', async (req, res) => {
                     VALUES (@user_id, @token, @otp_code, @token_type, @expires_at)
                 `);
 
-            const protocol = req.protocol;
-            const host = req.get('host');
-            setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(cleanEmail)}`;
+            const host = req.get('host') || '';
+            const protocol = req.protocol || 'https';
+            let baseUrl = process.env.APP_URL;
+            if (!baseUrl) {
+                if (host.includes('localhost') || host.includes('127.0.0.1')) {
+                    baseUrl = 'https://capstone1dorm.onrender.com';
+                } else {
+                    baseUrl = `${protocol}://${host}`;
+                }
+            }
+            setupUrl = `${baseUrl}/set-password.html?token=${setupToken}&email=${encodeURIComponent(cleanEmail)}`;
 
             console.log(`[Tenant Onboarding] Generated setup link for ${cleanEmail}: ${setupUrl}`);
 
@@ -301,9 +309,17 @@ router.post('/:id/resend-invite', async (req, res) => {
                 VALUES (@user_id, @token, @otp_code, @token_type, @expires_at)
             `);
 
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const setupUrl = `${protocol}://${host}/set-password.html?token=${setupToken}&email=${encodeURIComponent(tenant.email)}`;
+        const host = req.get('host') || '';
+        const protocol = req.protocol || 'https';
+        let baseUrl = process.env.APP_URL;
+        if (!baseUrl) {
+            if (host.includes('localhost') || host.includes('127.0.0.1')) {
+                baseUrl = 'https://capstone1dorm.onrender.com';
+            } else {
+                baseUrl = `${protocol}://${host}`;
+            }
+        }
+        const setupUrl = `${baseUrl}/set-password.html?token=${setupToken}&email=${encodeURIComponent(tenant.email)}`;
 
         // Dispatch Email with Setup Link
         try {
