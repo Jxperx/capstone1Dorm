@@ -2481,11 +2481,16 @@
                     }
                 }
 
-                // Build Condo Tour Tabs
-                condos.forEach((room, i) => {
+                const tourIndexByRoomId = {};
+                const tourCondos = condos.filter(r => getTourSrc(r) !== null);
+                const tourDorms  = dorms.filter(r => getTourSrc(r) !== null);
+
+                // Build Condo Tour Tabs (Only units with 360 virtual tours: Condo 1 & Condo 2)
+                tourCondos.forEach((room, i) => {
                     const panelId = 'tour-panel-' + room.id;
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
+                    tourIndexByRoomId[room.id] = idx;
                     const img = room.cover_image || condoImgs[i % condoImgs.length];
                     const tourSrc = getTourSrc(room);
                     const condoNum = getRoomNum(room);
@@ -2506,11 +2511,12 @@
                     }
                 });
 
-                // Build Dorm Tour Tabs
-                dorms.forEach((room, i) => {
+                // Build Dorm Tour Tabs (Only units with 360 virtual tours: Dorm A1)
+                tourDorms.forEach((room, i) => {
                     const panelId = 'tour-panel-' + room.id;
                     allTourPanelIds.push(panelId);
                     const idx = tabIndex++;
+                    tourIndexByRoomId[room.id] = idx;
                     const img = room.cover_image || dormImgs[i % dormImgs.length];
                     const tourSrc = getTourSrc(room);
                     const dormLabel = 'Dorm ' + (room.room_number.replace(/^dorm/i, '').trim() || (i + 1));
@@ -2538,10 +2544,13 @@
                     } else {
                         condoGrid.innerHTML = condos.map((room, i) => {
                             const img = room.cover_image || condoImgs[i % condoImgs.length];
-                            const tourIdx = i;
+                            const tourIdx = tourIndexByRoomId[room.id];
                             const condoNum = getRoomNum(room);
+                            const clickAction = tourIdx !== undefined
+                                ? `switchTourAndScroll(${tourIdx})`
+                                : `window.location.href='/unit.html?roomId=${room.id}'`;
                             return `
-                            <div class="condo-card" onclick="switchTourAndScroll(${tourIdx})">
+                            <div class="condo-card" onclick="${clickAction}">
                                 <img src="${img}" alt="Condo ${room.room_number}" class="condo-card-bg"
                                      onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80'">
                                 <div class="condo-card-content">
@@ -2567,10 +2576,13 @@
                     } else {
                         dormGrid.innerHTML = dorms.map((room, i) => {
                             const img  = room.cover_image || dormImgs[i % dormImgs.length];
-                            const tidx = condos.length + i;
+                            const tourIdx = tourIndexByRoomId[room.id];
                             const dormName = 'Dorm ' + (room.room_number.replace(/^dorm/i, '').trim() || (i + 1));
+                            const clickAction = tourIdx !== undefined
+                                ? `switchTourAndScroll(${tourIdx})`
+                                : `window.location.href='/unit.html?roomId=${room.id}'`;
                             return `
-                            <div class="dorm-card" onclick="switchTourAndScroll(${tidx})">
+                            <div class="dorm-card" onclick="${clickAction}">
                                 <img src="${img}" alt="Dorm ${room.room_number}" class="dorm-card-bg"
                                      onerror="this.src='https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80'">
                                 <div class="dorm-card-content">
