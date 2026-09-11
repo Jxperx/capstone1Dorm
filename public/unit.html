@@ -4,571 +4,1665 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit Details — EliteStay</title>
-    <meta name="description" content="View detailed information, availability calendar, and media for this EliteStay unit.">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Unit Details &bull; EliteStay Residences</title>
+    <meta name="description" content="Explore comprehensive specifications, panoramic media, and live availability calendar for EliteStay residences.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
-    <link rel="stylesheet" href="css/landing.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <style>
-        /* ── Variables ─────────────────────────────────────────────── */
+        /* ══════════════════════════════════════
+           DESIGN TOKENS & LUXURY PALETTE
+        ══════════════════════════════════════ */
         :root {
-            --charcoal:       #1A1A1B;
-            --charcoal-2:     #232325;
-            --charcoal-3:     #2d2d30;
-            --gold:           #D4AF37;
-            --gold-light:     #e8cd6a;
-            --gold-dark:      #b8960c;
-            --white:          #ffffff;
-            --off-white:      #f5f0e8;
-            --premium-shadow: 0 30px 60px rgba(0,0,0,0.5);
-            --border-radius:  24px;
+            --obsidian: #08090A;
+            --charcoal: #0E1013;
+            --carbon: #14171C;
+            --ash: #1C2026;
+            --slate: #282E37;
+            --stone: #94A3B8;
+            --linen: #F1F5F9;
+            --gold: #C5A059;
+            --gold-light: #DFBA73;
+            --gold-dark: #9A7B38;
+            --gold-glow: rgba(197, 160, 89, 0.25);
+            --gold-glow-soft: rgba(197, 160, 89, 0.10);
+            --white: #FFFFFF;
+            --glass-card: rgba(14, 16, 19, 0.82);
+            --glass-card-hover: rgba(20, 23, 28, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-gold: rgba(197, 160, 89, 0.35);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+            --radius-full: 9999px;
+            --transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+            --font-display: 'Cormorant Garamond', serif;
+        }
+
+        /* ── Reset & Base ────────────────── */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            background-color: var(--charcoal);
-            color: var(--white);
-            font-family: 'Poppins', sans-serif;
+            background-color: var(--obsidian);
+            color: var(--linen);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(197, 160, 89, 0.12), transparent 70%),
+                radial-gradient(circle at 100% 60%, rgba(197, 160, 89, 0.04), transparent 50%),
+                radial-gradient(circle at 0% 90%, rgba(197, 160, 89, 0.04), transparent 50%);
+            min-height: 100vh;
         }
 
-        /* ── Back Link ─────────────────────────────────────────────── */
+        /* ══════════════════════════════════════
+           TOP NAVIGATION BAR
+        ══════════════════════════════════════ */
+        .unit-nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(8, 9, 10, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 14px 4%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .nav-left-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .back-link {
-            position: absolute;
-            top: 30px; left: 5%;
-            z-index: 100;
-            color: white;
+            color: var(--linen);
             text-decoration: none;
-            font-size: 13px; font-weight: 600;
-            letter-spacing: 1px; text-transform: uppercase;
-            display: flex; align-items: center; gap: 10px;
-            background: rgba(0,0,0,0.3);
-            padding: 10px 20px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: all 0.3s ease;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px 18px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition);
         }
-        .back-link:hover { background: var(--gold); border-color: var(--gold); transform: translateX(-5px); }
 
-        /* ── Hero ──────────────────────────────────────────────────── */
-        .unit-hero-v2 {
-            height: 28vh; min-height: 200px;
-            background: linear-gradient(135deg,#000 0%,#1a1a1a 40%,#2d2416 100%);
-            position: relative;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; color: white; text-align: center; padding: 30px 0;
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--obsidian);
+            border-color: var(--gold);
+            transform: translateX(-3px);
+            box-shadow: 0 4px 16px var(--gold-glow);
         }
-        .hero-glow {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%,-50%);
-            width: 600px; height: 400px;
-            background: radial-gradient(circle,rgba(212,175,55,0.15) 0%,transparent 70%);
-            pointer-events: none;
+
+        .brand-logo {
+            font-family: var(--font-serif);
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--white);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .hero-content-v2 { position: relative; z-index: 5; max-width: 800px; padding: 0 24px; }
-        .luxury-badge {
-            font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
-            color: var(--gold); font-weight: 700; margin-bottom: 15px; display: block;
+
+        .brand-logo span {
+            color: var(--gold);
         }
+
+        .nav-right-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-inquire-cta {
+            background: var(--gold);
+            color: var(--obsidian);
+            padding: 9px 20px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-inquire-cta:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--gold-glow);
+        }
+
+        /* ══════════════════════════════════════
+           UNIT HERO BANNER
+        ══════════════════════════════════════ */
+        .unit-hero-banner {
+            padding: 44px 4% 32px;
+            max-width: 1720px;
+            margin: 0 auto;
+        }
+
+        .hero-badge-strip {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .collection-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--gold);
+            background: rgba(197, 160, 89, 0.10);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            padding: 5px 14px;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .status-badge-v2 {
-            display: inline-block; padding: 6px 16px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(252,211,77,0.3);
-            border-radius: 50px; font-size: 10px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 15px; backdrop-filter: blur(5px);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 16px;
+            border-radius: var(--radius-full);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(8px);
         }
-        .status-available-v2 { color: #86efac; border-color: rgba(134,239,172,0.3); }
-        .status-occupied-v2  { color: #fca5a5; border-color: rgba(252,165,165,0.3); }
+
+        .status-available-v2 {
+            color: #4ade80;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+        }
+
+        .status-available-v2::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .status-occupied-v2 {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        .status-occupied-v2::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
         .unit-title-v2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(28px,4vw,48px); font-weight: 500;
-            letter-spacing: 1px; line-height: 1.1; margin-bottom: 8px;
+            font-family: var(--font-display);
+            font-size: clamp(34px, 4.2vw, 56px);
+            font-weight: 600;
+            line-height: 1.1;
+            color: var(--white);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
         }
+
         .unit-subtitle-v2 {
-            font-size: 13px; font-weight: 300;
-            letter-spacing: 2px; text-transform: uppercase;
-            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--stone);
+            margin-bottom: 22px;
         }
 
-        /* ── Grid Layout ───────────────────────────────────────────── */
-        .luxury-container {
-            max-width: 1280px;
-            margin: -40px auto 60px;
-            padding: 0 24px;
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 30px;
-            position: relative;
-            z-index: 10;
+        /* ── Quick Specs Bar ── */
+        .hero-specs-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 16px 24px;
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(12px);
         }
 
-        /* ── Cards ─────────────────────────────────────────────────── */
-        .luxury-card {
-            background: var(--charcoal-2);
-            border-radius: var(--border-radius);
-            box-shadow: var(--premium-shadow);
-            padding: 28px; margin-bottom: 24px;
-            border: 1px solid rgba(212,175,55,0.12);
+        .hero-spec-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--linen);
         }
-        .section-header-v2 {
-            display: flex; align-items: center; gap: 12px;
-            font-size: 20px; font-family: 'Cormorant Garamond', serif;
-            font-weight: 700; color: var(--white);
-            margin-bottom: 20px; padding-bottom: 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+
+        .hero-spec-pill i {
+            color: var(--gold);
+            font-size: 14px;
+        }
+
+        .hero-spec-pill .spec-muted {
+            color: var(--stone);
+            font-size: 10px;
+            text-transform: uppercase;
             letter-spacing: 1px;
+            display: block;
         }
-        .section-header-v2 i { color: var(--gold); font-size: 18px; }
 
-        /* ── Gallery ───────────────────────────────────────────────── */
+        .hero-spec-pill .spec-val {
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .hero-spec-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--glass-border);
+        }
+
+        /* ══════════════════════════════════════
+           MAIN WIDESCREEN LAYOUT
+        ══════════════════════════════════════ */
+        .luxury-container {
+            max-width: 1720px;
+            width: 94%;
+            margin: 0 auto 80px;
+            display: grid;
+            grid-template-columns: 1fr 440px;
+            gap: 36px;
+            align-items: start;
+        }
+
+        /* ── Luxury Card Base ── */
+        .luxury-card {
+            background: var(--glass-card);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--glass-border);
+            padding: clamp(24px, 2.5vw, 36px);
+            margin-bottom: 30px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: border-color var(--transition);
+        }
+
+        .luxury-card:hover {
+            border-color: rgba(197, 160, 89, 0.22);
+        }
+
+        .section-header-v2 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-header-v2 i {
+            color: var(--gold);
+            font-size: 19px;
+        }
+
+        /* ══════════════════════════════════════
+           MEDIA SHOWCASE & SWITCHER
+        ══════════════════════════════════════ */
+        .media-view-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
+        }
+
+        .media-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--stone);
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .media-tab-btn:hover {
+            color: var(--white);
+        }
+
+        .media-tab-btn.active {
+            background: var(--gold);
+            color: var(--obsidian);
+            box-shadow: 0 2px 10px var(--gold-glow);
+        }
+
+        /* Photo View */
         .gallery-main {
-            width: 100%; height: 340px;
-            border-radius: 16px; overflow: hidden;
-            background: #eee; margin-bottom: 15px;
+            width: 100%;
+            height: clamp(380px, 48vh, 520px);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: #0d0e11;
+            margin-bottom: 16px;
+            position: relative;
+            border: 1px solid var(--glass-border);
         }
-        .gallery-main img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+
+        .gallery-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gallery-main:hover img {
+            transform: scale(1.02);
+        }
+
         .gallery-thumbs {
-            display: grid; grid-template-columns: repeat(5,1fr);
-            gap: 12px; margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            margin-bottom: 6px;
         }
+
         .thumb-item {
-            aspect-ratio: 4/3; border-radius: 10px; overflow: hidden;
-            cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;
+            aspect-ratio: 16/10;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background: #0d0e11;
+            transition: all var(--transition);
         }
-        .thumb-item:hover { transform: translateY(-3px); }
-        .thumb-item.active { border-color: var(--gold); }
-        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
-        .media-label-v2 {
-            font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
-            font-weight: 700; color: var(--gold); margin-bottom: 10px; display: block;
+
+        .thumb-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(197, 160, 89, 0.5);
         }
+
+        .thumb-item.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 14px var(--gold-glow);
+        }
+
+        .thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 360 Tour / Map View */
         .tour-container-v2 {
-            width: 100%; height: 320px; border-radius: 16px; overflow: hidden;
-            border: 1px solid rgba(212,175,55,0.1); background: var(--charcoal-3);
+            width: 100%;
+            height: clamp(380px, 48vh, 520px);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            background: #0d0e11;
+            position: relative;
         }
-        .tour-container-v2 iframe { width: 100%; height: 100%; border: 0; display: block; }
 
-        /* ── Calendar ──────────────────────────────────────────────── */
-        #calendar { margin-bottom: 10px; }
+        .tour-container-v2 iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+
+        .media-label-v2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            color: var(--gold);
+            margin: 20px 0 10px;
+            display: block;
+        }
+
+        /* ══════════════════════════════════════
+           AMENITIES & INCLUSIONS GRID
+        ══════════════════════════════════════ */
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .amenity-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all var(--transition);
+        }
+
+        .amenity-card:hover {
+            background: rgba(197, 160, 89, 0.05);
+            border-color: rgba(197, 160, 89, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .amenity-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(197, 160, 89, 0.12);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .amenity-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 2px;
+        }
+
+        .amenity-desc {
+            font-size: 11px;
+            color: var(--stone);
+        }
+
+        /* ══════════════════════════════════════
+           AVAILABILITY CALENDAR (DARK & SLEEK)
+        ══════════════════════════════════════ */
+        .calendar-wrap {
+            position: relative;
+        }
+
+        #calendar {
+            margin-bottom: 16px;
+        }
+
+        /* FullCalendar Custom Dark Styling */
+        .fc {
+            --fc-border-color: rgba(255, 255, 255, 0.08);
+            --fc-page-bg-color: transparent;
+            --fc-neutral-bg-color: rgba(255, 255, 255, 0.02);
+            --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.05);
+            --fc-today-bg-color: rgba(197, 160, 89, 0.08);
+            font-family: var(--font-sans);
+            font-size: 13px;
+        }
+
+        .fc .fc-toolbar-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 0.5px;
+        }
+
+        .fc .fc-button-primary {
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            color: var(--linen);
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            transition: all var(--transition);
+        }
+
+        .fc .fc-button-primary:hover {
+            background-color: var(--gold);
+            border-color: var(--gold);
+            color: var(--obsidian);
+        }
+
+        .fc .fc-button-primary:disabled {
+            background-color: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+            opacity: 0.4;
+        }
+
+        .fc .fc-col-header-cell {
+            padding: 10px 0;
+            background: rgba(255, 255, 255, 0.03);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+        }
+
+        .fc .fc-daygrid-day-number {
+            color: var(--linen);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 8px;
+        }
+
+        .fc .fc-daygrid-day-frame {
+            min-height: 70px;
+            transition: background var(--transition);
+        }
+
+        .fc-theme-standard td, .fc-theme-standard th {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .fc .fc-day-other .fc-daygrid-day-number {
+            opacity: 0.3;
+        }
+
+        .fc-event {
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Calendar Legend */
         .legend-v2 {
-            display: flex; gap: 16px; flex-wrap: wrap;
-            margin-top: 15px; font-size: 12px; font-weight: 600; color: #cbd5e1;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--glass-border);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--stone);
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-        .dot-available    { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
-        .dot-booked       { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.4); }
-        .dot-pending      { background: #eab308; box-shadow: 0 0 8px rgba(234,179,8,0.4); }
-        .dot-visit        { background: #06b6d4; box-shadow: 0 0 8px rgba(6,182,212,0.4); }
 
-        /* ── Sidebar ───────────────────────────────────────────────── */
-        .sidebar-sticky { position: sticky; top: 100px; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-available {
+            background: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        .dot-booked {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .dot-pending {
+            background: #eab308;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+
+        .dot-visit {
+            background: #06b6d4;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+
+        /* ══════════════════════════════════════
+           STICKY BOOKING & RATES SIDEBAR
+        ══════════════════════════════════════ */
+        .sidebar-sticky {
+            position: sticky;
+            top: 90px;
+        }
+
         .booking-card {
-            background: var(--charcoal-2);
-            border-radius: var(--border-radius);
-            box-shadow: var(--premium-shadow);
-            padding: 45px 35px;
-            border: 1px solid rgba(212,175,55,0.2);
+            background: var(--glass-card);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            padding: 36px 30px;
+            border: 1px solid var(--glass-border-gold);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
+
+        .booking-card-header {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .booking-card-header i {
+            color: var(--gold);
+        }
+
         .price-tag-v2 {
-            background: rgba(212,175,55,0.05);
-            padding: 30px; border-radius: 20px; text-align: center;
-            border: 1px solid rgba(212,175,55,0.15); margin-bottom: 35px;
+            background: rgba(197, 160, 89, 0.06);
+            padding: 24px 20px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            border: 1px solid rgba(197, 160, 89, 0.22);
+            margin-bottom: 26px;
         }
+
         .price-label-v2 {
-            font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
-            color: var(--gold); display: block; margin-bottom: 5px; font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
         }
+
         .price-value-v2 {
-            font-size: 42px; font-weight: 700;
-            color: var(--gold); font-family: 'Cormorant Garamond', serif;
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--white);
+            font-family: var(--font-display);
+            line-height: 1;
         }
+
+        .price-value-v2 span.per-month {
+            font-size: 13px;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            color: var(--stone);
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+        }
+
+        .price-sub-note {
+            font-size: 11px;
+            color: var(--stone);
+            margin-top: 8px;
+        }
+
+        /* Detail Rows */
         .detail-row-v2 {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .detail-label-v2 { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .detail-value-v2 { font-size: 15px; color: var(--white); font-weight: 500; }
 
-        /* ── Sidebar Buttons ───────────────────────────────────────── */
+        .detail-label-v2 {
+            font-size: 11px;
+            color: var(--stone);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-label-v2 i {
+            color: var(--gold);
+            font-size: 12px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .detail-value-v2 {
+            font-size: 13px;
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
         .book-btn-v2 {
-            display: block; width: 100%; padding: 18px;
-            background: var(--gold); color: #1a1a1a;
-            text-align: center; text-decoration: none; border-radius: 50px;
-            font-weight: 700; font-size: 14px; letter-spacing: 1px;
-            text-transform: uppercase; margin-top: 30px;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(212,175,55,0.3);
-            border: none; cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px;
+            background: var(--gold);
+            color: var(--obsidian);
+            text-align: center;
+            text-decoration: none;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 26px;
+            transition: all var(--transition);
+            box-shadow: 0 8px 24px var(--gold-glow);
+            border: none;
+            cursor: pointer;
         }
-        .book-btn-v2:hover { background: var(--charcoal); color: var(--white); transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+
+        .book-btn-v2:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px var(--gold-glow);
+        }
+
         .visit-btn {
-            display: block; width: 100%; padding: 14px;
-            background: transparent; color: var(--gold);
-            text-align: center; border-radius: 50px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700; font-size: 13px; letter-spacing: 1px;
-            text-transform: uppercase; margin-top: 12px;
-            transition: all 0.3s ease;
-            border: 2px solid var(--gold); cursor: pointer;
-        }
-        .visit-btn:hover { background: rgba(212,175,55,0.1); transform: translateY(-2px); }
-        .rent-btn {
-            display: block; width: 100%; padding: 16px;
-            background: linear-gradient(135deg,#c5a059,#D4AF37);
-            color: #1a1a1a; text-align: center; border-radius: 50px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 800; font-size: 14px; letter-spacing: 1px;
-            text-transform: uppercase; margin-top: 12px;
-            transition: all 0.3s ease; border: none; cursor: pointer;
-            box-shadow: 0 8px 20px rgba(212,175,55,0.4);
-        }
-        .rent-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(212,175,55,0.5); }
-        .book-note-v2 {
-            text-align: center; font-size: 11px; color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 13px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--gold);
+            text-align: center;
+            border-radius: var(--radius-full);
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
             margin-top: 12px;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all var(--transition);
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            cursor: pointer;
         }
 
-        /* ── Responsive ────────────────────────────────────────────── */
-        @media (max-width: 992px) {
-            .luxury-container { grid-template-columns: 1fr; margin-top: -30px; }
-            .sidebar-sticky { position: static; order: -1; }
-            .gallery-main { height: 350px; }
-        }
-        @media (max-width: 480px) {
-            .unit-hero-v2 { height: 35vh; }
-            .luxury-card { padding: 25px; }
-            .gallery-main { height: 250px; }
-            .gallery-thumbs { grid-template-columns: repeat(2,1fr); }
+        .visit-btn:hover {
+            background: rgba(197, 160, 89, 0.12);
+            border-color: var(--gold);
+            transform: translateY(-2px);
         }
 
-        /* ════════════════════════════════════════════════════════════
-           MODAL BASE
-        ════════════════════════════════════════════════════════════ */
+        .rent-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, rgba(197, 160, 89, 0.25), rgba(197, 160, 89, 0.1));
+            color: var(--linen);
+            text-align: center;
+            border-radius: var(--radius-full);
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 12px;
+            transition: all var(--transition);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            cursor: pointer;
+        }
+
+        .rent-btn:hover {
+            background: linear-gradient(135deg, rgba(197, 160, 89, 0.35), rgba(197, 160, 89, 0.2));
+            border-color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .book-note-v2 {
+            text-align: center;
+            font-size: 11px;
+            color: var(--stone);
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Trust Strip */
+        .sidebar-trust-strip {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .trust-item {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--stone);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .trust-item i {
+            color: var(--gold);
+            font-size: 14px;
+        }
+
+        /* ══════════════════════════════════════
+           MODAL BASE & POPUPS
+        ══════════════════════════════════════ */
         .es-modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.80);
-            backdrop-filter: blur(6px);
+            background: rgba(4, 5, 6, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 9999;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        .es-modal-overlay.open { display: flex; }
+
+        .es-modal-overlay.open {
+            display: flex;
+        }
 
         .es-modal {
-            background: var(--charcoal-2);
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(212,175,55,0.25);
+            background: var(--charcoal);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--glass-border-gold);
             padding: 36px;
             width: 100%;
-            max-width: 520px;
+            max-width: 540px;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
-            box-shadow: 0 40px 80px rgba(0,0,0,0.7);
-            animation: modalIn 0.25s ease;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+            animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         @keyframes modalIn {
             from { opacity: 0; transform: translateY(20px) scale(0.97); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
+
         .es-modal-close {
-            position: absolute; top: 18px; right: 20px;
-            background: none; border: none;
-            color: rgba(255,255,255,0.35); font-size: 20px;
-            cursor: pointer; transition: color 0.2s;
-            line-height: 1;
+            position: absolute;
+            top: 20px;
+            right: 22px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            color: var(--stone);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .es-modal-close:hover { color: var(--gold); }
+
+        .es-modal-close:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--gold);
+        }
 
         .modal-subtitle {
-            font-size: 11px; color: var(--gold);
-            text-transform: uppercase; letter-spacing: 2px;
-            margin-bottom: 6px; display: block;
+            font-size: 10px;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin-bottom: 6px;
+            font-weight: 700;
+            display: block;
         }
+
         .modal-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 28px; font-weight: 600;
-            color: var(--white); margin-bottom: 6px;
-        }
-        .modal-unit-tag {
-            font-size: 13px; color: rgba(255,255,255,0.45);
-            margin-bottom: 22px; line-height: 1.6;
-        }
-        .modal-unit-tag strong { color: var(--gold); }
-
-        /* ── Form Elements ─────────────────────────────────────────── */
-        .es-form-group { margin-bottom: 14px; }
-        .es-label {
-            display: block; font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.45); margin-bottom: 6px;
-        }
-        .es-input {
-            width: 100%; padding: 11px 15px;
-            background: var(--charcoal-3);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
             color: var(--white);
-            font-family: 'Poppins', sans-serif;
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
+            margin-bottom: 6px;
         }
-        .es-input:focus { outline: none; border-color: var(--gold); }
-        .es-input::placeholder { color: rgba(255,255,255,0.2); }
-        .es-input option { background: var(--charcoal-2); }
-        textarea.es-input { resize: vertical; min-height: 70px; }
 
-        /* ── Two-col grid helper ───────────────────────────────────── */
-        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-unit-tag {
+            font-size: 13px;
+            color: var(--stone);
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
 
-        /* ── Error box ─────────────────────────────────────────────── */
+        .modal-unit-tag strong {
+            color: var(--gold);
+        }
+
+        /* Forms */
+        .es-form-group {
+            margin-bottom: 16px;
+        }
+
+        .es-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--stone);
+            margin-bottom: 6px;
+        }
+
+        .es-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            color: var(--white);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            box-sizing: border-box;
+            transition: all var(--transition);
+        }
+
+        .es-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(197, 160, 89, 0.04);
+            box-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .es-input::placeholder {
+            color: rgba(148, 163, 184, 0.4);
+        }
+
+        .es-input option {
+            background: #14171c;
+            color: var(--white);
+        }
+
+        textarea.es-input {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
         .es-errors {
             display: none;
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.35);
-            border-radius: 10px; padding: 12px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
             margin-bottom: 16px;
-            color: #fca5a5; font-size: 13px;
+            color: #fca5a5;
+            font-size: 12px;
             list-style: none;
         }
-        .es-errors li { padding: 2px 0; }
-        .es-errors li::before { content: "• "; }
 
-        /* ── Slot hint ─────────────────────────────────────────────── */
-        .slot-hint { font-size: 12px; margin-top: 5px; min-height: 16px; font-weight: 600; }
-
-        /* ── Submit button ─────────────────────────────────────────── */
-        .btn-submit {
-            width: 100%; padding: 14px;
-            background: var(--gold); border: none;
-            border-radius: 50px;
-            color: #1a1a1a; font-family: 'Poppins', sans-serif;
-            font-size: 14px; font-weight: 800;
-            letter-spacing: 1px; text-transform: uppercase;
-            cursor: pointer; transition: all 0.25s;
-            margin-top: 8px;
-            box-shadow: 0 6px 20px rgba(212,175,55,0.35);
+        .es-errors li {
+            padding: 2px 0;
         }
-        .btn-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
-        .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-        /* ── Success panel ─────────────────────────────────────────── */
+        .es-errors li::before {
+            content: "• ";
+        }
+
+        .slot-hint {
+            font-size: 11px;
+            margin-top: 6px;
+            min-height: 16px;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold);
+            border: none;
+            border-radius: var(--radius-full);
+            color: var(--obsidian);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 10px;
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .btn-submit:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Success screen */
         .modal-success {
             display: none;
-            text-align: center; padding: 20px 10px;
+            text-align: center;
+            padding: 20px 10px;
         }
+
         .modal-success .success-icon {
-            font-size: 52px; color: #22c55e;
-            display: block; margin-bottom: 16px;
+            font-size: 50px;
+            color: #22c55e;
+            display: block;
+            margin-bottom: 16px;
         }
+
         .modal-success h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 26px; color: var(--white); margin-bottom: 10px;
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--white);
+            margin-bottom: 10px;
         }
-        .modal-success p { color: rgba(255,255,255,0.55); font-size: 14px; line-height: 1.6; }
+
+        .modal-success p {
+            color: var(--stone);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
         .btn-done {
-            display: inline-block; margin-top: 22px;
-            padding: 12px 36px;
-            background: var(--gold); border: none; border-radius: 50px;
-            color: #1a1a1a; font-family: 'Poppins', sans-serif;
-            font-size: 13px; font-weight: 800; cursor: pointer;
-            letter-spacing: 1px; text-transform: uppercase;
-            transition: all 0.2s;
+            display: inline-block;
+            margin-top: 24px;
+            padding: 12px 38px;
+            background: var(--gold);
+            border: none;
+            border-radius: var(--radius-full);
+            color: var(--obsidian);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all var(--transition);
         }
-        .btn-done:hover { background: var(--gold-light); }
 
-        /* ════════════════════════════════════════════════════════════
-           WIZARD (Rent Modal)
-        ════════════════════════════════════════════════════════════ */
+        .btn-done:hover {
+            background: var(--gold-light);
+        }
+
+        /* Wizard */
         .step-indicators {
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; margin-bottom: 20px;
-        }
-        .step-dot {
-            width: 9px; height: 9px; border-radius: 50%;
-            background: rgba(255,255,255,0.15); transition: all 0.3s;
-        }
-        .step-dot.active { background: var(--gold); transform: scale(1.35); }
-        .step-dot.done   { background: #22c55e; }
-        .step-label {
-            font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-            color: rgba(255,255,255,0.35); text-align: center;
-            margin-bottom: 18px; font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .wizard-nav { display: flex; gap: 10px; margin-top: 18px; }
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            transition: all var(--transition);
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .step-dot.done {
+            background: #22c55e;
+        }
+
+        .step-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--stone);
+            text-align: center;
+            margin-bottom: 18px;
+            font-weight: 700;
+        }
+
+        .wizard-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
         .btn-back {
-            flex: 1; padding: 12px;
+            flex: 1;
+            padding: 13px;
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 50px;
-            color: rgba(255,255,255,0.5);
-            font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
+            color: var(--stone);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition);
         }
-        .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+
+        .btn-back:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
         .btn-next {
-            flex: 2; padding: 12px;
-            background: var(--gold); border: none; border-radius: 50px;
-            color: #1a1a1a; font-family: 'Poppins', sans-serif;
-            font-size: 13px; font-weight: 800;
-            cursor: pointer; transition: all 0.2s;
-            text-transform: uppercase; letter-spacing: 1px;
+            flex: 2;
+            padding: 13px;
+            background: var(--gold);
+            border: none;
+            border-radius: var(--radius-full);
+            color: var(--obsidian);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
-        .btn-next:hover { background: var(--gold-light); }
-        .btn-next:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .btn-next:hover {
+            background: var(--gold-light);
+        }
+
+        .btn-next:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
 
         /* Review table */
-        .review-table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
-        .review-table td { padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; vertical-align: top; }
-        .review-table td:first-child { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; width: 40%; }
-        .review-table td:last-child { color: var(--white); font-weight: 500; text-align: right; }
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 16px;
+        }
+
+        .review-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .review-table td:first-child {
+            color: var(--stone);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            width: 40%;
+        }
+
+        .review-table td:last-child {
+            color: var(--white);
+            font-weight: 600;
+            text-align: right;
+        }
+
         .review-notice {
-            font-size: 11px; color: rgba(255,255,255,0.35);
-            line-height: 1.65; margin-top: 12px;
+            font-size: 11px;
+            color: var(--stone);
+            line-height: 1.6;
+            margin-top: 14px;
         }
 
         /* Upload boxes */
         .upload-box {
             display: block;
-            border: 2px dashed rgba(212,175,55,0.25);
-            border-radius: 12px; padding: 18px;
-            text-align: center; cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
-            margin-bottom: 12px;
+            border: 2px dashed rgba(197, 160, 89, 0.3);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-bottom: 14px;
+            background: rgba(255, 255, 255, 0.02);
         }
-        .upload-box:hover { border-color: var(--gold); background: rgba(212,175,55,0.04); }
-        .upload-box input[type="file"] { display: none; }
-        .upload-box .upload-icon { font-size: 26px; color: var(--gold); display: block; margin-bottom: 6px; }
-        .upload-box .upload-title { font-size: 13px; font-weight: 700; color: var(--white); margin: 0 0 2px; }
-        .upload-box .upload-sub   { font-size: 12px; color: rgba(255,255,255,0.35); margin: 0; }
-        .upload-box .upload-fname { font-size: 11px; color: #22c55e; margin-top: 5px; font-weight: 600; }
+
+        .upload-box:hover {
+            border-color: var(--gold);
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        .upload-box input[type="file"] {
+            display: none;
+        }
+
+        .upload-box .upload-icon {
+            font-size: 26px;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .upload-box .upload-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 2px;
+        }
+
+        .upload-box .upload-sub {
+            font-size: 11px;
+            color: var(--stone);
+            margin: 0;
+        }
+
+        .upload-box .upload-fname {
+            font-size: 11px;
+            color: #22c55e;
+            margin-top: 6px;
+            font-weight: 700;
+        }
+
+        /* ══════════════════════════════════════
+           FOOTER
+        ══════════════════════════════════════ */
+        footer {
+            border-top: 1px solid var(--glass-border);
+            padding: 32px 4%;
+            text-align: center;
+            background: rgba(8, 9, 10, 0.95);
+        }
+
+        .footer-logo {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .footer-copy {
+            font-size: 12px;
+            color: var(--stone);
+        }
+
+        /* ══════════════════════════════════════
+           RESPONSIVE BREAKPOINTS
+        ══════════════════════════════════════ */
+        @media (max-width: 1180px) {
+            .luxury-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-sticky {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .unit-nav-bar {
+                padding: 12px 16px;
+            }
+            .brand-logo {
+                font-size: 16px;
+            }
+            .unit-hero-banner {
+                padding: 28px 16px 20px;
+            }
+            .luxury-container {
+                width: 92%;
+                margin-bottom: 50px;
+            }
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .gallery-main {
+                height: 280px;
+            }
+            .tour-container-v2 {
+                height: 320px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- Back link -->
-    <a href="index.html" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
-
-    <!-- ═══ UNIT HERO ══════════════════════════════════════════════ -->
-    <div class="unit-hero-v2">
-        <div class="hero-glow"></div>
-        <div class="hero-content-v2">
-            <span class="luxury-badge">EliteStay Premium Living</span>
-            <div id="unitStatusBadge" class="status-badge-v2">Loading…</div>
-            <h1 id="unitTitle" class="unit-title-v2">Unit Details</h1>
-            <p id="unitSubtitle" class="unit-subtitle-v2">Experience High-End Student Housing</p>
+    <!-- ═══ TOP NAVIGATION BAR ═══ -->
+    <header class="unit-nav-bar">
+        <div class="nav-left-group">
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Residences
+            </a>
+            <a href="index.html" class="brand-logo">
+                Elite<span>Stay</span>
+            </a>
         </div>
-    </div>
+        <div class="nav-right-group">
+            <div id="unitStatusBadge" class="status-badge-v2">Loading...</div>
+            <a href="index.html#inquire" class="nav-inquire-cta">
+                <i class="fas fa-paper-plane"></i> Inquire
+            </a>
+        </div>
+    </header>
 
-    <!-- ═══ MAIN CONTENT ══════════════════════════════════════════ -->
+    <!-- ═══ HERO BANNER & SPEC SUMMARY ═══ -->
+    <section class="unit-hero-banner">
+        <div class="hero-badge-strip">
+            <span class="collection-tag"><i class="fas fa-gem"></i> EliteStay Luxury Residence Collection</span>
+        </div>
+        <h1 id="unitTitle" class="unit-title-v2">Unit Details</h1>
+        <p id="unitSubtitle" class="unit-subtitle-v2">Experience High-End Student Housing</p>
+
+        <!-- Quick Glance Specs Row -->
+        <div class="hero-specs-row">
+            <div class="hero-spec-pill">
+                <i class="fas fa-coins"></i>
+                <div>
+                    <span class="spec-muted">Monthly Rate</span>
+                    <span class="spec-val">&#8369;<span id="infoRate">0</span>/mo</span>
+                </div>
+            </div>
+            <div class="hero-spec-divider"></div>
+            <div class="hero-spec-pill">
+                <i class="fas fa-building"></i>
+                <div>
+                    <span class="spec-muted">Property Type</span>
+                    <span class="spec-val" id="infoType">Loading...</span>
+                </div>
+            </div>
+            <div class="hero-spec-divider"></div>
+            <div class="hero-spec-pill">
+                <i class="fas fa-door-open"></i>
+                <div>
+                    <span class="spec-muted">Unit Number</span>
+                    <span class="spec-val" id="infoRoomNumber">Loading...</span>
+                </div>
+            </div>
+            <div class="hero-spec-divider"></div>
+            <div class="hero-spec-pill">
+                <i class="fas fa-users"></i>
+                <div>
+                    <span class="spec-muted">Capacity</span>
+                    <span class="spec-val"><span id="infoCapacity">0</span> Resident(s)</span>
+                </div>
+            </div>
+            <div class="hero-spec-divider"></div>
+            <div class="hero-spec-pill">
+                <i class="fas fa-vector-square"></i>
+                <div>
+                    <span class="spec-muted">Floor Area</span>
+                    <span class="spec-val">28.5 sqm</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ MAIN CONTENT GRID ═══ -->
     <div class="luxury-container">
 
-        <!-- ── Left Column ── -->
+        <!-- ── LEFT COLUMN (Showcase, Amenities, Calendar) ── -->
         <main>
 
-            <!-- Availability Calendar -->
+            <!-- Card 1: Visual Showcase & 360 Media -->
             <div class="luxury-card">
-                <h3 class="section-header-v2"><i class="fas fa-calendar-alt"></i> Availability Calendar</h3>
-                <div id="calendar"></div>
-                <div class="legend-v2">
-                    <div class="legend-item"><span class="dot dot-available"></span> Available</div>
-                    <div class="legend-item"><span class="dot dot-booked"></span> Occupied</div>
-                    <div class="legend-item"><span class="dot dot-pending"></span> Pending</div>
-                    <div class="legend-item"><span class="dot dot-visit"></span> Visit Slots</div>
+                <div class="section-header-v2">
+                    <div class="section-header-title">
+                        <i class="fas fa-camera-retro"></i>
+                        <span>Visual Showcase &amp; 360&deg; Tour</span>
+                    </div>
+                    <div class="media-view-switcher">
+                        <button type="button" class="media-tab-btn active" id="btnShowPhotos" onclick="switchMediaTab('photos')">
+                            <i class="fas fa-images"></i> Photos
+                        </button>
+                        <button type="button" class="media-tab-btn" id="btnShow360" onclick="switchMediaTab('tour360')">
+                            <i class="fas fa-vr-cardboard"></i> 360&deg; Tour
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Photos View -->
+                <div id="mediaPhotosView">
+                    <div class="gallery-main" id="mainGalleryContainer">
+                        <img id="heroImage" src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1350&q=80" alt="Main View">
+                    </div>
+                    <div class="gallery-thumbs" id="galleryThumbs">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- 360 Tour View -->
+                <div id="media360View" style="display: none;">
+                    <span class="media-label-v2">EliteStay &bull; 360&deg; Virtual Tour</span>
+                    <div class="tour-container-v2" id="unitMap">
+                        <div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+                            <i class="fas fa-map-marked-alt fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional Video Walkthrough -->
+                <div id="unitVideoContainer" style="display:none; margin-top:24px;">
+                    <span class="media-label-v2"><i class="fas fa-video" style="margin-right:6px;"></i> Cinematic Video Walkthrough</span>
+                    <div style="border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--glass-border); background:#000;">
+                        <video id="unitVideoPlayer" controls playsinline style="width:100%; max-height:420px; display:block;"></video>
+                    </div>
                 </div>
             </div>
 
-            <!-- Gallery & 360° Tour -->
+            <!-- Card 2: Features & Included Amenities -->
             <div class="luxury-card">
-                <h3 class="section-header-v2"><i class="fas fa-camera-retro"></i> Gallery &amp; 360° Tour</h3>
-
-                <span class="media-label-v2">Unit Gallery</span>
-                <div class="gallery-main" id="mainGalleryContainer">
-                    <img id="heroImage" src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1350&q=80" alt="Main View">
-                </div>
-
-                <div class="gallery-thumbs" id="galleryThumbs">
-                    <!-- populated by JS -->
-                </div>
-
-                <span class="media-label-v2">EliteStay — 360° Virtual Tour</span>
-                <div class="tour-container-v2" id="unitMap">
-                    <div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
-                        <i class="fas fa-map-marked-alt fa-3x"></i>
+                <div class="section-header-v2">
+                    <div class="section-header-title">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>Features &amp; Included Amenities</span>
                     </div>
                 </div>
 
-                <div id="unitVideoContainer" style="display:none; margin-top:20px;">
-                    <span class="media-label-v2"><i class="fas fa-video" style="margin-right:6px;"></i> Video Walkthrough</span>
-                    <div style="border-radius:16px; overflow:hidden; border:1px solid rgba(212,175,55,0.15); background:#000;">
-                        <video id="unitVideoPlayer" controls playsinline style="width:100%; max-height:360px; display:block;"></video>
+                <div class="amenities-grid">
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-wifi"></i></div>
+                        <div>
+                            <div class="amenity-name">High-Speed Fiber WiFi</div>
+                            <div class="amenity-desc">Dedicated business-grade connectivity</div>
+                        </div>
                     </div>
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-snowflake"></i></div>
+                        <div>
+                            <div class="amenity-name">Air Conditioning</div>
+                            <div class="amenity-desc">Independent climate control inverter</div>
+                        </div>
+                    </div>
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-laptop"></i></div>
+                        <div>
+                            <div class="amenity-name">Study Workstations</div>
+                            <div class="amenity-desc">Acoustic quiet zone with ergonomic desks</div>
+                        </div>
+                    </div>
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-bed"></i></div>
+                        <div>
+                            <div class="amenity-name">Premium Bedding</div>
+                            <div class="amenity-desc">Orthopedic mattress &amp; privacy curtains</div>
+                        </div>
+                    </div>
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-shower"></i></div>
+                        <div>
+                            <div class="amenity-name">Modern Bathrooms</div>
+                            <div class="amenity-desc">Hot &amp; cold showers with premium fixtures</div>
+                        </div>
+                    </div>
+                    <div class="amenity-card">
+                        <div class="amenity-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <div class="amenity-name">24/7 Security &amp; CCTV</div>
+                            <div class="amenity-desc">Keycard access and continuous monitoring</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Availability Calendar -->
+            <div class="luxury-card">
+                <div class="section-header-v2">
+                    <div class="section-header-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Availability &amp; Viewing Schedule</span>
+                    </div>
+                </div>
+                <div class="calendar-wrap">
+                    <div id="calendar"></div>
+                </div>
+                <div class="legend-v2">
+                    <div class="legend-item"><span class="dot dot-available"></span> Available Date</div>
+                    <div class="legend-item"><span class="dot dot-booked"></span> Occupied (Active Lease)</div>
+                    <div class="legend-item"><span class="dot dot-pending"></span> Lease Pending</div>
+                    <div class="legend-item"><span class="dot dot-visit"></span> Site Visit Slots</div>
                 </div>
             </div>
 
         </main>
 
-        <!-- ── Right Column: Sidebar ── -->
+        <!-- ── RIGHT COLUMN (Sticky Booking Sidebar) ── -->
         <aside>
             <div class="sidebar-sticky">
                 <div class="booking-card">
-                    <h3 class="section-header-v2" style="border:0;margin-bottom:10px;">
-                        <i class="fas fa-building"></i> Unit Details
+                    <h3 class="booking-card-header">
+                        <i class="fas fa-building"></i>
+                        <span>Unit Summary</span>
                     </h3>
 
                     <div class="price-tag-v2">
-                        <span class="price-label-v2">24-Hour Stay Rate</span>
-                        <div class="price-value-v2">₱<span id="infoRate">0</span></div>
+                        <span class="price-label-v2">Monthly Lease Rate</span>
+                        <div class="price-value-v2">&#8369;<span id="infoRate">0</span><span class="per-month">/mo</span></div>
+                        <p class="price-sub-note">Includes high-speed fiber internet and water utilities</p>
                     </div>
 
                     <div class="detail-row-v2">
-                        <span class="detail-label-v2">Property Type</span>
-                        <span class="detail-value-v2" id="infoType">Loading…</span>
+                        <span class="detail-label-v2"><i class="fas fa-home"></i> Property Type</span>
+                        <span class="detail-value-v2" id="infoType">Loading...</span>
                     </div>
                     <div class="detail-row-v2">
-                        <span class="detail-label-v2">Unit Number</span>
-                        <span class="detail-value-v2" id="infoRoomNumber">Loading…</span>
+                        <span class="detail-label-v2"><i class="fas fa-hashtag"></i> Unit Number</span>
+                        <span class="detail-value-v2" id="infoRoomNumber">Loading...</span>
                     </div>
                     <div class="detail-row-v2">
-                        <span class="detail-label-v2">Maximum Capacity</span>
+                        <span class="detail-label-v2"><i class="fas fa-user-friends"></i> Max Capacity</span>
                         <span class="detail-value-v2"><span id="infoCapacity">0</span> Persons</span>
                     </div>
                     <div class="detail-row-v2">
-                        <span class="detail-label-v2">Floor Area</span>
+                        <span class="detail-label-v2"><i class="fas fa-expand-arrows-alt"></i> Floor Area</span>
                         <span class="detail-value-v2">28.5 sqm</span>
                     </div>
                     <div class="detail-row-v2">
-                        <span class="detail-label-v2">Amenities</span>
+                        <span class="detail-label-v2"><i class="fas fa-couch"></i> Amenities</span>
                         <span class="detail-value-v2">WiFi, AC, Bed</span>
                     </div>
 
-                    <!-- CTA Buttons -->
+                    <!-- CTA Action Buttons -->
                     <a href="index.html#inquire" class="book-btn-v2" id="bookBtnLink">
-                        <i class="fas fa-paper-plane" style="margin-right:8px;"></i> Inquire Today
+                        <i class="fas fa-paper-plane"></i> Inquire Today
                     </a>
 
                     <button class="visit-btn" id="scheduleVisitBtn">
-                        <i class="fas fa-calendar-check" style="margin-right:8px;"></i> Schedule a Visit
+                        <i class="fas fa-calendar-check"></i> Schedule a Visit
                     </button>
 
                     <button class="rent-btn" id="rentNowBtn">
-                        <i class="fas fa-home" style="margin-right:8px;"></i> Rent This Unit
+                        <i class="fas fa-home"></i> Rent This Unit
                     </button>
 
                     <p class="book-note-v2">
-                        <i class="fas fa-lock"></i> Login required to apply for rent
+                        <i class="fas fa-lock"></i> Tenant login required to apply for rent
                     </p>
+
+                    <!-- Trust Strip -->
+                    <div class="sidebar-trust-strip">
+                        <div class="trust-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Verified Unit</span>
+                        </div>
+                        <div class="trust-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Zero Hidden Fees</span>
+                        </div>
+                        <div class="trust-item">
+                            <i class="fas fa-clock"></i>
+                            <span>24/7 Security</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -576,9 +1670,9 @@
     </div><!-- /luxury-container -->
 
 
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- ═══════════════════════════════════════
          SITE VISIT MODAL
-    ═══════════════════════════════════════════════════════════ -->
+    ═══════════════════════════════════════ -->
     <div class="es-modal-overlay" id="visitModal">
         <div class="es-modal">
             <button class="es-modal-close" onclick="closeVisitModal()"><i class="fas fa-times"></i></button>
@@ -586,8 +1680,8 @@
             <span class="modal-subtitle"><i class="fas fa-calendar-alt" style="margin-right:5px;"></i> In-Person Site Visit</span>
             <h2 class="modal-title">Schedule a Visit</h2>
             <p class="modal-unit-tag">
-                Unit: <strong id="visitUnitLabel">—</strong><br>
-                <span style="font-size:11px;">Available Wed – Sun only &nbsp;·&nbsp; Max 3 visitors per slot</span>
+                Unit: <strong id="visitUnitLabel">&mdash;</strong><br>
+                <span style="font-size:11px;">Available Wed &ndash; Sun only &nbsp;&bull;&nbsp; Max 3 visitors per slot</span>
             </p>
 
             <!-- Errors -->
@@ -603,10 +1697,10 @@
                 <div class="es-form-group">
                     <label class="es-label" for="visitSlot">Time Slot</label>
                     <select id="visitSlot" class="es-input" onchange="updateSlotAvailability()">
-                        <option value="">— Select a time slot —</option>
-                        <option value="morning">🌅 Morning (9:00 AM – 11:00 AM)</option>
-                        <option value="afternoon">☀️ Afternoon (1:00 PM – 3:00 PM)</option>
-                        <option value="late_afternoon">🌇 Late Afternoon (3:00 PM – 5:00 PM)</option>
+                        <option value="">&mdash; Select a time slot &mdash;</option>
+                        <option value="morning">Morning (9:00 AM &ndash; 11:00 AM)</option>
+                        <option value="afternoon">Afternoon (1:00 PM &ndash; 3:00 PM)</option>
+                        <option value="late_afternoon">Late Afternoon (3:00 PM &ndash; 5:00 PM)</option>
                     </select>
                     <div class="slot-hint" id="slotHint"></div>
                 </div>
@@ -629,7 +1723,7 @@
 
                 <div class="es-form-group">
                     <label class="es-label" for="visitNotes">Notes (optional)</label>
-                    <textarea id="visitNotes" class="es-input" placeholder="Any questions or special requests…"></textarea>
+                    <textarea id="visitNotes" class="es-input" placeholder="Any questions or special requests..."></textarea>
                 </div>
 
                 <button class="btn-submit" id="visitSubmitBtn" onclick="submitVisitForm()">
@@ -641,23 +1735,23 @@
             <div class="modal-success" id="visitSuccess">
                 <i class="fas fa-check-circle success-icon"></i>
                 <h3>Visit Scheduled!</h3>
-                <p>Your site visit request has been received.<br>We'll confirm your slot within 24 hours.</p>
+                <p>Your site visit request has been received.<br>We will confirm your slot within 24 hours.</p>
                 <button class="btn-done" onclick="closeVisitModal()">Done</button>
             </div>
         </div>
     </div>
 
 
-    <!-- ═══════════════════════════════════════════════════════════
-         RENT NOW MODAL (3-step wizard)
-    ═══════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════
+         RENT NOW MODAL (3-Step Wizard)
+    ═══════════════════════════════════════ -->
     <div class="es-modal-overlay" id="rentModal">
         <div class="es-modal">
             <button class="es-modal-close" onclick="closeRentModal()"><i class="fas fa-times"></i></button>
 
             <span class="modal-subtitle"><i class="fas fa-home" style="margin-right:5px;"></i> Direct Rental Application</span>
             <h2 class="modal-title">Rent This Unit</h2>
-            <p class="modal-unit-tag">Unit: <strong id="rentUnitLabel">—</strong></p>
+            <p class="modal-unit-tag">Unit: <strong id="rentUnitLabel">&mdash;</strong></p>
 
             <!-- Step dots -->
             <div class="step-indicators">
@@ -674,7 +1768,7 @@
 
                 <!-- Step 1 -->
                 <div id="rentStep1">
-                    <p class="step-label">Step 1 of 3 — Your Information</p>
+                    <p class="step-label">Step 1 of 3 &mdash; Your Information</p>
 
                     <div class="es-form-group">
                         <label class="es-label">Full Name</label>
@@ -705,7 +1799,7 @@
 
                     <div class="es-form-group">
                         <label class="es-label" for="rentMessage">Message to Admin (optional)</label>
-                        <textarea id="rentMessage" class="es-input" placeholder="Any special requirements or questions…"></textarea>
+                        <textarea id="rentMessage" class="es-input" placeholder="Any special requirements or questions..."></textarea>
                     </div>
 
                     <div class="wizard-nav" style="justify-content:flex-end;">
@@ -717,7 +1811,7 @@
 
                 <!-- Step 2 -->
                 <div id="rentStep2" style="display:none;">
-                    <p class="step-label">Step 2 of 3 — Upload ID Documents</p>
+                    <p class="step-label">Step 2 of 3 &mdash; Upload ID Documents</p>
                     <p style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:18px;line-height:1.6;">
                         Please upload at least one valid ID (JPG or PNG, max 5 MB each).
                     </p>
@@ -752,13 +1846,13 @@
 
                 <!-- Step 3 -->
                 <div id="rentStep3" style="display:none;">
-                    <p class="step-label">Step 3 of 3 — Review &amp; Confirm</p>
+                    <p class="step-label">Step 3 of 3 &mdash; Review &amp; Confirm</p>
 
                     <table class="review-table">
-                        <tr><td>Unit</td>       <td id="reviewUnit">—</td></tr>
-                        <tr><td>Move-In Date</td><td id="reviewMoveIn">—</td></tr>
-                        <tr><td>Stay Duration</td><td id="reviewStay">—</td></tr>
-                        <tr><td>Phone</td>       <td id="reviewPhone">—</td></tr>
+                        <tr><td>Unit</td>       <td id="reviewUnit">&mdash;</td></tr>
+                        <tr><td>Move-In Date</td><td id="reviewMoveIn">&mdash;</td></tr>
+                        <tr><td>Stay Duration</td><td id="reviewStay">&mdash;</td></tr>
+                        <tr><td>Phone</td>       <td id="reviewPhone">&mdash;</td></tr>
                     </table>
 
                     <p class="review-notice">
@@ -788,14 +1882,35 @@
     </div>
 
 
-    <!-- ═══ FOOTER ════════════════════════════════════════════════ -->
+    <!-- ═══ FOOTER ═══ -->
     <footer>
         <span class="footer-logo">EliteStay</span>
-        <p class="footer-copy">&copy; 2026 EliteStay Student Housing. All rights reserved.</p>
+        <p class="footer-copy">&copy; 2026 EliteStay Student Housing &bull; Premium Residence Management</p>
     </footer>
 
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="js/unit-details.js"></script>
+    <script>
+        // Media Tab Switcher
+        function switchMediaTab(tab) {
+            const btnPhotos = document.getElementById('btnShowPhotos');
+            const btn360    = document.getElementById('btnShow360');
+            const viewPhotos = document.getElementById('mediaPhotosView');
+            const view360    = document.getElementById('media360View');
+
+            if (tab === 'photos') {
+                if (btnPhotos) btnPhotos.classList.add('active');
+                if (btn360) btn360.classList.remove('active');
+                if (viewPhotos) viewPhotos.style.display = 'block';
+                if (view360) view360.style.display = 'none';
+            } else if (tab === 'tour360') {
+                if (btnPhotos) btnPhotos.classList.remove('active');
+                if (btn360) btn360.classList.add('active');
+                if (viewPhotos) viewPhotos.style.display = 'none';
+                if (view360) view360.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 
 </html>

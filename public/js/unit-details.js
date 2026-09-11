@@ -245,8 +245,7 @@ function initCalendar(isOccupied, leases = [], visitData = {}) {
             center: 'title',
             right: ''
         },
-        height: 380,
-        contentHeight: 340,
+        height: 'auto',
         events: calendarEvents,
         dayCellDidMount: function(arg) {
             const dateStr = arg.date.toISOString().split('T')[0];
