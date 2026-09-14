@@ -117,6 +117,27 @@ router.post('/upload', async (req, res, next) => {
             console.error('[Fraud Integration Error]', engineErr);
         }
 
+        // Real-time socket emission to Admin and Tenant
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('payment:submitted', {
+                    paymentId,
+                    tenantId,
+                    amount,
+                    paymentDate,
+                    referenceNumber
+                });
+                io.to(`tenant-${tenantId}`).emit('payment:submitted', {
+                    paymentId,
+                    amount,
+                    status: 'pending'
+                });
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit payment:submitted:', sockErr.message);
+        }
+
         res.json({ message: 'Payment proof uploaded and analyzed successfully!' });
     } catch (err) {
         console.error('Database Insert Error:', err);

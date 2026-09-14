@@ -142,6 +142,10 @@ router.post('/', async (req, res) => {
             .input('monthly_rate', sql.Decimal(10, 2), monthly_rate)
             .input('room_type', sql.NVarChar, room_type)
             .query('INSERT INTO rooms (room_number, capacity, monthly_rate, room_type) VALUES (@room_number, @capacity, @monthly_rate, @room_type)');
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'created' });
+        } catch (_) {}
         res.json({ message: 'Room added successfully' });
     } catch (err) {
         console.error(err);
@@ -164,6 +168,11 @@ router.put('/:id', async (req, res) => {
             .input('monthly_rate', sql.Decimal(10, 2), monthly_rate)
             .input('room_type', sql.NVarChar, room_type)
             .query('UPDATE rooms SET room_number = @room_number, capacity = @capacity, monthly_rate = @monthly_rate, room_type = @room_type WHERE id = @id');
+        
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'updated', id });
+        } catch (_) {}
         res.json({ message: 'Room updated successfully' });
     } catch (err) {
         console.error(err);
@@ -187,6 +196,11 @@ router.delete('/:id', async (req, res) => {
         await pool.request()
             .input('id', sql.Int, id)
             .query('DELETE FROM rooms WHERE id = @id');
+            
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'deleted', id });
+        } catch (_) {}
         res.json({ message: 'Room deleted successfully' });
     } catch (err) {
         console.error(err);

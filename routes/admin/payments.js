@@ -52,6 +52,25 @@ router.post('/:id/approve', async (req, res) => {
                     VALUES (@pid, 0, 'SAFE', 'MANUAL_APPROVED')
             `);
 
+        // Get tenant_id to notify the specific tenant
+        const pRow = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query('SELECT tenant_id, amount FROM payments WHERE id = @pid');
+        const targetTenantId = pRow.recordset[0]?.tenant_id;
+
+        // Real-time socket emission to Admin and Tenant
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('payment:status_changed', { paymentId, status: 'approved', tenantId: targetTenantId });
+                if (targetTenantId) {
+                    io.to(`tenant-${targetTenantId}`).emit('payment:status_changed', { paymentId, status: 'approved' });
+                }
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit payment:status_changed:', sockErr.message);
+        }
+
         res.json({ message: `Payment ${paymentId} approved.` });
     } catch (err) {
         console.error(err);
@@ -80,6 +99,25 @@ router.post('/:id/reject', async (req, res) => {
                     INSERT INTO fraud_scores (payment_id, risk_score, risk_level, decision)
                     VALUES (@pid, 0, 'SAFE', 'MANUAL_BLOCKED')
             `);
+
+        // Get tenant_id to notify the specific tenant
+        const pRow = await pool.request()
+            .input('pid', sql.Int, paymentId)
+            .query('SELECT tenant_id, amount FROM payments WHERE id = @pid');
+        const targetTenantId = pRow.recordset[0]?.tenant_id;
+
+        // Real-time socket emission to Admin and Tenant
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('payment:status_changed', { paymentId, status: 'rejected', tenantId: targetTenantId });
+                if (targetTenantId) {
+                    io.to(`tenant-${targetTenantId}`).emit('payment:status_changed', { paymentId, status: 'rejected' });
+                }
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit payment:status_changed:', sockErr.message);
+        }
 
         res.json({ message: `Payment ${paymentId} rejected.` });
     } catch (err) {

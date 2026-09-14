@@ -71,6 +71,33 @@ async function loadDashboardData() {
         // 4. Load Recent Activity
         loadRecentActivity();
 
+        // 5. Connect Real-time Socket & Listeners for Tenant
+        if (typeof io !== 'undefined' && data.tenant_id) {
+            window.tenantSocket = window.tenantSocket || io();
+            window.tenantSocket.emit('tenant:join', {
+                tenantId: data.tenant_id,
+                tenantName: data.full_name,
+                roomNumber: data.room_number
+            });
+
+            if (!window.tenantSocketEventsBound) {
+                window.tenantSocketEventsBound = true;
+
+                // Real-time payment approval / rejection
+                window.tenantSocket.on('payment:status_changed', () => {
+                    if (typeof loadDashboardData === 'function') loadDashboardData();
+                    if (typeof loadPayments === 'function') loadPayments();
+                    if (typeof loadHistory === 'function') loadHistory();
+                });
+
+                // Real-time maintenance status update
+                window.tenantSocket.on('maintenance:status_changed', () => {
+                    if (typeof loadMyMaintenanceRequests === 'function') loadMyMaintenanceRequests();
+                    if (typeof loadDashboardData === 'function') loadDashboardData();
+                });
+            }
+        }
+
     } catch (err) {
         console.error('Error loading dashboard data:', err);
     }

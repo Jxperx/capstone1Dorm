@@ -319,6 +319,24 @@ router.post('/submit', (req, res, next) => {
 
         console.log(`[Inquiry] Saved — status:${status} ai:${aiResult}(${aiConfidence}%) ip:${ip}`);
 
+        // Real-time socket emission to Admin Portal
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('inquiry:created', {
+                    firstName,
+                    lastName,
+                    email,
+                    phone,
+                    preferred_unit: prefUnit,
+                    status,
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit inquiry:created:', sockErr.message);
+        }
+
         // ── Step 10: Admin Notification (non-blocking) ────────────────────────
         if (status === 'approved' || status === 'suspicious') {
             notifyAdmin(

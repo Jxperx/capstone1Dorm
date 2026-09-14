@@ -95,6 +95,21 @@ router.post('/report', upload.single('image'), async (req, res) => {
             console.error('[AI Triage] Classification update failed:', aiErr.message);
         }
 
+        // Real-time socket emission to Admin Portal
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('maintenance:created', {
+                    reportId,
+                    tenantId,
+                    description,
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit maintenance:created:', sockErr.message);
+        }
+
         res.json({ message: 'Issue reported successfully!', reportId });
 
     } catch (err) {

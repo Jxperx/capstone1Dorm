@@ -3264,9 +3264,23 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadAllRooms().then(handleUnitPreselect);
             loadLandingPropertyMedia();
+
+            // Real-time room updates without needing manual page refresh
+            if (typeof io !== 'undefined') {
+                try {
+                    const landingSocket = io();
+                    landingSocket.on('room:changed', () => {
+                        loadAllRooms();
+                    });
+                } catch (err) {
+                    console.warn('[Landing Socket] Realtime connection:', err);
+                }
+            }
         });
     </script>
 
+    <!-- Socket.IO for real-time room availability -->
+    <script src="/socket.io/socket.io.js"></script>
     <!-- Room Matching Quiz module -->
     <script src="js/room-quiz.js"></script>
     <!-- FingerprintJS for device tracking on inquiry form -->

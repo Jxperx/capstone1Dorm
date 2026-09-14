@@ -455,6 +455,7 @@ function startServer(port, attempt = 1) {
     });
     io.use((socket, next) => sessionMiddlewareForSocket(socket.request, socket.request.res || {}, next));
 
+    app.set('io', io);
     setupSocketIO(io);
 
     const HOST = process.env.HOST || '0.0.0.0';

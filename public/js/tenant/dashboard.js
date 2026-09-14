@@ -199,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function renderPaymentCompletedUI(codeId, amountPaid) {
     stopQrPolling();
+
+    // Auto-refresh dashboard data and payment list in-place
+    if (typeof loadDashboardData === 'function') loadDashboardData();
+    if (typeof loadPayments === 'function') loadPayments();
+    if (typeof loadHistory === 'function') loadHistory();
     
     const qrContainer = document.getElementById('qr-container');
     if (!qrContainer) return;

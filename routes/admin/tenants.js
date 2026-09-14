@@ -254,6 +254,14 @@ router.post('/create-account', async (req, res) => {
             console.error('[Tenant Onboarding] Error updating inquiry status:', inqErr.message);
         }
 
+        // Real-time broadcast
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('tenant:changed', { action: 'created', full_name });
+            io.to('admin-room').emit('room:changed', { action: 'updated', room_id });
+            io.to('admin-room').emit('inquiry:created', {});
+        }
+
         res.status(201).json({
             message: isSelfService ? `Tenant added! Password setup email sent to ${cleanEmail}.` : 'Tenant added successfully.',
             isPending: isSelfService,
@@ -432,6 +440,11 @@ router.post('/:id/update', upload.single('profileImage'), async (req, res) => {
                 WHERE id = @tid
             `);
 
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('tenant:changed', { action: 'updated', id: req.params.id });
+        }
+
         res.json({ message: 'Tenant updated successfully' });
 
     } catch (err) {
@@ -458,6 +471,13 @@ router.post('/:id/end-lease', async (req, res) => {
 
         if (result.rowsAffected[0] === 0) {
             return res.status(404).json({ error: 'Tenant not found' });
+        }
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('tenant:changed', { action: 'ended', id: inputId });
+            io.to('admin-room').emit('room:changed', {});
+            io.to(`tenant-${inputId}`).emit('lease:ended');
         }
 
         res.json({ message: 'Tenant lease ended successfully' });
@@ -550,6 +570,13 @@ router.delete('/:id', async (req, res) => {
 
             await transaction.commit();
             console.log(`[Admin Tenants] Tenant deleted successfully (tenantId: ${tenantId}, userId: ${userId})`);
+
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('tenant:changed', { action: 'deleted', id: tenantId });
+                io.to('admin-room').emit('room:changed', {});
+            }
+
             res.json({ message: 'Tenant account and history removed successfully' });
         } catch (err) {
             await transaction.rollback();
@@ -595,6 +622,12 @@ router.post('/:id/renew-lease', async (req, res) => {
             .input('id', sql.Int, tenantId)
             .input('new_end_date', sql.Date, finalEndDate)
             .query("UPDATE tenants SET lease_end_date = @new_end_date, status = 'active' WHERE id = @id");
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('tenant:changed', { action: 'renewed', id: tenantId });
+            io.to(`tenant-${tenantId}`).emit('lease:renewed');
+        }
 
         res.json({ message: 'Lease extended successfully', new_end_date: finalEndDate });
 
@@ -700,6 +733,13 @@ router.post('/:id/transfer', async (req, res) => {
             .input('tid', sql.Int, tenantId)
             .input('rid', sql.Int, targetRoomId)
             .query('UPDATE tenants SET room_id = @rid WHERE id = @tid');
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('tenant:changed', { action: 'transferred', id: tenantId });
+            io.to('admin-room').emit('room:changed', {});
+            io.to(`tenant-${tenantId}`).emit('room:transferred', { room_number: targetRoom.room_number });
+        }
 
         res.json({
             success: true,

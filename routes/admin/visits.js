@@ -112,6 +112,12 @@ router.patch('/:id/status', async (req, res) => {
             }).catch(e => console.error('[Admin Visits] Confirmation email error:', e.message));
         }
 
+        // Real-time broadcast to admin room
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin-room').emit('visit:status_changed', { id, status });
+        }
+
         return res.json({ success: true, status });
     } catch (err) {
         console.error('[Admin Visits] Status update error:', err.message);

@@ -141,6 +141,23 @@ router.post('/schedule', async (req, res) => {
                 VALUES (@uid, @date, @slot, @name, @email, @phone, @notes)
             `);
 
+        // Real-time socket emission to Admin Portal
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                io.to('admin-room').emit('visit:created', {
+                    unitId,
+                    date: dateStr,
+                    slot: cleanSlot,
+                    name: cleanName,
+                    phone: cleanPhone,
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit visit:created:', sockErr.message);
+        }
+
         // ── Admin notification (non-blocking) ────────────────────────────────
         if (process.env.EMAIL_USER) {
             const slotLabel = { morning: 'Morning (9AM–11AM)', afternoon: 'Afternoon (1PM–3PM)', late_afternoon: 'Late Afternoon (3PM–5PM)' }[cleanSlot];

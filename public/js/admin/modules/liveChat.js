@@ -258,8 +258,11 @@ const LiveChatAdmin = (() => {
         if (isInitialized) return;
         isInitialized = true;
 
-        socket = io();
-        socket.emit('admin:join');
+        socket = window.adminSocket || io();
+        if (!window.adminSocket) {
+            socket.emit('admin:join');
+            window.adminSocket = socket;
+        }
 
         // New message from tenant
         socket.on('admin:new-message', (data) => {

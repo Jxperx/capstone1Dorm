@@ -149,6 +149,7 @@ function initMaintenanceSubmit() {
 
                 // Open Track Requests Modal & Reload
                 loadMyMaintenanceRequests();
+                if (typeof loadDashboardData === 'function') loadDashboardData();
                 const trackModalEl = document.getElementById('trackMaintenanceModal');
                 const trackModal = bootstrap.Modal.getOrCreateInstance(trackModalEl);
                 trackModal.show();

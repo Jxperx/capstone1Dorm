@@ -102,7 +102,7 @@ router.post('/update', upload.single('profileImage'), async (req, res) => {
         // Update session name if changed
         req.session.user.name = fullName;
 
-        res.json({ message: 'Profile updated successfully' });
+        res.json({ message: 'Profile updated successfully', profile_image_url: imageUrl || null });
 
     } catch (err) {
         console.error(err);

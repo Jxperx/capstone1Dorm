@@ -70,8 +70,28 @@ async function saveProfile() {
         const data = await res.json();
         
         if (res.ok) {
-            alert('Profile updated!');
-            location.reload(); // Refresh to show new name/pic everywhere
+            const newName = document.getElementById('profileName')?.value?.trim();
+            if (newName) {
+                const firstName = newName.split(' ')[0];
+                const welcomeNameEl = document.getElementById('welcomeName');
+                if (welcomeNameEl) welcomeNameEl.textContent = `Hey, ${firstName}! 👋`;
+                const sidebarNameEl = document.getElementById('sidebarName');
+                if (sidebarNameEl) sidebarNameEl.textContent = newName;
+                const mobileDrawerNameEl = document.getElementById('mobileDrawerName');
+                if (mobileDrawerNameEl) mobileDrawerNameEl.textContent = newName;
+            }
+            if (data.profile_image_url) {
+                document.querySelectorAll('#userAvatar, #sidebarAvatar, #mobileDrawerAvatar, .profile-avatar').forEach(img => {
+                    img.src = data.profile_image_url;
+                });
+            }
+            const modalEl = document.getElementById('profileModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+            alert('Profile updated successfully!');
         } else {
             alert('Error: ' + data.error);
         }

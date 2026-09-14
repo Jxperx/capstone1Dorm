@@ -165,7 +165,29 @@ function initPaymentUploadForm() {
 
                 if (res.ok) {
                     alert('✅ Payment proof submitted successfully! We will review your reference number shortly.');
-                    location.reload();
+                    
+                    // Reset form and input fields
+                    const proofForm = document.getElementById('paymentProofForm');
+                    if (proofForm) proofForm.reset();
+                    const proofFile = document.getElementById('paymentProof');
+                    if (proofFile) proofFile.value = '';
+                    const receiptPrev = document.getElementById('receiptPreview');
+                    if (receiptPrev) receiptPrev.classList.add('d-none');
+
+                    // Hide the payment modal in-place
+                    const paymentModalEl = document.getElementById('paymentModal');
+                    if (paymentModalEl && typeof bootstrap !== 'undefined') {
+                        const modal = bootstrap.Modal.getInstance(paymentModalEl);
+                        if (modal) modal.hide();
+                    }
+
+                    // Refresh history and dashboard in-place without page reload
+                    if (typeof loadPayments === 'function') loadPayments();
+                    if (typeof loadHistory === 'function') loadHistory();
+                    if (typeof loadDashboardData === 'function') loadDashboardData();
+
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Payment';
                 } else {
                     alert('❌ Submission failed: ' + (data.error || 'Server error'));
                     submitBtn.disabled = false;

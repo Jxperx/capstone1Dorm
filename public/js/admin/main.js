@@ -150,6 +150,89 @@ function initAdminMain() {
     if(typeof loadAdminFeedback === 'function') loadAdminFeedback();
     if(typeof loadPropertyMediaAdmin === 'function') loadPropertyMediaAdmin();
     if(typeof loadTopNavProfile === 'function') loadTopNavProfile();
+
+    // Real-time updates via Socket.IO
+    initAdminRealtime();
+}
+
+// --- Real-time Socket Setup ---
+function initAdminRealtime() {
+    if (typeof io === 'undefined') {
+        console.warn('[Admin Socket] Socket.io not loaded.');
+        return;
+    }
+
+    if (!window.adminSocket) {
+        window.adminSocket = io();
+    }
+    const socket = window.adminSocket;
+
+    socket.emit('admin:join');
+
+    const notify = (msg, type = 'info') => {
+        if (typeof window.showEnterpriseToast === 'function') {
+            window.showEnterpriseToast(msg, type);
+        } else {
+            console.log(`[Admin Realtime ${type}]: ${msg}`);
+        }
+    };
+
+    // 1. Inquiry Created
+    socket.on('inquiry:created', (data) => {
+        const name = data && data.name ? data.name : 'A visitor';
+        notify(`📩 New inquiry received from <strong>${name}</strong>!`, 'info');
+        if (typeof loadInquiries === 'function') loadInquiries(1);
+        if (typeof loadInquiryAnalytics === 'function') loadInquiryAnalytics();
+        if (typeof loadStats === 'function') loadStats();
+    });
+
+    // 2. Site Visit Created / Status Changed
+    socket.on('visit:created', (data) => {
+        const name = data && data.name ? data.name : 'A visitor';
+        const room = data && data.room_number ? ` for Room ${data.room_number}` : '';
+        notify(`📅 New site visit booked by <strong>${name}</strong>${room}!`, 'info');
+        if (typeof loadStats === 'function') loadStats();
+    });
+    socket.on('visit:status_changed', () => {
+        if (typeof loadStats === 'function') loadStats();
+    });
+
+    // 3. Maintenance Ticket Created / Status Changed
+    socket.on('maintenance:created', (data) => {
+        const title = data && data.title ? `: "${data.title}"` : '';
+        notify(`🔧 New maintenance request submitted${title}`, 'warning');
+        if (typeof loadMaintenance === 'function') loadMaintenance();
+        if (typeof loadStats === 'function') loadStats();
+    });
+    socket.on('maintenance:status_changed', () => {
+        if (typeof loadMaintenance === 'function') loadMaintenance();
+        if (typeof loadStats === 'function') loadStats();
+    });
+
+    // 4. Payment Submitted / Status Changed
+    socket.on('payment:submitted', (data) => {
+        const amount = data && data.amount ? ` (₱${Number(data.amount).toLocaleString()})` : '';
+        notify(`💰 New payment submitted${amount}. Awaiting review.`, 'success');
+        if (typeof loadPayments === 'function') loadPayments();
+        if (typeof loadStats === 'function') loadStats();
+    });
+    socket.on('payment:status_changed', () => {
+        if (typeof loadPayments === 'function') loadPayments();
+        if (typeof loadStats === 'function') loadStats();
+    });
+
+    // 5. Room Changed
+    socket.on('room:changed', () => {
+        if (typeof loadRooms === 'function') loadRooms();
+        if (typeof loadStats === 'function') loadStats();
+    });
+
+    // 6. Tenant Changed
+    socket.on('tenant:changed', () => {
+        if (typeof loadTenants === 'function') loadTenants();
+        if (typeof loadTenantsForCalc === 'function') loadTenantsForCalc();
+        if (typeof loadStats === 'function') loadStats();
+    });
 }
 
 if (document.readyState === 'loading') {

@@ -133,16 +133,39 @@ router.post('/:id/update', async (req, res) => {
             }
         }
 
-        // Fetch tenant info for email notification
+        // Fetch tenant info for real-time notification and email
         const tenantInfo = await pool.request()
             .input('mid', sql.Int, id)
             .query(`
-                SELECT u.email, u.full_name, m.title
+                SELECT t.id AS tenant_id, u.email, u.full_name, m.title
                 FROM maintenance_requests m
                 JOIN tenants t ON m.tenant_id = t.id
                 JOIN users u ON t.user_id = u.id
                 WHERE m.id = @mid
             `);
+
+        // Real-time socket emission to Admin and Tenant
+        try {
+            const io = req.app.get('io');
+            if (io) {
+                const targetTenantId = tenantInfo.recordset[0]?.tenant_id;
+                io.to('admin-room').emit('maintenance:status_changed', {
+                    id,
+                    status,
+                    admin_note: admin_note || null,
+                    tenantId: targetTenantId
+                });
+                if (targetTenantId) {
+                    io.to(`tenant-${targetTenantId}`).emit('maintenance:status_changed', {
+                        id,
+                        status,
+                        admin_note: admin_note || null
+                    });
+                }
+            }
+        } catch (sockErr) {
+            console.warn('[Socket.io] Failed to emit maintenance:status_changed:', sockErr.message);
+        }
 
         // Send email notification asynchronously (non-blocking)
         if (tenantInfo.recordset.length > 0) {
