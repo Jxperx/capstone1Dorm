@@ -39,21 +39,26 @@
         </div>
 
         <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 p-4">
+        <div class="col-md-9 col-lg-10 p-4 main-tenant-content" id="tenantContentWrapper">
             
             <!-- Mobile Header -->
-            <div class="d-block d-md-none mb-4 d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 fw-bold" style="font-family: 'Playfair Display', serif;">EliteStay</h4>
+            <div class="d-block d-md-none mb-3 d-flex justify-content-between align-items-center tenant-mobile-header">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn tenant-mobile-drawer-btn" id="tenantDrawerOpenBtn" aria-label="Open Navigation Menu" type="button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h4 class="mb-0 fw-bold" style="font-family: 'Playfair Display', serif; font-size: 1.25rem;">EliteStay</h4>
+                </div>
                 <div class="dropdown">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
-                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-0">
-                        <li><a class="dropdown-item" href="#" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2"></i> Profile</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadAvailableRooms()" data-bs-toggle="modal" data-bs-target="#unitsModal"><i class="fas fa-building me-2"></i> Browse Units</a></li>
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#feedbackModal"><i class="fas fa-comment-dots me-2"></i> Feedback</a></li>
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#locationModal"><i class="fas fa-map-marked-alt me-2"></i> Location</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> History</a></li>
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#maintenanceModal"><i class="fas fa-tools me-2"></i> Report Issue</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal"><i class="fas fa-tasks me-2"></i> Track Requests</a></li>
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Profile" style="width: 38px; height: 38px; border-radius: 50%; cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
+                        <li><a class="dropdown-item" href="#" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2 text-warning"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadAvailableRooms()" data-bs-toggle="modal" data-bs-target="#unitsModal"><i class="fas fa-building me-2 text-primary"></i> Browse Units</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#feedbackModal"><i class="fas fa-comment-dots me-2 text-info"></i> Feedback</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#locationModal"><i class="fas fa-map-marked-alt me-2 text-success"></i> Location</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2 text-secondary"></i> History</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#maintenanceModal"><i class="fas fa-tools me-2 text-danger"></i> Report Issue</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal"><i class="fas fa-tasks me-2 text-warning"></i> Track Requests</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                     </ul>
@@ -870,6 +875,96 @@
         </div>
     </div>
 </div>
+
+<!-- Tenant Mobile Slide-out Drawer & Overlay -->
+<div class="tenant-drawer-overlay" id="tenantDrawerOverlay"></div>
+<aside class="tenant-mobile-drawer" id="tenantMobileDrawer" aria-hidden="true">
+    <div class="tenant-drawer-header">
+        <div class="tenant-drawer-brand">ELITESTAY</div>
+        <button class="tenant-drawer-close" id="tenantDrawerCloseBtn" aria-label="Close menu">&times;</button>
+    </div>
+    <div class="tenant-drawer-profile text-center mb-3">
+        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Profile" class="profile-img mb-2" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover;">
+        <h6 id="mobileDrawerName" class="fw-bold text-white mb-0">Tenant</h6>
+        <p class="small text-white-50 mb-0 font-monospace extra-small" id="mobileDrawerRoom">Room --</p>
+    </div>
+    <nav class="tenant-drawer-nav">
+        <a class="tenant-drawer-link active" href="#"><i class="fas fa-home me-2"></i> Dashboard</a>
+        <a class="tenant-drawer-link" href="#" data-bs-toggle="modal" data-bs-target="#maintenanceModal"><i class="fas fa-tools me-2"></i> Report Issue</a>
+        <a class="tenant-drawer-link" href="#" onclick="loadMyMaintenanceRequests()" data-bs-toggle="modal" data-bs-target="#trackMaintenanceModal"><i class="fas fa-tasks me-2"></i> Track Requests</a>
+        <a class="tenant-drawer-link" href="#" onclick="loadAvailableRooms()" data-bs-toggle="modal" data-bs-target="#unitsModal"><i class="fas fa-building me-2"></i> Browse Units</a>
+        <a class="tenant-drawer-link" href="#" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Payment History</a>
+        <a class="tenant-drawer-link" href="#" onclick="loadFeedbackReport()" data-bs-toggle="modal" data-bs-target="#feedbackModal"><i class="fas fa-comment-dots me-2"></i> Feedback</a>
+        <a class="tenant-drawer-link" href="#" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2"></i> My Profile</a>
+        <a class="tenant-drawer-link text-danger mt-3" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+    </nav>
+</aside>
+
+<!-- Mobile Bottom App Bar -->
+<nav class="tenant-bottom-nav d-flex d-md-none" id="tenantBottomNav" aria-label="Mobile Bottom Navigation">
+    <a href="#" class="tenant-bottom-nav-item active">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="#" class="tenant-bottom-nav-item" data-bs-toggle="modal" data-bs-target="#maintenanceModal">
+        <i class="fas fa-wrench"></i>
+        <span>Issue</span>
+    </a>
+    <a href="#" class="tenant-bottom-nav-item" onclick="loadHistory()" data-bs-toggle="modal" data-bs-target="#historyModal">
+        <i class="fas fa-receipt"></i>
+        <span>Payments</span>
+    </a>
+    <a href="#" class="tenant-bottom-nav-item" onclick="loadFeedbackReport()" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+        <i class="fas fa-comment-alt"></i>
+        <span>Feedback</span>
+    </a>
+    <a href="#" class="tenant-bottom-nav-item" onclick="loadProfile()" data-bs-toggle="modal" data-bs-target="#profileModal">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+    </a>
+</nav>
+
+<script>
+// Tenant Mobile Drawer Controller
+(function() {
+    const openBtn = document.getElementById('tenantDrawerOpenBtn');
+    const closeBtn = document.getElementById('tenantDrawerCloseBtn');
+    const drawer = document.getElementById('tenantMobileDrawer');
+    const overlay = document.getElementById('tenantDrawerOverlay');
+
+    function openDrawer() {
+        if (drawer) {
+            drawer.classList.add('active');
+            drawer.setAttribute('aria-hidden', 'false');
+        }
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        if (drawer) {
+            drawer.classList.remove('active');
+            drawer.setAttribute('aria-hidden', 'true');
+        }
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+
+    document.querySelectorAll('.tenant-drawer-link').forEach(link => {
+        link.addEventListener('click', closeDrawer);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawer && drawer.classList.contains('active')) {
+            closeDrawer();
+        }
+    });
+})();
+</script>
 
 </body>
 </html>

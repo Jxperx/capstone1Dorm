@@ -24,6 +24,11 @@ function showSection(sectionId, linkElement) {
             item.classList.remove('active');
         }
     });
+    
+    // Auto-close sidebar on mobile devices upon selecting a section
+    if (window.innerWidth < 768) {
+        document.body.classList.remove('sb-sidenav-toggled');
+    }
 
     // Scroll main content container to top on section switch
     const contentWrapper = document.getElementById('page-content-wrapper');

@@ -8,6 +8,8 @@ async function loadDashboardData() {
         const firstName = data.full_name ? data.full_name.split(' ')[0] : 'Tenant';
         document.getElementById('welcomeName').textContent = `Hey, ${firstName}! 👋`;
         document.getElementById('sidebarName').textContent = data.full_name || 'Tenant';
+        const mobileDrawerNameEl = document.getElementById('mobileDrawerName');
+        if (mobileDrawerNameEl) mobileDrawerNameEl.textContent = data.full_name || 'Tenant';
         
         // Update Dynamic Daily Rent Due Date & Countdown Badge
         updateDynamicRentDueDate(data);
@@ -18,6 +20,8 @@ async function loadDashboardData() {
             const roomDetails = `${data.capacity || 0} Bed ${roomType === 'CONDO' ? 'Unit' : 'Dormitory'} • AC • WiFi`;
             
             document.getElementById('sidebarRoom').textContent = `${roomType === 'CONDO' ? 'Unit' : 'Room'} ${data.room_number}`;
+            const mobileDrawerRoomEl = document.getElementById('mobileDrawerRoom');
+            if (mobileDrawerRoomEl) mobileDrawerRoomEl.textContent = `${roomType === 'CONDO' ? 'Unit' : 'Room'} ${data.room_number}`;
             document.getElementById('cardRoomNumber').textContent = `${roomType === 'CONDO' ? 'Unit' : 'Room'} ${data.room_number}`;
             document.getElementById('cardRoomType').textContent = roomType;
             document.getElementById('cardRoomType').className = `badge ${roomType === 'CONDO' ? 'bg-info' : 'bg-primary'}`;

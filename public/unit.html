@@ -1632,7 +1632,7 @@
         }
 
         /* ══════════════════════════════════════
-           RESPONSIVE BREAKPOINTS
+           RESPONSIVE BREAKPOINTS & MOBILE ENHANCEMENTS
         ══════════════════════════════════════ */
         @media (max-width: 1180px) {
             .luxury-container {
@@ -1646,22 +1646,39 @@
         @media (max-width: 768px) {
             .unit-nav-bar {
                 padding: 12px 16px;
+                gap: 12px;
             }
             .brand-logo {
                 font-size: 16px;
+                letter-spacing: 1.5px;
+            }
+            .back-link {
+                padding: 6px 12px;
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+            .nav-inquire-cta {
+                padding: 7px 14px;
+                font-size: 10px;
+                letter-spacing: 1px;
             }
             .unit-hero-banner {
-                padding: 28px 16px 20px;
+                padding: 24px 16px 18px;
             }
             .luxury-container {
                 width: 92%;
                 margin-bottom: 50px;
+                gap: 24px;
+            }
+            .luxury-card {
+                padding: 18px 16px;
+                border-radius: var(--radius-lg);
             }
             .form-grid-2 {
                 grid-template-columns: 1fr;
             }
             .gallery-main {
-                height: clamp(300px, 46vh, 380px);
+                height: clamp(260px, 42vh, 360px);
             }
             .gallery-expand-hint {
                 display: none;
@@ -1670,7 +1687,63 @@
                 display: none;
             }
             .tour-container-v2 {
-                height: 320px;
+                height: 300px;
+            }
+            .amenities-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .amenity-card {
+                padding: 12px;
+                gap: 10px;
+            }
+            .amenity-name {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .fc .fc-toolbar-title {
+                font-size: 18px;
+            }
+            .fc .fc-button-primary {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            .fc-col-header-cell-cushion {
+                font-size: 10px;
+                padding: 2px 0;
+            }
+            .fc-daygrid-day-number {
+                font-size: 11px;
+                padding: 2px 4px;
+            }
+            .sidebar-trust-strip {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .brand-logo {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+            .unit-nav-bar {
+                padding: 10px 12px;
+            }
+            .back-link {
+                padding: 6px 10px;
+                font-size: 9px;
+            }
+            .nav-inquire-cta {
+                padding: 6px 10px;
+                font-size: 9px;
             }
         }
     </style>
@@ -1710,7 +1783,7 @@
                 <i class="fas fa-coins"></i>
                 <div>
                     <span class="spec-muted">Monthly Rate</span>
-                    <span class="spec-val">&#8369;<span id="infoRate">0</span>/mo</span>
+                    <span class="spec-val">&#8369;<span id="heroRate">0</span>/mo</span>
                 </div>
             </div>
             <div class="hero-spec-divider"></div>
@@ -1718,7 +1791,7 @@
                 <i class="fas fa-building"></i>
                 <div>
                     <span class="spec-muted">Property Type</span>
-                    <span class="spec-val" id="infoType">Loading...</span>
+                    <span class="spec-val" id="heroType">Loading...</span>
                 </div>
             </div>
             <div class="hero-spec-divider"></div>
@@ -1726,7 +1799,7 @@
                 <i class="fas fa-door-open"></i>
                 <div>
                     <span class="spec-muted">Unit Number</span>
-                    <span class="spec-val" id="infoRoomNumber">Loading...</span>
+                    <span class="spec-val" id="heroRoomNumber">Loading...</span>
                 </div>
             </div>
             <div class="hero-spec-divider"></div>
@@ -1734,7 +1807,7 @@
                 <i class="fas fa-users"></i>
                 <div>
                     <span class="spec-muted">Capacity</span>
-                    <span class="spec-val"><span id="infoCapacity">0</span> Resident(s)</span>
+                    <span class="spec-val"><span id="heroCapacity">0</span> Resident(s)</span>
                 </div>
             </div>
             <div class="hero-spec-divider"></div>
@@ -1742,7 +1815,7 @@
                 <i class="fas fa-vector-square"></i>
                 <div>
                     <span class="spec-muted">Floor Area</span>
-                    <span class="spec-val">28.5 sqm</span>
+                    <span class="spec-val" id="heroFloorArea">28.5 sqm</span>
                 </div>
             </div>
         </div>
@@ -1909,11 +1982,11 @@
                     </div>
                     <div class="detail-row-v2">
                         <span class="detail-label-v2"><i class="fas fa-expand-arrows-alt"></i> Floor Area</span>
-                        <span class="detail-value-v2">28.5 sqm</span>
+                        <span class="detail-value-v2" id="infoFloorArea">28.5 sqm</span>
                     </div>
                     <div class="detail-row-v2">
                         <span class="detail-label-v2"><i class="fas fa-couch"></i> Amenities</span>
-                        <span class="detail-value-v2">WiFi, AC, Bed</span>
+                        <span class="detail-value-v2" id="infoAmenities">WiFi, AC, Bed</span>
                     </div>
 
                     <!-- CTA Action Buttons -->

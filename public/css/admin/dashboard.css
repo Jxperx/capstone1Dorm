@@ -730,14 +730,30 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
         margin-left: 0 !important;
         width: 100% !important;
         max-width: 100vw !important;
-        height: 100vh;
+        height: 100dvh;
+        min-height: 100vh;
         overflow-y: auto !important;
         overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
         box-sizing: border-box !important;
     }
 
     .navbar {
         padding: 0.75rem 0.9rem;
+    }
+
+    /* Navbar items on small phones */
+    #pageTitle {
+        font-size: 1.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+
+    .admin-topbar-profile-btn {
+        padding: 4px 8px !important;
+        font-size: 0.8rem;
     }
 
     /* Modal responsiveness on small phones */
@@ -748,6 +764,12 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     
     .modal-header, .modal-footer {
         padding: 1rem;
+    }
+
+    /* Section action buttons responsive stacking */
+    .content-section > .d-flex.justify-content-between:first-child {
+        flex-wrap: wrap;
+        gap: 12px;
     }
 }
 
@@ -838,6 +860,41 @@ h1, h2, h3, h4, h5, h6, .sidebar-heading, #pageTitle {
     body.sb-sidenav-toggled .sidebar-overlay {
         display: block;
         opacity: 1;
+    }
+}
+
+/* Responsive Data Tables with Touch Momentum Scroll */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(197, 160, 89, 0.35) transparent;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(197, 160, 89, 0.35);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: rgba(197, 160, 89, 0.6);
+}
+
+@media (max-width: 767.98px) {
+    .table-responsive table {
+        min-width: 580px !important;
     }
 }
 

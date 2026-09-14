@@ -458,3 +458,195 @@ body {
     }
 }
 
+/* ── Tenant Mobile Drawer & Overlay ────────────────────────────── */
+.tenant-mobile-drawer-btn {
+    background: #121212;
+    color: #ffffff;
+    border: 1px solid rgba(197, 160, 89, 0.35);
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.tenant-mobile-drawer-btn:hover {
+    background: var(--accent);
+    color: #121212;
+    border-color: var(--accent);
+}
+
+.tenant-drawer-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1060;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.tenant-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.tenant-mobile-drawer {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(82vw, 300px);
+    background: #121212;
+    border-right: 1px solid rgba(197, 160, 89, 0.25);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 1070;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 18px;
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tenant-mobile-drawer.active {
+    transform: translateX(0);
+}
+
+.tenant-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 16px;
+}
+
+.tenant-drawer-brand {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tenant-drawer-brand::before {
+    content: '◆';
+    font-size: 11px;
+    color: var(--accent);
+}
+
+.tenant-drawer-close {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tenant-drawer-close:hover {
+    background: rgba(197, 160, 89, 0.2);
+    border-color: var(--accent);
+}
+
+.tenant-drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+}
+
+.tenant-drawer-link {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.tenant-drawer-link:hover, .tenant-drawer-link.active {
+    background: rgba(197, 160, 89, 0.15);
+    color: var(--accent);
+}
+
+.tenant-drawer-link i {
+    width: 22px;
+    color: var(--accent);
+}
+
+/* ── Tenant Mobile Bottom App Bar ───────────────────────────────── */
+.tenant-bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 62px;
+    background: rgba(18, 18, 18, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(197, 160, 89, 0.25);
+    z-index: 1030;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 6px env(safe-area-inset-bottom, 4px);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tenant-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    min-width: 50px;
+}
+
+.tenant-bottom-nav-item i {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.2s ease;
+}
+
+.tenant-bottom-nav-item:hover, .tenant-bottom-nav-item.active {
+    color: var(--accent);
+}
+
+.tenant-bottom-nav-item:hover i, .tenant-bottom-nav-item.active i {
+    color: var(--accent);
+}
+
+@media (max-width: 767.98px) {
+    .main-tenant-content {
+        padding: clamp(12px, 3vw, 20px) !important;
+        padding-bottom: 84px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+

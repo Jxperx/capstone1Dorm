@@ -56,18 +56,54 @@ async function loadUnitDetails() {
         }
 
         // UI Updates
-        document.getElementById('unitTitle').textContent = unitName;
-        document.getElementById('unitSubtitle').textContent = `Professional ${isCondo ? 'Condo' : 'Dorm'} Living Experience`;
+        const unitTitleEl = document.getElementById('unitTitle');
+        if (unitTitleEl) unitTitleEl.textContent = unitName;
+        
+        const unitSubtitleEl = document.getElementById('unitSubtitle');
+        if (unitSubtitleEl) unitSubtitleEl.textContent = `Professional ${isCondo ? 'Condo' : 'Dorm'} Living Experience`;
         
         const statusBadge = document.getElementById('unitStatusBadge');
         const isOccupied = room.status === 'occupied';
-        statusBadge.textContent = isOccupied ? 'Currently Occupied' : 'Available for Rent';
-        statusBadge.className = 'status-badge-v2 ' + (isOccupied ? 'status-occupied-v2' : 'status-available-v2');
+        if (statusBadge) {
+            statusBadge.textContent = isOccupied ? 'Currently Occupied' : 'Available for Rent';
+            statusBadge.className = 'status-badge-v2 ' + (isOccupied ? 'status-occupied-v2' : 'status-available-v2');
+        }
 
-        document.getElementById('infoType').textContent = isCondo ? 'Premium Condo' : 'Standard Dormitory';
-        document.getElementById('infoRoomNumber').textContent = room.room_number;
-        document.getElementById('infoCapacity').textContent = room.capacity;
-        document.getElementById('infoRate').textContent = room.monthly_rate;
+        const propTypeName = isCondo ? 'Premium Condo' : 'Standard Dormitory';
+        const formattedMonthlyRate = (room.monthly_rate != null && !isNaN(Number(room.monthly_rate)))
+            ? Number(room.monthly_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : (room.monthly_rate || '0.00');
+        const capacityText = room.capacity != null ? `${room.capacity}` : '0';
+        const roomNumberText = room.room_number || '';
+        const floorAreaText = isCondo ? '36.0 sqm' : '28.5 sqm';
+        const amenitiesText = isCondo ? 'WiFi, AC, Kitchenette, Bath' : 'WiFi, AC, Bed, Desk';
+
+        // Helper to update elements safely
+        const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        // Update Top Hero Specs Bar
+        safeSetText('heroType', propTypeName);
+        safeSetText('heroRoomNumber', roomNumberText);
+        safeSetText('heroCapacity', capacityText);
+        safeSetText('heroRate', formattedMonthlyRate);
+        safeSetText('heroFloorArea', floorAreaText);
+
+        // Update Sidebar Unit Summary Card
+        safeSetText('infoType', propTypeName);
+        safeSetText('infoRoomNumber', roomNumberText);
+        safeSetText('infoCapacity', capacityText);
+        safeSetText('infoRate', formattedMonthlyRate);
+        safeSetText('infoFloorArea', floorAreaText);
+        safeSetText('infoAmenities', amenitiesText);
+
+        // Fallback: Also update any elements matching querySelectorAll in case of any duplicate references
+        document.querySelectorAll('#infoType').forEach(el => el.textContent = propTypeName);
+        document.querySelectorAll('#infoRoomNumber').forEach(el => el.textContent = roomNumberText);
+        document.querySelectorAll('#infoCapacity').forEach(el => el.textContent = capacityText);
+        document.querySelectorAll('#infoRate').forEach(el => el.textContent = formattedMonthlyRate);
 
         const dbGallery = (data.gallery || []).map(g => g.image_url).filter(Boolean);
         const galleryList = dbGallery.length >= 5 ? dbGallery.slice(0, 5) : STANDARD_GALLERY_ITEMS.map(i => i.url);
