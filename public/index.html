@@ -598,18 +598,13 @@
                 display: none;
             }
             .nav-right .nav-btn#ctaNavBtn {
-                padding: 8px 14px;
-                font-size: 10px;
-                letter-spacing: 1px;
+                display: none;
             }
         }
 
         @media (max-width: 480px) {
             nav#eliteNav {
                 padding: 12px 4%;
-            }
-            .nav-right .nav-btn#ctaNavBtn {
-                display: none;
             }
             .condo-cards {
                 grid-template-columns: 1fr;
@@ -1803,6 +1798,23 @@
             }
         }
 
+        @media (max-width: 768px) {
+            #hero.snap-section {
+                padding-left: 16px;
+                padding-right: 16px;
+                width: 100%;
+                min-height: auto;
+                padding-top: calc(74px + 16px);
+                padding-bottom: 30px;
+            }
+            .hero-intro-title {
+                font-size: clamp(2.1rem, 6.5vw, 3.2rem);
+            }
+            .hero-intro-desc {
+                font-size: 14px;
+            }
+        }
+
         .hero-intro-content {
             display: flex;
             flex-direction: column;
@@ -2161,7 +2173,7 @@
         </div>
         <div class="mobile-nav-footer">
             <a href="/login" class="mobile-nav-btn solid"><i class="fas fa-user-shield"></i> Tenant Portal</a>
-            <a href="/admin-dashboard.html" class="mobile-nav-btn outline"><i class="fas fa-sliders-h"></i> Admin Portal</a>
+            <a href="/admin" class="mobile-nav-btn outline"><i class="fas fa-sliders-h"></i> Admin Portal</a>
         </div>
     </aside>
 
@@ -2614,7 +2626,7 @@
             <a href="#dorms">Dormitories</a>
             <a href="#inquire">Inquire</a>
             <a href="#location">Location</a>
-            <a href="/admin-dashboard.html">Admin Portal</a>
+            <a href="/admin">Admin Portal</a>
         </div>
     </footer>
     </section>
@@ -3105,17 +3117,55 @@
             }
         }
 
-        // ── Intersection Observer for Scroll Reveals ──
-        const revealEls = document.querySelectorAll('.reveal');
-        const observer  = new IntersectionObserver((entries) => {
+        // ── Intersection Observer & Section Reveal Engine ──
+        function revealTargetSection(targetId) {
+            if (!targetId) return;
+            const cleanId = targetId.replace(/^#/, '');
+            const sec = document.getElementById(cleanId);
+            if (sec) {
+                if (sec.classList.contains('reveal')) sec.classList.add('visible');
+                sec.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+            }
+        }
+
+        const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
                     observer.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.08 });
-        revealEls.forEach(el => observer.observe(el));
+        }, { threshold: 0.01, rootMargin: '100px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight + 120 && rect.bottom > -120) {
+                el.classList.add('visible');
+            } else {
+                observer.observe(el);
+            }
+        });
+
+        // Immediately reveal target when jumping or clicking anchor links
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash) revealTargetSection(window.location.hash);
+        });
+        if (window.location.hash) {
+            revealTargetSection(window.location.hash);
+            const hashTarget = document.getElementById(window.location.hash.slice(1));
+            if (hashTarget) {
+                hashTarget.scrollIntoView({ behavior: 'auto' });
+            }
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function() {
+                const href = this.getAttribute('href');
+                if (href && href.length > 1) {
+                    revealTargetSection(href);
+                }
+            });
+        });
 
         // ── Inquiry form submission handler (/api/inquiries/submit) ──
         async function handleInquiry(e) {

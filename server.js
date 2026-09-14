@@ -111,7 +111,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     store: sessionStore,
     secret: process.env.SESSION_SECRET || 'change-this-session-secret',
@@ -124,6 +123,19 @@ app.use(session({
         sameSite: 'lax'
     }
 }));
+
+// Route guards to prevent unauthenticated static access to dashboard HTML files
+app.get('/admin-dashboard.html', (req, res) => {
+    if (!req.session?.user || req.session.user.role !== 'admin') return res.redirect('/login');
+    res.sendFile(path.join(__dirname, 'public', 'admin-dashboard.html'));
+});
+
+app.get('/tenant-dashboard.html', (req, res) => {
+    if (!req.session?.user) return res.redirect('/login');
+    res.sendFile(path.join(__dirname, 'public', 'tenant-dashboard.html'));
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Route Imports
 const authRoutes          = require('./routes/auth');
