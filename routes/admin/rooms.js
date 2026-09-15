@@ -17,13 +17,16 @@ async function ensureGalleryTable() {
             CREATE TABLE IF NOT EXISTS room_gallery (
                 id SERIAL PRIMARY KEY,
                 room_id INT NOT NULL,
-                image_url VARCHAR(255) NOT NULL,
+                image_url TEXT NOT NULL,
                 caption VARCHAR(100) NULL,
                 sort_order INT NOT NULL DEFAULT 0,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
             );
         `);
+        try {
+            await pool.request().query('ALTER TABLE room_gallery ALTER COLUMN image_url TYPE TEXT;');
+        } catch (_) {}
         galleryTableReady = true;
     } catch (err) {
         galleryTableReady = true;
@@ -307,16 +310,21 @@ router.post('/gallery/:roomId', upload.array('images', 25), async (req, res) => 
         const pool = await poolPromise;
         await ensureGalleryTable();
 
-        // Get current max sort_order
+        // Get current max sort_order safely handling PostgreSQL lowercase column names
         const maxOrder = await pool.request()
             .input('rid', sql.Int, roomId)
             .query('SELECT ISNULL(MAX(sort_order), -1) AS maxSort FROM room_gallery WHERE room_id = @rid');
-        let nextOrder = maxOrder.recordset[0].maxSort + 1;
+        
+        const row = maxOrder.recordset && maxOrder.recordset[0];
+        const rawSort = row ? (row.maxsort !== undefined ? row.maxsort : row.maxSort) : -1;
+        const parsedSort = parseInt(rawSort, 10);
+        let nextOrder = (!isNaN(parsedSort) && parsedSort >= 0) ? parsedSort + 1 : 0;
 
         for (const file of req.files) {
+            const fileUrl = file.path || file.secure_url || file.url;
             await pool.request()
                 .input('room_id', sql.Int, roomId)
-                .input('image_url', sql.NVarChar, file.path)
+                .input('image_url', sql.NVarChar, fileUrl)
                 .input('sort_order', sql.Int, nextOrder++)
                 .query('INSERT INTO room_gallery (room_id, image_url, sort_order) VALUES (@room_id, @image_url, @sort_order)');
         }
@@ -326,10 +334,15 @@ router.post('/gallery/:roomId', upload.array('images', 25), async (req, res) => 
             .input('rid', sql.Int, roomId)
             .query('SELECT id, image_url, caption, sort_order FROM room_gallery WHERE room_id = @rid ORDER BY sort_order, id');
 
-        res.json({ message: `${req.files.length} image(s) uploaded`, gallery: result.recordset });
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'gallery_updated', id: roomId });
+        } catch (_) {}
+
+        res.json({ message: `${req.files.length} image(s) uploaded successfully`, gallery: result.recordset });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database error' });
+        console.error('[Gallery Upload Error]:', err);
+        res.status(500).json({ error: err.message || 'Database error' });
     }
 });
 
@@ -341,13 +354,14 @@ router.delete('/gallery/image/:id', async (req, res) => {
 
     try {
         const pool = await poolPromise;
-        // Get file path before deleting
+        // Get file path and room_id before deleting
         const img = await pool.request()
             .input('id', sql.Int, id)
-            .query('SELECT image_url FROM room_gallery WHERE id = @id');
+            .query('SELECT room_id, image_url FROM room_gallery WHERE id = @id');
 
         if (img.recordset.length === 0) return res.status(404).json({ error: 'Image not found' });
 
+        const roomId = img.recordset[0].room_id;
         const imageUrl = img.recordset[0].image_url;
 
         // Delete from database
@@ -359,6 +373,11 @@ router.delete('/gallery/image/:id', async (req, res) => {
         deleteFromCloudinary(imageUrl).catch(err => {
             console.warn('[Gallery] Failed to delete Cloudinary asset:', err.message);
         });
+
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'gallery_updated', id: roomId });
+        } catch (_) {}
 
         res.json({ message: 'Image deleted' });
     } catch (err) {

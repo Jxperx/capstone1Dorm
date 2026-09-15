@@ -1,5 +1,4 @@
-'use strict';
-
+require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const path = require('path');
@@ -21,20 +20,31 @@ cloudinary.config({
  * @param {string[]} allowedFormats - Allowed file formats
  * @param {boolean} isPrivate - If true, uploads as 'authenticated' to prevent unauthorized public access
  */
-function createCloudinaryStorage(folderSubpath, allowedFormats = ['jpg', 'jpeg', 'png'], isPrivate = false) {
+function createCloudinaryStorage(folderSubpath, allowedFormats = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'avif'], isPrivate = false) {
     return new CloudinaryStorage({
         cloudinary: cloudinary,
         params: async (req, file) => {
             const ext = path.extname(file.originalname).substring(1).toLowerCase();
-            const format = allowedFormats.includes(ext) ? ext : 'jpg';
+            const isVideo = (file.mimetype && file.mimetype.startsWith('video/')) || ['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(ext);
             const cleanFilename = path.basename(file.originalname, path.extname(file.originalname))
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .substring(0, 50);
             const publicId = `${cleanFilename}_${Date.now()}`;
             
+            if (isVideo) {
+                return {
+                    folder: `elitestay/${folderSubpath}`,
+                    resource_type: 'video',
+                    public_id: publicId,
+                    type: isPrivate ? 'authenticated' : 'upload'
+                };
+            }
+
+            const format = allowedFormats.includes(ext) ? ext : 'jpg';
             return {
                 folder: `elitestay/${folderSubpath}`,
                 format: format,
+                resource_type: 'image',
                 public_id: publicId,
                 type: isPrivate ? 'authenticated' : 'upload', // 'authenticated' requires a signed URL to view
                 transformation: isPrivate ? [] : [{ width: 1200, crop: 'limit', quality: 'auto' }] // Optimize non-sensitive images

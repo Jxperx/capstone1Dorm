@@ -106,7 +106,21 @@ async function loadUnitDetails() {
         document.querySelectorAll('#infoRate').forEach(el => el.textContent = formattedMonthlyRate);
 
         const dbGallery = (data.gallery || []).map(g => g.image_url).filter(Boolean);
-        const galleryList = dbGallery.length >= 5 ? dbGallery.slice(0, 5) : STANDARD_GALLERY_ITEMS.map(i => i.url);
+        let galleryList;
+        if (dbGallery.length > 0) {
+            galleryList = [...dbGallery];
+            if (galleryList.length < 5) {
+                STANDARD_GALLERY_ITEMS.forEach(item => {
+                    if (galleryList.length < 5 && !galleryList.includes(item.url)) {
+                        galleryList.push(item.url);
+                    }
+                });
+            } else {
+                galleryList = galleryList.slice(0, 5);
+            }
+        } else {
+            galleryList = STANDARD_GALLERY_ITEMS.map(i => i.url);
+        }
 
         // Initialize Thumbnails & Showcase (strictly 5 pictures)
         initGalleryThumbnails(galleryList);

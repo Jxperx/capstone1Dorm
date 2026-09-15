@@ -121,7 +121,7 @@ router.get('/media-stats', async (req, res) => {
             LEFT JOIN (
                 SELECT room_id,
                        COUNT(id) AS photo_count,
-                       MAX(CASE WHEN sort_order = 0 THEN image_url ELSE NULL END) AS cover_image
+                       (ARRAY_AGG(image_url ORDER BY sort_order, id))[1] AS cover_image
                 FROM room_gallery
                 GROUP BY room_id
             ) g ON r.id = g.room_id

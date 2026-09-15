@@ -1124,7 +1124,13 @@ async function uploadGalleryImages(customFiles = null) {
         const data = await res.json();
         if (res.ok) {
             renderGalleryGrid(data.gallery);
-            showMediaToast(data.message);
+            showMediaToast(data.message || 'Photos uploaded successfully');
+            if (window.ReportModule && typeof window.ReportModule.loadMediaStats === 'function') {
+                window.ReportModule.loadMediaStats();
+            }
+            if (typeof loadRooms === 'function') {
+                loadRooms();
+            }
         } else {
             showMediaToast(data.error || 'Upload failed', 'error');
         }
@@ -1152,6 +1158,12 @@ async function deleteGalleryImage(imageId) {
                 });
                 if (res.ok) {
                     loadUnitGallery();
+                    if (window.ReportModule && typeof window.ReportModule.loadMediaStats === 'function') {
+                        window.ReportModule.loadMediaStats();
+                    }
+                    if (typeof loadRooms === 'function') {
+                        loadRooms();
+                    }
                     window.showEnterpriseToast('Photo deleted successfully.');
                 } else {
                     window.showEnterpriseToast('Failed to delete photo.', 'error');
