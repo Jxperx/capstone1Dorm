@@ -386,4 +386,44 @@ router.delete('/gallery/image/:id', async (req, res) => {
     }
 });
 
+// Set a photo as cover photo
+router.put('/gallery/cover/:id', async (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') return res.status(401).json({ error: 'Not authorized' });
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid image id' });
+
+    try {
+        const pool = await poolPromise;
+        const img = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT room_id FROM room_gallery WHERE id = @id');
+
+        if (img.recordset.length === 0) return res.status(404).json({ error: 'Image not found' });
+        const roomId = img.recordset[0].room_id;
+
+        await pool.request()
+            .input('room_id', sql.Int, roomId)
+            .input('id', sql.Int, id)
+            .query(`
+                UPDATE room_gallery
+                SET sort_order = CASE WHEN id = @id THEN 0 ELSE sort_order + 1 END
+                WHERE room_id = @room_id
+            `);
+
+        const result = await pool.request()
+            .input('rid', sql.Int, roomId)
+            .query('SELECT id, image_url, caption, sort_order FROM room_gallery WHERE room_id = @rid ORDER BY sort_order, id');
+
+        try {
+            const io = req.app.get('io');
+            if (io) io.emit('room:changed', { action: 'gallery_updated', id: roomId });
+        } catch (_) {}
+
+        res.json({ message: 'Cover photo updated', gallery: result.recordset });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 module.exports = router;

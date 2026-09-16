@@ -1317,15 +1317,29 @@
                                     <span id="galleryCount" class="badge bg-secondary rounded-pill px-3 py-1">0 photos</span>
                                 </div>
                                 <div class="card-body p-4">
-                                    <!-- Gallery Grid -->
-                                    <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-bottom:20px;"></div>
+                                    <!-- Gallery Grid (5 showcase slots) -->
+                                    <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:20px;"></div>
+
+                                    <!-- Hidden File Input for Multiple Uploads -->
+                                    <input type="file" id="galleryFileInput" multiple accept="image/*" style="display:none;" onchange="uploadGalleryImages()">
 
                                     <!-- Upload Zone -->
-                                    <div id="uploadZone" class="border border-2 border-dashed rounded-4 p-5 text-center cursor-pointer" style="background:#fafafa; transition:all 0.25s;" onmouseover="this.style.borderColor='#c5a059';this.style.background='#fef9f0'" onmouseout="this.style.borderColor='#ccc';this.style.background='#fafafa'">
-                                        <i class="fas fa-cloud-upload-alt text-warning mb-2" style="font-size:2.2rem; color:#c5a059 !important;"></i>
-                                        <div class="fw-bold text-dark" style="font-size:0.95rem;">Drop photos here or click to upload</div>
-                                        <div class="text-muted small mt-1" style="font-size:0.75rem;">Supports JPG, PNG, WEBP (upload multiple photos, up to 25 at once)</div>
-                                        <input type="file" id="galleryFileInput" multiple accept="image/*" style="display:none;" onchange="uploadGalleryImages()">
+                                    <div id="uploadZone" class="border border-2 border-dashed rounded-4 p-4 text-center cursor-pointer position-relative" style="background:#fafafa; transition:all 0.25s;" onmouseover="this.style.borderColor='#c5a059';this.style.background='#fef9f0'" onmouseout="this.style.borderColor='#ccc';this.style.background='#fafafa'">
+                                        <div id="uploadZoneNormal">
+                                            <i class="fas fa-cloud-upload-alt text-warning mb-2" style="font-size:2.4rem; color:#c5a059 !important;"></i>
+                                            <div class="fw-bold text-dark" style="font-size:0.95rem;">Drop photos here or click to choose files</div>
+                                            <div class="text-muted small mt-1" style="font-size:0.75rem;">Select up to 5 photos at once, or add photos one by one (Supports JPG, PNG, WEBP)</div>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-1 fw-bold" style="font-size:0.78rem;" onclick="event.stopPropagation(); document.getElementById('galleryFileInput').click();">
+                                                    <i class="fas fa-images me-1.5 text-warning"></i>Browse Photos
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="uploadZoneUploading" style="display:none; padding:15px 0;">
+                                            <i class="fas fa-spinner fa-spin mb-2" style="font-size:2rem; color:#c5a059;"></i>
+                                            <div class="fw-bold text-dark" style="font-size:0.95rem;">Uploading photos to cloud gallery...</div>
+                                            <div class="text-muted small" style="font-size:0.75rem;">Optimizing resolution and generating thumbnails</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

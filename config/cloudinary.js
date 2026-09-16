@@ -29,7 +29,8 @@ function createCloudinaryStorage(folderSubpath, allowedFormats = ['jpg', 'jpeg',
             const cleanFilename = path.basename(file.originalname, path.extname(file.originalname))
                 .replace(/[^a-zA-Z0-9]/g, '_')
                 .substring(0, 50);
-            const publicId = `${cleanFilename}_${Date.now()}`;
+            const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const publicId = `${cleanFilename}_${uniqueSuffix}`;
             
             if (isVideo) {
                 return {

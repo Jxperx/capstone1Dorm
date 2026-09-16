@@ -1055,48 +1055,116 @@ async function loadUnitGallery() {
     }
 }
 
-function renderGalleryGrid(images) {
+const GALLERY_SLOT_NAMES = [
+    'Photo 1 (Cover / Main)',
+    'Photo 2 (Bedroom / Interior)',
+    'Photo 3 (Kitchen / Dining)',
+    'Photo 4 (Bathroom)',
+    'Photo 5 (Exterior / Balcony)'
+];
+
+function triggerGalleryFileInput() {
+    const input = document.getElementById('galleryFileInput');
+    if (input) input.click();
+}
+
+function renderGalleryGrid(images = []) {
     const grid = document.getElementById('galleryGrid');
     const count = document.getElementById('galleryCount');
     if (!grid) return;
 
-    count.textContent = `${images.length} photo${images.length !== 1 ? 's' : ''}`;
-
-    if (images.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:#aaa;font-size:0.85rem;"><i class="fas fa-image" style="font-size:1.5rem;margin-bottom:8px;display:block;"></i>No photos yet — upload some below</div>';
-        return;
+    const imgCount = images.length;
+    if (count) {
+        if (imgCount === 0) {
+            count.className = 'badge bg-secondary rounded-pill px-3 py-1';
+            count.textContent = '0 / 5 photos';
+        } else if (imgCount < 5) {
+            count.className = 'badge bg-warning text-dark rounded-pill px-3 py-1';
+            count.textContent = `${imgCount} / 5 photos (${5 - imgCount} more needed)`;
+        } else {
+            count.className = 'badge bg-success rounded-pill px-3 py-1';
+            count.textContent = `${imgCount} / 5 photos (Showcase Ready)`;
+        }
     }
 
-    grid.innerHTML = images.map(img => `
-        <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f0f0f0;">
-            <img src="${img.image_url}" alt="${img.caption || 'Room photo'}" style="width:100%;height:100%;object-fit:cover;">
-            <button onclick="deleteGalleryImage(${img.id})" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(220,53,69,0.9);color:#fff;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" title="Delete this photo">
+    let html = '';
+
+    // Render uploaded photos
+    images.forEach((img, idx) => {
+        const slotTitle = GALLERY_SLOT_NAMES[idx] || `Photo ${idx + 1}`;
+        const isCover = img.sort_order === 0;
+        html += `
+        <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#f0f0f0;box-shadow:0 2px 6px rgba(0,0,0,0.06);border:1px solid #e9ecef;">
+            <img src="${img.image_url}" alt="${img.caption || slotTitle}" style="width:100%;height:100%;object-fit:cover;">
+            
+            <!-- Delete Button -->
+            <button type="button" onclick="deleteGalleryImage(${img.id})" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(220,53,69,0.9);color:#fff;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0.8;transition:all 0.2s;" onmouseover="this.style.opacity='1';this.style.transform='scale(1.1)'" onmouseout="this.style.opacity='0.8';this.style.transform='scale(1)'" title="Delete this photo">
                 <i class="fas fa-times"></i>
             </button>
-            ${img.sort_order === 0 ? '<div style="position:absolute;bottom:6px;left:6px;background:rgba(197,160,89,0.9);color:#fff;font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:600;">COVER</div>' : ''}
-        </div>
-    `).join('');
+
+            <!-- Set as Cover Button (if not already cover) -->
+            ${!isCover ? `
+            <button type="button" onclick="setAsCoverImage(${img.id})" style="position:absolute;top:6px;left:6px;padding:2px 8px;border-radius:8px;border:none;background:rgba(33,37,41,0.75);color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;gap:3px;opacity:0.85;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'" title="Make this the Cover photo">
+                <i class="fas fa-star text-warning" style="font-size:0.6rem;"></i> Set Cover
+            </button>` : ''}
+
+            <!-- Slot Badge -->
+            ${isCover ? `
+                <div style="position:absolute;bottom:6px;left:6px;background:rgba(197,160,89,0.95);color:#fff;font-size:0.65rem;padding:2px 8px;border-radius:8px;font-weight:700;letter-spacing:0.04em;">
+                    <i class="fas fa-star me-1" style="font-size:0.6rem;"></i>COVER
+                </div>
+            ` : `
+                <div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.65);color:#fff;font-size:0.65rem;padding:2px 8px;border-radius:8px;font-weight:600;">
+                    Photo ${idx + 1}
+                </div>
+            `}
+        </div>`;
+    });
+
+    // Render remaining empty slots up to 5
+    for (let i = imgCount; i < 5; i++) {
+        const slotLabel = GALLERY_SLOT_NAMES[i];
+        html += `
+        <div onclick="triggerGalleryFileInput()" style="position:relative;border-radius:10px;aspect-ratio:1;border:2px dashed #c5a059;background:#fefbf5;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:12px;text-align:center;transition:all 0.2s;" onmouseover="this.style.background='#fdf2d6';this.style.borderColor='#b38f45'" onmouseout="this.style.background='#fefbf5';this.style.borderColor='#c5a059'" title="Click to upload ${slotLabel}">
+            <i class="fas fa-plus-circle text-warning mb-1.5" style="font-size:1.6rem; color:#c5a059 !important;"></i>
+            <span style="font-size:0.75rem;font-weight:700;color:#2c3e50;line-height:1.2;">${slotLabel}</span>
+            <span class="text-muted small mt-1" style="font-size:0.68rem;">+ Add Photo</span>
+        </div>`;
+    }
+
+    grid.innerHTML = html;
 }
 
-// Upload zone — drag & drop + click
-document.addEventListener('DOMContentLoaded', function() {
+// Upload zone listeners initialization
+function initGalleryUploadListeners() {
     const zone = document.getElementById('uploadZone');
-    const input = document.getElementById('galleryFileInput');
-    if (!zone || !input) return;
+    if (!zone) return;
 
-    zone.addEventListener('click', e => {
-        if (e.target !== input) input.click();
-    });
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#c5a059'; zone.style.background = '#fef9f0'; });
-    zone.addEventListener('dragleave', e => { e.preventDefault(); zone.style.borderColor = '#ccc'; zone.style.background = '#fafafa'; });
-    zone.addEventListener('drop', e => {
+    zone.onclick = () => {
+        triggerGalleryFileInput();
+    };
+    zone.ondragover = e => {
         e.preventDefault();
-        zone.style.borderColor = '#ccc'; zone.style.background = '#fafafa';
+        zone.style.borderColor = '#c5a059';
+        zone.style.background = '#fef9f0';
+    };
+    zone.ondragleave = e => {
+        e.preventDefault();
+        zone.style.borderColor = '#ccc';
+        zone.style.background = '#fafafa';
+    };
+    zone.ondrop = e => {
+        e.preventDefault();
+        zone.style.borderColor = '#ccc';
+        zone.style.background = '#fafafa';
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             uploadGalleryImages(e.dataTransfer.files);
         }
-    });
-});
+    };
+}
+
+document.addEventListener('DOMContentLoaded', initGalleryUploadListeners);
+if (document.readyState !== 'loading') initGalleryUploadListeners();
 
 async function uploadGalleryImages(customFiles = null) {
     if (!currentMediaRoomId) return alert('Please select a unit first');
@@ -1109,10 +1177,11 @@ async function uploadGalleryImages(customFiles = null) {
         formData.append('images', files[i]);
     }
 
-    const zone = document.getElementById('uploadZone');
-    const origHtml = zone ? zone.innerHTML : '';
-    if (zone) {
-        zone.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#c5a059;"></i><div style="margin-top:8px;font-size:0.85rem;color:#888;">Uploading...</div>';
+    const normalView = document.getElementById('uploadZoneNormal');
+    const uploadView = document.getElementById('uploadZoneUploading');
+    if (normalView && uploadView) {
+        normalView.style.display = 'none';
+        uploadView.style.display = 'block';
     }
 
     try {
@@ -1124,7 +1193,7 @@ async function uploadGalleryImages(customFiles = null) {
         const data = await res.json();
         if (res.ok) {
             renderGalleryGrid(data.gallery);
-            showMediaToast(data.message || 'Photos uploaded successfully');
+            showMediaToast(data.message || `${files.length} photo(s) uploaded successfully`);
             if (window.ReportModule && typeof window.ReportModule.loadMediaStats === 'function') {
                 window.ReportModule.loadMediaStats();
             }
@@ -1135,12 +1204,35 @@ async function uploadGalleryImages(customFiles = null) {
             showMediaToast(data.error || 'Upload failed', 'error');
         }
     } catch (err) {
-        console.error(err);
+        console.error('[Upload Gallery Error]:', err);
         showMediaToast('Error uploading images', 'error');
+    } finally {
+        if (normalView && uploadView) {
+            normalView.style.display = 'block';
+            uploadView.style.display = 'none';
+        }
+        if (input) input.value = '';
     }
+}
 
-    if (zone) zone.innerHTML = origHtml;
-    if (input) input.value = '';
+async function setAsCoverImage(imageId) {
+    try {
+        const res = await fetch(`/api/admin/rooms/gallery/cover/${imageId}`, {
+            method: 'PUT',
+            credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok) {
+            renderGalleryGrid(data.gallery);
+            window.showEnterpriseToast('Cover photo updated successfully.');
+            if (typeof loadRooms === 'function') loadRooms();
+        } else {
+            window.showEnterpriseToast(data.error || 'Failed to update cover photo.', 'error');
+        }
+    } catch (err) {
+        console.error('[Cover Update Error]:', err);
+        window.showEnterpriseToast('Error updating cover photo.', 'error');
+    }
 }
 
 async function deleteGalleryImage(imageId) {
