@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 // Startup diagnostics
 const hasEmailJS = !!process.env.EMAILJS_PUBLIC_KEY;
 const hasSmtp    = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+let smtpBlocked  = false; // Set to true if SMTP port is blocked by cloud provider (e.g. Render)
 
 if (hasEmailJS) {
     console.log('[Email] EmailJS credentials detected - supporting EmailJS HTTP API.');
@@ -20,8 +21,8 @@ async function sendViaEmailJS(mailOptions) {
     const otpCode = otpMatch ? otpMatch[0] : '';
 
     // Extract user name if present (e.g. Hello Jaxper,)
-    const nameMatch = searchString.match(/Hello\s+([^,]+)/i);
-    const userName = nameMatch ? nameMatch[1].trim() : 'Valued Tenant';
+    const nameMatch = searchString.match(/Hello\s+([^,\n\r]+)/i);
+    const userName = (mailOptions.to_name || mailOptions.userName || (nameMatch ? nameMatch[1].trim() : 'Valued Resident'));
 
     // Generate formatted expiry time
     const expiryTime = new Date(Date.now() + 5 * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -29,9 +30,13 @@ async function sendViaEmailJS(mailOptions) {
     const setupLink = mailOptions.setupUrl || mailOptions.link || '';
     const isOtpEmail = !!(mailOptions.isOtp || (mailOptions.subject && /verification code|reset code|login otp/i.test(mailOptions.subject)));
 
-    // Select template: Use EMAILJS_ONBOARDING_TEMPLATE_ID if available and this is not an OTP email
+    // Select template
     let templateId = process.env.EMAILJS_TEMPLATE_ID;
-    if (!isOtpEmail && process.env.EMAILJS_ONBOARDING_TEMPLATE_ID) {
+    if (mailOptions.templateId) {
+        templateId = mailOptions.templateId;
+    } else if (mailOptions.isReminder && process.env.EMAILJS_REMINDER_TEMPLATE_ID) {
+        templateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID;
+    } else if (!isOtpEmail && process.env.EMAILJS_ONBOARDING_TEMPLATE_ID) {
         templateId = process.env.EMAILJS_ONBOARDING_TEMPLATE_ID;
     }
 
@@ -49,6 +54,9 @@ async function sendViaEmailJS(mailOptions) {
             email: mailOptions.to,
             to_email: mailOptions.to,
             to_name: userName,
+            name: userName,
+            user_name: userName,
+            recipient_name: userName,
 
             // Setup Link mappings
             setup_url: setupLink,
@@ -66,10 +74,6 @@ async function sendViaEmailJS(mailOptions) {
             verification_code: effectiveCode,
             passcode: effectiveCode,
 
-            // User name mappings
-            user_name: userName,
-            name: userName,
-
             // Expiry mappings
             expiry: setupLink ? '48 hours' : expiryTime,
             expires: setupLink ? '48 hours' : expiryTime,
@@ -79,7 +83,22 @@ async function sendViaEmailJS(mailOptions) {
 
             // General fallbacks
             message: mailOptions.text || mailOptions.html || setupLink || '',
-            subject: mailOptions.subject || 'EliteStay Notification'
+            content: mailOptions.text || mailOptions.html || '',
+            subject: mailOptions.subject || 'EliteStay Notification',
+            title: mailOptions.subject || 'EliteStay Notification',
+
+            // Rent reminder & billing fields
+            due_date: mailOptions.dueDate || '',
+            due_date_str: mailOptions.dueDate || '',
+            room_number: mailOptions.roomNumber || '',
+            unit_number: mailOptions.roomNumber || '',
+            monthly_rate: mailOptions.amount || '',
+            amount: mailOptions.amount || '',
+            rent_amount: mailOptions.amount || '',
+
+            // Custom extra parameters
+            ...(mailOptions.templateParams || {}),
+            ...(mailOptions.template_params || {})
         }
     };
 
@@ -96,7 +115,7 @@ async function sendViaEmailJS(mailOptions) {
         throw new Error(`EmailJS HTTP ${response.status}: ${errText}`);
     }
 
-    console.log('[Email] Sent via EmailJS API.');
+    console.log(`[Email] Successfully sent email to ${mailOptions.to} via EmailJS API.`);
     return { messageId: `emailjs-${Date.now()}` };
 }
 
@@ -113,8 +132,13 @@ const transporter = nodemailer.createTransport({
 
 if (hasSmtp) {
     transporter.verify((err) => {
-        if (err) console.warn('[Email] SMTP verify failed:', err.message);
-        else     console.log('[Email] SMTP (port 465) is ready.');
+        if (err) {
+            smtpBlocked = true;
+            console.warn('[Email] SMTP verify failed (outbound SMTP likely blocked on cloud host):', err.message);
+        } else {
+            smtpBlocked = false;
+            console.log('[Email] SMTP (port 465) is verified and ready.');
+        }
     });
 }
 
@@ -128,22 +152,38 @@ async function sendMailWithFallback(mailOptions) {
             return await sendViaEmailJS(mailOptions);
         } catch (emailjsErr) {
             console.warn('[Email] EmailJS OTP failed, attempting SMTP fallback:', emailjsErr.message);
-            if (hasSmtp) {
-                return await transporter.sendMail(mailOptions);
+            if (hasSmtp && !smtpBlocked) {
+                return await rawSendMail(mailOptions);
             }
             throw emailjsErr;
         }
     }
 
-    // 2) For rich HTML / Onboarding / Notification emails:
-    // Attempt SMTP first so recipients receive the full branded HTML email template
+    // 2) If SMTP is known to be blocked (e.g. Render firewall blocks port 465/587), go directly to EmailJS
+    if (smtpBlocked && hasEmailJS) {
+        try {
+            return await sendViaEmailJS(mailOptions);
+        } catch (emailjsErr) {
+            console.warn('[Email] EmailJS send failed when SMTP marked blocked, attempting SMTP retry:', emailjsErr.message);
+            if (hasSmtp) {
+                return await rawSendMail(mailOptions);
+            }
+            throw emailjsErr;
+        }
+    }
+
+    // 3) For regular emails: attempt SMTP first if available
     if (hasSmtp) {
         try {
-            const info = await transporter.sendMail(mailOptions);
+            const info = await rawSendMail(mailOptions);
             console.log(`[Email] Sent email via SMTP to ${mailOptions.to}`);
+            smtpBlocked = false;
             return info;
         } catch (smtpErr) {
             console.warn('[Email] SMTP send failed or blocked, falling back to EmailJS:', smtpErr.message);
+            if (/timeout|ECONNREFUSED|ENOTFOUND|EHOSTUNREACH/i.test(smtpErr.message || '')) {
+                smtpBlocked = true;
+            }
             if (hasEmailJS) {
                 return await sendViaEmailJS(mailOptions);
             }
@@ -151,13 +191,31 @@ async function sendMailWithFallback(mailOptions) {
         }
     }
 
-    // 3) If SMTP is not configured, send via EmailJS
+    // 4) If SMTP is not configured, send via EmailJS
     if (hasEmailJS) {
         return await sendViaEmailJS(mailOptions);
     }
 
     throw new Error('No working email provider configured.');
 }
+
+// Wrap raw transporter.sendMail so any legacy or direct callers automatically get the fallback
+const rawSendMail = transporter.sendMail.bind(transporter);
+transporter.rawSendMail = rawSendMail;
+transporter.sendMail = async function (mailOptions, callback) {
+    try {
+        const result = await sendMailWithFallback(mailOptions);
+        if (typeof callback === 'function') {
+            callback(null, result);
+        }
+        return result;
+    } catch (err) {
+        if (typeof callback === 'function') {
+            callback(err);
+        }
+        throw err;
+    }
+};
 
 module.exports = transporter;
 module.exports.sendMailWithFallback = sendMailWithFallback;

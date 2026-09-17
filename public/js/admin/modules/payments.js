@@ -90,14 +90,16 @@ async function rejectPayment(id) {
 }
 
 async function triggerRentReminders() {
-    if (!confirm('Are you sure you want to send rent reminders to all active dorm tenants? This will send an email to each of them.')) return;
+    if (!confirm('Are you sure you want to send rent reminders to all active tenants? This will dispatch an email reminder to each tenant with their upcoming due date and room details.')) return;
 
     const btn = document.querySelector('button[onclick="triggerRentReminders()"]');
-    const originalText = btn.innerHTML;
+    const originalText = btn ? btn.innerHTML : '';
     
     try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+        }
 
         const res = await fetch('/api/admin/stats/trigger-reminders', {
             method: 'POST',
@@ -107,15 +109,30 @@ async function triggerRentReminders() {
         const result = await res.json();
 
         if (res.ok) {
-            alert(result.message);
+            if (typeof window.showEnterpriseToast === 'function') {
+                window.showEnterpriseToast(result.message || 'Rent reminders sent successfully.');
+            } else {
+                alert(result.message || 'Rent reminders sent successfully.');
+            }
         } else {
-            alert(result.error || 'Failed to send reminders');
+            const errMsg = result.error || 'Failed to send reminders';
+            if (typeof window.showEnterpriseToast === 'function') {
+                window.showEnterpriseToast(errMsg, 'error');
+            } else {
+                alert(errMsg);
+            }
         }
     } catch (err) {
-        console.error(err);
-        alert('An error occurred while sending reminders');
+        console.error('Trigger reminders error:', err);
+        if (typeof window.showEnterpriseToast === 'function') {
+            window.showEnterpriseToast('An error occurred while sending reminders.', 'error');
+        } else {
+            alert('An error occurred while sending reminders.');
+        }
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
     }
 }

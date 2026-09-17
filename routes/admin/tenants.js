@@ -646,7 +646,56 @@ router.post('/:id/send-lease-reminder', async (req, res) => {
         const t = tenantReq.recordset[0];
         const endDateStr = t.lease_end_date ? new Date(t.lease_end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'soon';
 
-        console.log(`[Lease Reminder Sent] To: ${t.email} (${t.full_name}), Unit: ${t.room_number}, Lease End: ${endDateStr}`);
+        if (t.email) {
+            const { sendMailWithFallback } = require('../../utils/email');
+            const roomLabel = t.room_number ? `Room ${t.room_number}` : 'your unit';
+            const subject = `Lease Renewal Notice – ${t.room_number ? `${t.room_number} ` : ''}(Expiring ${endDateStr})`;
+            const text = `Hello ${t.full_name},\n\nThis is a notification from EliteStay Management that your lease agreement for ${roomLabel} is scheduled to end on ${endDateStr}.\n\nIf you would like to renew or extend your stay, or if you have any questions regarding your lease terms, please visit the EliteStay management office or reach out to us at your earliest convenience.\n\nThank you,\nEliteStay Management`;
+            const html = `
+                <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; color: #1a1a1a; border: 1px solid #eaeaea; border-radius: 8px; background-color: #ffffff;">
+                    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">
+                        <h1 style="color: #c5a059; font-family: 'Playfair Display', Georgia, serif; margin: 0; font-size: 26px;">EliteStay</h1>
+                        <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 11px; margin-top: 6px; color: #888; font-weight: 600;">Lease Renewal Notice</p>
+                    </div>
+                    <p style="margin-top: 0; color: #333; font-size: 15px; line-height: 1.6;">Hello <strong>${t.full_name}</strong>,</p>
+                    <p style="color: #555; font-size: 14px; line-height: 1.6;">
+                        This is an official notice regarding your lease agreement for <strong>${roomLabel}</strong>.
+                    </p>
+                    <div style="background-color: #fcf8e3; border-left: 4px solid #f0ad4e; padding: 14px 18px; margin: 20px 0; border-radius: 4px;">
+                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8a6d3b; display: block;">Scheduled Lease End Date</span>
+                        <strong style="font-size: 18px; color: #8a6d3b;">${endDateStr}</strong>
+                    </div>
+                    <p style="color: #555; font-size: 14px; line-height: 1.6;">
+                        If you would like to renew or extend your stay, or discuss future arrangements, please connect with the EliteStay management office at your earliest convenience.
+                    </p>
+                    <p style="margin-top: 28px; color: #444; font-size: 14px; line-height: 1.6;">
+                        Warm regards,<br>
+                        <strong>EliteStay Management</strong>
+                    </p>
+                </div>
+            `;
+            try {
+                await sendMailWithFallback({
+                    from: `"EliteStay Management" <${process.env.EMAIL_USER || 'no-reply@elitestay.com'}>`,
+                    to: t.email,
+                    subject,
+                    text,
+                    html,
+                    isReminder: true,
+                    dueDate: endDateStr,
+                    roomNumber: t.room_number || '',
+                    templateParams: {
+                        due_date: endDateStr,
+                        room_number: t.room_number || '',
+                        message: text,
+                        to_name: t.full_name
+                    }
+                });
+                console.log(`[Lease Reminder Sent] To: ${t.email} (${t.full_name}), Unit: ${t.room_number}, Lease End: ${endDateStr}`);
+            } catch (mailErr) {
+                console.error(`[Lease Reminder Mail Error] To: ${t.email}:`, mailErr.message);
+            }
+        }
 
         res.json({ 
             success: true, 

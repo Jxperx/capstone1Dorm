@@ -52,11 +52,28 @@ router.get('/', async (req, res) => {
 // Admin - Trigger Rent Reminders Manually
 router.post('/trigger-reminders', async (req, res) => {
     try {
-        await sendDormRentReminders();
-        res.json({ message: 'Rent reminders sent successfully to all active dorm tenants.' });
+        const result = await sendDormRentReminders();
+        if (result.total === 0) {
+            return res.json({
+                success: true,
+                message: 'No active tenants with registered email addresses found.',
+                result
+            });
+        }
+        if (result.sent === 0 && result.failed > 0) {
+            return res.status(500).json({
+                error: `Failed to deliver reminders to all ${result.failed} tenant(s). Please verify email provider configuration.`,
+                result
+            });
+        }
+        res.json({
+            success: true,
+            message: `Rent reminders sent successfully to ${result.sent} active tenant(s)${result.failed > 0 ? ` (${result.failed} failed)` : ''}.`,
+            result
+        });
     } catch (err) {
         console.error('Manual Reminder Trigger Error:', err);
-        res.status(500).json({ error: 'Failed to send reminders' });
+        res.status(500).json({ error: 'Failed to send reminders: ' + (err.message || 'Server error') });
     }
 });
 
