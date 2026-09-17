@@ -2,15 +2,54 @@ const nodemailer = require('nodemailer');
 
 // Startup diagnostics
 const hasEmailJS = !!process.env.EMAILJS_PUBLIC_KEY;
+const hasResend  = !!process.env.RESEND_API_KEY;
 const hasSmtp    = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 let smtpBlocked  = false; // Set to true if SMTP port is blocked by cloud provider (e.g. Render)
 
+if (hasResend) {
+    console.log('[Email] Resend API key detected - supporting direct HTML email delivery.');
+}
 if (hasEmailJS) {
     console.log('[Email] EmailJS credentials detected - supporting EmailJS HTTP API.');
-} else if (hasSmtp) {
+}
+if (hasSmtp) {
     console.log(`[Email] SMTP credentials detected for: ${process.env.EMAIL_USER}`);
-} else {
-    console.error('[Email] No email provider configured. Set EMAILJS_PUBLIC_KEY or EMAIL_USER/EMAIL_PASS.');
+}
+if (!hasResend && !hasEmailJS && !hasSmtp) {
+    console.error('[Email] No email provider configured. Set RESEND_API_KEY, EMAILJS_PUBLIC_KEY, or EMAIL_USER/EMAIL_PASS.');
+}
+
+// Resend HTTP API sender (Direct, raw HTML/Text, no templates needed - ideal for cloud hosting)
+async function sendViaResend(mailOptions) {
+    const fromAddress = process.env.RESEND_FROM || 'EliteStay <onboarding@resend.dev>';
+    const payload = {
+        from: fromAddress,
+        to: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
+        subject: mailOptions.subject || 'EliteStay Notification',
+        html: mailOptions.html || undefined,
+        text: mailOptions.text || undefined
+    };
+    if (mailOptions.replyTo || process.env.EMAIL_USER) {
+        payload.reply_to = mailOptions.replyTo || process.env.EMAIL_USER;
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Resend HTTP ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    console.log(`[Email] Successfully sent email to ${mailOptions.to} via Resend API (ID: ${data.id}).`);
+    return { messageId: data.id };
 }
 
 // EmailJS HTTP API sender
@@ -142,11 +181,20 @@ if (hasSmtp) {
     });
 }
 
-// Unified sender: Intelligent routing between SMTP and EmailJS
+// Unified sender: Intelligent routing between Resend, EmailJS, and SMTP
 async function sendMailWithFallback(mailOptions) {
     const isOtpEmail = !!(mailOptions.isOtp || (mailOptions.subject && /verification code|reset code|login otp/i.test(mailOptions.subject)));
 
-    // 1) For OTP emails: prefer EmailJS HTTP API if configured (avoiding SMTP port issues on cloud hosts)
+    // 1) Direct HTTP API with Resend (supports full custom HTML, no template setup required)
+    if (hasResend) {
+        try {
+            return await sendViaResend(mailOptions);
+        } catch (resendErr) {
+            console.warn('[Email] Resend API failed, attempting other providers:', resendErr.message);
+        }
+    }
+
+    // 2) For OTP emails: prefer EmailJS HTTP API if configured (avoiding SMTP port issues on cloud hosts)
     if (isOtpEmail && hasEmailJS) {
         try {
             return await sendViaEmailJS(mailOptions);
@@ -159,7 +207,7 @@ async function sendMailWithFallback(mailOptions) {
         }
     }
 
-    // 2) If SMTP is known to be blocked (e.g. Render firewall blocks port 465/587), go directly to EmailJS
+    // 3) If SMTP is known to be blocked (e.g. Render firewall blocks port 465/587), go directly to EmailJS
     if (smtpBlocked && hasEmailJS) {
         try {
             return await sendViaEmailJS(mailOptions);
@@ -172,8 +220,8 @@ async function sendMailWithFallback(mailOptions) {
         }
     }
 
-    // 3) For regular emails: attempt SMTP first if available
-    if (hasSmtp) {
+    // 4) For regular emails: attempt SMTP first if available (local development)
+    if (hasSmtp && !smtpBlocked) {
         try {
             const info = await rawSendMail(mailOptions);
             console.log(`[Email] Sent email via SMTP to ${mailOptions.to}`);
@@ -191,7 +239,7 @@ async function sendMailWithFallback(mailOptions) {
         }
     }
 
-    // 4) If SMTP is not configured, send via EmailJS
+    // 5) If SMTP is not configured or blocked, send via EmailJS
     if (hasEmailJS) {
         return await sendViaEmailJS(mailOptions);
     }
