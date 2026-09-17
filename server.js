@@ -505,7 +505,5 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    logger.error('[FATAL] Unhandled Promise Rejection:', reason);
-    // Let PM2 detect the exit and auto-restart
-    process.exit(1);
+    logger.error('[Warning] Unhandled Promise Rejection (non-fatal):', reason);
 });

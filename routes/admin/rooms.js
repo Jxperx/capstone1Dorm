@@ -232,7 +232,15 @@ router.get(['/media/all', '/media'], async (req, res) => {
 });
 
 // Admin - Update property media
-router.post('/:type', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
+router.post('/:type', (req, res, next) => {
+    upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }])(req, res, (err) => {
+        if (err) {
+            console.warn('[Property Media Upload Error]:', err.message || err);
+            return res.status(400).json({ error: err.message || 'Error processing media upload' });
+        }
+        next();
+    });
+}, async (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') return res.status(401).json({ error: 'Not authorized' });
     
     const type = req.params.type;
@@ -300,7 +308,15 @@ router.get('/gallery/:roomId', async (req, res) => {
 });
 
 // Upload multiple gallery images for a room
-router.post('/gallery/:roomId', upload.array('images', 25), async (req, res) => {
+router.post('/gallery/:roomId', (req, res, next) => {
+    upload.array('images', 25)(req, res, (err) => {
+        if (err) {
+            console.warn('[Gallery Upload Error]:', err.message || err);
+            return res.status(400).json({ error: err.message || 'Error uploading photos' });
+        }
+        next();
+    });
+}, async (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') return res.status(401).json({ error: 'Not authorized' });
     const roomId = parseInt(req.params.roomId, 10);
     if (Number.isNaN(roomId)) return res.status(400).json({ error: 'Invalid room id' });

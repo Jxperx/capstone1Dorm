@@ -1168,9 +1168,14 @@ if (document.readyState !== 'loading') initGalleryUploadListeners();
 
 async function uploadGalleryImages(customFiles = null) {
     if (!currentMediaRoomId) return alert('Please select a unit first');
-    const input = document.getElementById('galleryFileInput');
-    const files = customFiles || (input ? input.files : null);
-    if (!files || files.length === 0) return;
+    const rawFiles = customFiles || (input ? input.files : null);
+    if (!rawFiles || rawFiles.length === 0) return;
+
+    const files = Array.from(rawFiles).filter(f => f && f.size > 0);
+    if (files.length === 0) {
+        showMediaToast('Selected file(s) are empty', 'warning');
+        return;
+    }
 
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
