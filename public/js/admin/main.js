@@ -25,8 +25,8 @@ function showSection(sectionId, linkElement) {
         }
     });
     
-    // Auto-close sidebar on mobile devices upon selecting a section
-    if (window.innerWidth < 768) {
+    // Auto-close sidebar on mobile & tablet devices upon selecting a section
+    if (window.innerWidth < 992) {
         document.body.classList.remove('sb-sidenav-toggled');
     }
 

@@ -174,16 +174,32 @@
             .snap-nav-dots { display: none; }
         }
 
-        /* Mobile & Small Screen Fallback */
-        @media (max-width: 768px), (max-height: 650px) {
+        /* Fluid Mobile & Tablet Scrolling (Disable snap on touch screens and small heights) */
+        @media (max-width: 1024px), (max-height: 750px) {
             html {
-                scroll-snap-type: y proximity;
-                scroll-padding-top: 60px;
+                scroll-snap-type: none !important;
+                scroll-behavior: smooth;
             }
             .snap-section {
-                min-height: auto;
-                padding: 40px 0;
-                scroll-margin-top: 70px !important;
+                scroll-snap-align: none !important;
+                scroll-snap-stop: normal !important;
+                min-height: auto !important;
+                padding: clamp(24px, 4vh, 48px) 0 !important;
+                scroll-margin-top: 74px !important;
+            }
+            #hero.snap-section {
+                min-height: calc(100svh - 74px) !important;
+                padding-top: calc(74px + 16px) !important;
+                padding-bottom: 24px !important;
+                padding-left: clamp(16px, 4vw, 32px);
+                padding-right: clamp(16px, 4vw, 32px);
+            }
+            #tour.snap-section,
+            #condos.snap-section,
+            #dorms.snap-section,
+            #inquire.snap-section,
+            #location.snap-section {
+                min-height: auto !important;
             }
         }
 
@@ -602,13 +618,27 @@
             }
         }
 
-        @media (max-width: 480px) {
-            nav#eliteNav {
-                padding: 12px 4%;
-            }
+        @media (max-width: 900px) {
             .condo-cards {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                gap: 24px;
+                max-width: 640px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav#eliteNav {
+                padding: 10px 4%;
+            }
+            .condo-cards {
+                gap: 16px;
+            }
+            .condo-card-content {
+                padding: 16px 18px;
+            }
+            .condo-card-bg {
+                height: clamp(180px, 24vh, 230px);
             }
         }
 
@@ -1629,12 +1659,53 @@
                 grid-template-columns: 1fr;
             }
             .inquire-photo {
-                min-height: 320px;
+                min-height: 280px;
             }
             .inquire-form-side {
                 border-left: none;
                 border-top: 1px solid var(--glass-border);
-                padding: 32px 20px;
+                padding: 28px 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .inquire-photo {
+                min-height: 180px;
+                max-height: 220px;
+            }
+            .inquire-photo-badge {
+                top: 14px;
+                left: 14px;
+                padding: 8px 14px;
+            }
+            .inquire-photo-badge .badge-label {
+                font-size: 9px;
+                letter-spacing: 1.5px;
+            }
+            .inquire-photo-badge .badge-value {
+                font-size: 16px;
+            }
+            .inquire-form-side {
+                padding: 20px 14px;
+            }
+            .calc-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .id-upload-card {
+                padding: 0;
+            }
+            .id-upload-placeholder {
+                padding: 6px 10px;
+                gap: 8px;
+            }
+            .id-upload-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 11px;
+            }
+            .id-upload-label {
+                font-size: 11px;
             }
         }
         
@@ -2060,6 +2131,99 @@
             height: clamp(440px, 58vh, 640px) !important;
         }
 
+        @media (max-width: 1024px) {
+            .expanded-tour-window {
+                height: clamp(340px, 50vh, 460px) !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .expanded-tour-window {
+                height: clamp(260px, 45vh, 340px) !important;
+            }
+            .tour-wrapper {
+                padding: 14px 10px;
+            }
+            .tour-tab {
+                padding: 6px 12px;
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+        }
+
+        /* ── Fullscreen 360 Tour Mode ── */
+        #tourWindow:fullscreen,
+        #tourWindow:-webkit-full-screen,
+        #tourWindow:-moz-full-screen,
+        #tourWindow:-ms-fullscreen,
+        #tourWindow.is-tour-fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #000 !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+        }
+
+        #tourWindow.is-tour-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 999999 !important;
+        }
+
+        #tourWindow:fullscreen .tour-panel,
+        #tourWindow:-webkit-full-screen .tour-panel,
+        #tourWindow:-moz-full-screen .tour-panel,
+        #tourWindow:-ms-fullscreen .tour-panel,
+        #tourWindow.is-tour-fullscreen .tour-panel {
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+            inset: 0 !important;
+        }
+
+        #tourWindow:fullscreen .tour-panel.active,
+        #tourWindow:-webkit-full-screen .tour-panel.active,
+        #tourWindow:-moz-full-screen .tour-panel.active,
+        #tourWindow:-ms-fullscreen .tour-panel.active,
+        #tourWindow.is-tour-fullscreen .tour-panel.active {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+            inset: 0 !important;
+        }
+
+        #tourWindow:fullscreen .tour-panel.active iframe,
+        #tourWindow:-webkit-full-screen .tour-panel.active iframe,
+        #tourWindow:-moz-full-screen .tour-panel.active iframe,
+        #tourWindow:-ms-fullscreen .tour-panel.active iframe,
+        #tourWindow.is-tour-fullscreen .tour-panel.active iframe {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            border: 0 !important;
+        }
+
+        #tourWindow:fullscreen .tour-controls,
+        #tourWindow:-webkit-full-screen .tour-controls,
+        #tourWindow:-moz-full-screen .tour-controls,
+        #tourWindow:-ms-fullscreen .tour-controls,
+        #tourWindow.is-tour-fullscreen .tour-controls {
+            position: fixed !important;
+            bottom: 24px !important;
+            right: 24px !important;
+            z-index: 1000000 !important;
+        }
+
         @media (max-width: 580px) {
             .hero-visual-frame {
                 height: clamp(300px, 46vh, 380px);
@@ -2300,10 +2464,10 @@
 
                     <!-- Controls -->
                     <div class="tour-controls">
-                        <div class="tour-ctrl-btn" title="Fullscreen" onclick="requestFullscreen()">
+                        <div class="tour-ctrl-btn" id="tourFullscreenBtn" title="Fullscreen" onclick="toggleTourFullscreen()">
                             <i class="fas fa-expand"></i>
                         </div>
-                        <div class="tour-ctrl-btn" title="Share">
+                        <div class="tour-ctrl-btn" title="Share" onclick="shareTour()">
                             <i class="fas fa-share-alt"></i>
                         </div>
                     </div>
@@ -2732,11 +2896,140 @@
         });
 
         // ── Fullscreen toggle for 360 Tour ──
-        function requestFullscreen() {
-            const win = document.getElementById('tourWindow');
-            if (!win) return;
-            if (win.requestFullscreen) win.requestFullscreen();
-            else if (win.webkitRequestFullscreen) win.webkitRequestFullscreen();
+        function toggleTourFullscreen() {
+            const isFs = !!(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement ||
+                document.getElementById('tourWindow')?.classList.contains('is-tour-fullscreen')
+            );
+
+            if (isFs) {
+                const win = document.getElementById('tourWindow');
+                if (win && win.classList.contains('is-tour-fullscreen')) {
+                    win.classList.remove('is-tour-fullscreen');
+                    document.body.style.overflow = '';
+                    updateTourFullscreenUI(false);
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            } else {
+                // Prioritize making the active 360 iframe fullscreen for full immersion
+                const activeIframe = document.querySelector('#tourWindow .tour-panel.active iframe');
+                const win = document.getElementById('tourWindow');
+                const target = activeIframe || win;
+                if (!target) return;
+
+                const req = target.requestFullscreen ||
+                            target.webkitRequestFullscreen ||
+                            target.mozRequestFullScreen ||
+                            target.msRequestFullscreen;
+
+                if (req) {
+                    const promise = req.call(target);
+                    if (promise && promise.catch) {
+                        promise.catch((err) => {
+                            console.warn('Native fullscreen on target failed, falling back to tourWindow', err);
+                            if (win && target !== win && win.requestFullscreen) {
+                                win.requestFullscreen().catch(() => {
+                                    win.classList.add('is-tour-fullscreen');
+                                    document.body.style.overflow = 'hidden';
+                                    updateTourFullscreenUI(true);
+                                });
+                            } else if (win) {
+                                win.classList.add('is-tour-fullscreen');
+                                document.body.style.overflow = 'hidden';
+                                updateTourFullscreenUI(true);
+                            }
+                        });
+                    }
+                } else if (win) {
+                    win.classList.add('is-tour-fullscreen');
+                    document.body.style.overflow = 'hidden';
+                    updateTourFullscreenUI(true);
+                }
+            }
+        }
+        window.toggleTourFullscreen = toggleTourFullscreen;
+        window.requestFullscreen = toggleTourFullscreen; // backwards compatibility
+
+        function updateTourFullscreenUI(isFs) {
+            const fsBtn = document.getElementById('tourFullscreenBtn') || 
+                          document.querySelector('#tourWindow .tour-ctrl-btn[onclick*="Fullscreen"], #tourWindow .tour-ctrl-btn[onclick*="fullscreen"]');
+            if (fsBtn) {
+                fsBtn.title = isFs ? 'Exit Fullscreen' : 'Fullscreen';
+                const icon = fsBtn.querySelector('i');
+                if (icon) {
+                    icon.className = isFs ? 'fas fa-compress' : 'fas fa-expand';
+                }
+            }
+            setTimeout(notifyActiveTourResize, 60);
+            setTimeout(notifyActiveTourResize, 260);
+        }
+
+        function notifyActiveTourResize() {
+            const activeIframe = document.querySelector('#tourWindow .tour-panel.active iframe');
+            if (activeIframe && activeIframe.clientWidth > 0 && activeIframe.clientHeight > 0 && activeIframe.contentWindow) {
+                try {
+                    activeIframe.contentWindow.dispatchEvent(new Event('resize'));
+                } catch (e) {}
+            }
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+            document.addEventListener(evt, () => {
+                const isFs = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.mozFullScreenElement ||
+                    document.msFullscreenElement
+                );
+                const win = document.getElementById('tourWindow');
+                if (!isFs && win && win.classList.contains('is-tour-fullscreen')) {
+                    win.classList.remove('is-tour-fullscreen');
+                    document.body.style.overflow = '';
+                }
+                updateTourFullscreenUI(isFs);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const win = document.getElementById('tourWindow');
+                if (win && win.classList.contains('is-tour-fullscreen')) {
+                    win.classList.remove('is-tour-fullscreen');
+                    document.body.style.overflow = '';
+                    updateTourFullscreenUI(false);
+                }
+            }
+        });
+
+        function shareTour() {
+            const shareData = {
+                title: 'EliteStay 360° Virtual Tour',
+                text: 'Experience EliteStay student dormitories and condos in immersive 360° virtual tour!',
+                url: window.location.origin + window.location.pathname + '#tour'
+            };
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareData.url).then(() => {
+                    const btn = document.querySelector('#tourWindow .tour-ctrl-btn[title="Share"], #tourWindow .tour-ctrl-btn[onclick*="shareTour"]');
+                    if (btn) {
+                        const originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-check" style="color:var(--gold);"></i>';
+                        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+                    }
+                }).catch(() => {});
+            }
         }
 
         // ── Tour tab switcher (index-based) ──
@@ -2748,6 +3041,7 @@
                 const p = document.getElementById(id);
                 if (p) p.classList.toggle('active', i === index);
             });
+            setTimeout(notifyActiveTourResize, 60);
         }
 
         function switchTourAndScroll(index) {

@@ -96,15 +96,45 @@ body::before {
         padding: 12px;
     }
     .auth-card {
-        flex-direction: column-reverse; /* Stack image on top on mobile */
+        flex-direction: column-reverse; /* Form stays primary */
         min-height: auto;
     }
     .auth-card.reverse {
         flex-direction: column-reverse;
     }
     .auth-image {
-        min-height: 160px;
+        min-height: 140px;
         flex: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .bg-video {
+        display: none; /* Save mobile battery and prevent video stutter */
+    }
+    .auth-overlay {
+        padding: 20px;
+    }
+    .auth-overlay h2 {
+        font-size: 1.3rem;
+    }
+    .auth-overlay p {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 420px) {
+    body {
+        padding: 8px;
+    }
+    .auth-form {
+        padding: 24px 16px;
+    }
+    .auth-card {
+        border-radius: 6px;
+    }
+    .auth-image {
+        min-height: 110px;
     }
 }
 

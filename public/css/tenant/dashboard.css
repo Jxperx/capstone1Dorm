@@ -83,7 +83,7 @@ body {
 }
 
 /* Sidebar Fixed Layout & Independent Content Scroll */
-@media (min-width: 768px) {
+@media (min-width: 992px) {
     html, body {
         height: 100vh;
         overflow: hidden !important;
@@ -108,7 +108,7 @@ body {
         box-shadow: 4px 0 24px rgba(0,0,0,0.15);
     }
 
-    .col-md-9.col-lg-10 {
+    .col-lg-10 {
         margin-left: auto;
         height: 100vh;
         overflow-y: auto !important;
@@ -641,12 +641,37 @@ body {
     color: var(--accent);
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 991.98px) {
     .main-tenant-content {
         padding: clamp(12px, 3vw, 20px) !important;
         padding-bottom: 84px !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .tenant-mobile-header {
+        margin-bottom: 0.75rem !important;
+    }
+    .tenant-top-tab-wrapper {
+        padding: 4px 8px;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+    .tenant-tab-btn {
+        padding: 6px 12px;
+        font-size: 0.78rem;
+    }
+    .modal-dialog {
+        margin: 0.5rem auto !important;
+        max-width: 96vw !important;
+    }
+    .modal-body {
+        padding: 1rem !important;
+    }
+    .modal-footer {
+        padding: 0.75rem 1rem !important;
     }
 }
 

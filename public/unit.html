@@ -1703,6 +1703,14 @@
         }
 
         @media (max-width: 540px) {
+            .luxury-container {
+                width: 96%;
+                margin-bottom: 40px;
+                gap: 16px;
+            }
+            .luxury-card {
+                padding: 16px 12px;
+            }
             .fc .fc-toolbar {
                 flex-direction: column;
                 gap: 10px;
@@ -1723,9 +1731,51 @@
                 font-size: 11px;
                 padding: 2px 4px;
             }
+            .fc-daygrid-day-frame {
+                min-height: 44px !important;
+            }
+            .legend-v2 {
+                gap: 10px;
+                font-size: 11px;
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+            .booking-card {
+                padding: 24px 18px;
+            }
+            .price-tag-v2 {
+                padding: 16px 14px;
+                margin-bottom: 18px;
+            }
+            .price-value-v2 {
+                font-size: 30px;
+            }
             .sidebar-trust-strip {
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
+            }
+            .es-modal {
+                padding: 22px 16px !important;
+                border-radius: var(--radius-lg);
+                max-width: 95vw;
+            }
+            .modal-title {
+                font-size: 22px;
+            }
+            .gallery-thumbs {
+                grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)) !important;
+                gap: 8px;
+            }
+            .lightbox-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+            }
+            .lightbox-arrow-prev { left: 6px; }
+            .lightbox-arrow-next { right: 6px; }
+            .lightbox-image-wrap img {
+                max-height: 64vh;
+                max-width: 94vw;
             }
         }
 
@@ -1744,6 +1794,22 @@
             .nav-inquire-cta {
                 padding: 6px 10px;
                 font-size: 9px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .unit-nav-bar {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            .brand-logo {
+                font-size: 12px;
+                letter-spacing: 0.5px;
+            }
+            .back-link, .nav-inquire-cta {
+                padding: 5px 8px;
+                font-size: 8.5px;
+                letter-spacing: 0.5px;
             }
         }
     </style>
